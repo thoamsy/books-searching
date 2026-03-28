@@ -17,18 +17,25 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { getCoverUrl, normalizeWorkId } from "@/lib/books-api";
 import { bookDetailQueryOptions, suggestionsQueryOptions } from "@/lib/book-queries";
 import { queryClient } from "@/lib/query-client";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { SearchBook } from "@/types/books";
 
 const SEARCH_HISTORY_KEY = "book-echo-search-history";
 const SEARCH_HISTORY_LIMIT = 8;
+const SEARCH_PAGE_ANIMATION_SEEN_KEY = "book-echo-search-page-animation-seen";
 
 type SearchOption =
   | { id: string; label: string; meta?: string; year?: string; kind: "suggestion"; book: SearchBook };
 
+interface RecentSearchEntry {
+  workId: string;
+  query: string;
+  book: SearchBook;
+}
+
 function readSearchHistory() {
   if (typeof window === "undefined") {
-    return [] as string[];
+    return [] as RecentSearchEntry[];
   }
 
   try {
@@ -38,13 +45,28 @@ function readSearchHistory() {
     }
 
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter((item): item is RecentSearchEntry => {
+      if (!item || typeof item !== "object") {
+        return false;
+      }
+
+      const candidate = item as Partial<RecentSearchEntry>;
+      return (
+        typeof candidate.workId === "string" &&
+        typeof candidate.query === "string" &&
+        Boolean(candidate.book && typeof candidate.book === "object" && typeof candidate.book.title === "string")
+      );
+    });
   } catch {
     return [];
   }
 }
 
-function writeSearchHistory(items: string[]) {
+function writeSearchHistory(items: RecentSearchEntry[]) {
   if (typeof window === "undefined") {
     return;
   }
@@ -52,13 +74,18 @@ function writeSearchHistory(items: string[]) {
   window.localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(items));
 }
 
-function pushSearchHistory(items: string[], term: string) {
-  const trimmed = term.trim();
-  if (!trimmed) {
+function pushSearchHistory(items: RecentSearchEntry[], entry: RecentSearchEntry) {
+  const trimmedQuery = entry.query.trim();
+  if (!trimmedQuery) {
     return items;
   }
 
-  return [trimmed, ...items.filter((item) => item !== trimmed)].slice(0, SEARCH_HISTORY_LIMIT);
+  const nextEntry = {
+    ...entry,
+    query: trimmedQuery
+  };
+
+  return [nextEntry, ...items.filter((item) => item.workId !== nextEntry.workId)].slice(0, SEARCH_HISTORY_LIMIT);
 }
 
 function getSuggestionOptionId(book: SearchBook, index: number) {
@@ -71,12 +98,23 @@ function getSuggestionOptionId(book: SearchBook, index: number) {
   ].join("::");
 }
 
+function shouldPlaySearchEntranceAnimation() {
+  if (typeof window === "undefined") {
+    return true;
+  }
+
+  return window.sessionStorage.getItem(SEARCH_PAGE_ANIMATION_SEEN_KEY) !== "true";
+}
+
 export function SearchPage() {
+  const location = useLocation();
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  const initialQueryFromUrl = new URLSearchParams(location.search).get("q")?.trim() ?? "";
+  const [shouldAnimateEntrance] = useState(shouldPlaySearchEntranceAnimation);
+  const [query, setQuery] = useState(initialQueryFromUrl);
+  const [isOpen, setIsOpen] = useState(Boolean(initialQueryFromUrl));
   const [isComposing, setIsComposing] = useState(false);
-  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [searchHistory, setSearchHistory] = useState<RecentSearchEntry[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchFrameRef = useRef<HTMLDivElement>(null);
   const searchShellRef = useRef<HTMLDivElement>(null);
@@ -85,7 +123,11 @@ export function SearchPage() {
   useEffect(() => {
     inputRef.current?.focus();
     setSearchHistory(readSearchHistory());
-  }, []);
+
+    if (shouldAnimateEntrance) {
+      window.sessionStorage.setItem(SEARCH_PAGE_ANIMATION_SEEN_KEY, "true");
+    }
+  }, [shouldAnimateEntrance]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -114,6 +156,32 @@ export function SearchPage() {
         : "搜索服务暂时不可用，请稍后再试。"
       : "";
 
+  function saveRecentBook(book: SearchBook, workId: string, searchQuery: string) {
+    setSearchHistory((current) => {
+      const next = pushSearchHistory(current, { workId, query: searchQuery, book });
+      if (next !== current) {
+        writeSearchHistory(next);
+      }
+      return next;
+    });
+  }
+
+  function openBookDetail(book: SearchBook, searchQuery: string) {
+    const workId = normalizeWorkId(book.key);
+    if (!workId) {
+      return false;
+    }
+
+    saveRecentBook(book, workId, searchQuery);
+    setIsOpen(false);
+    setIsComposing(false);
+    void queryClient.prefetchQuery(bookDetailQueryOptions(workId));
+    navigate(`/book/${workId}?q=${encodeURIComponent(searchQuery)}`, {
+      state: { book }
+    });
+    return true;
+  }
+
   function submitSearch(term: string) {
     const trimmed = term.trim();
 
@@ -132,24 +200,7 @@ export function SearchPage() {
       return;
     }
 
-    setSearchHistory((current) => {
-      const next = pushSearchHistory(current, matchedSuggestion.title);
-      if (next.join("::") !== current.join("::")) {
-        writeSearchHistory(next);
-      }
-      return next;
-    });
-
-    const workId = normalizeWorkId(matchedSuggestion.key);
-    if (!workId) {
-      return;
-    }
-
-    setIsOpen(false);
-    void queryClient.prefetchQuery(bookDetailQueryOptions(workId));
-    navigate(`/book/${workId}?q=${encodeURIComponent(matchedSuggestion.title)}`, {
-      state: { book: matchedSuggestion }
-    });
+    openBookDetail(matchedSuggestion, matchedSuggestion.title);
   }
 
   function clearSearch(shouldFocus = false) {
@@ -179,34 +230,36 @@ export function SearchPage() {
   const showHistoryPanel = isOpen && query.trim().length === 0 && showHistory;
   const comboOpen = showSuggestions && (comboItems.length > 0 || isSuggesting);
 
+  function handleInputValueChange(nextValue: string, details: { reason: string }) {
+    if (
+      details.reason === "item-press" ||
+      details.reason === "list-navigation" ||
+      details.reason === "trigger-press" ||
+      details.reason === "outside-press" ||
+      details.reason === "focus-out" ||
+      details.reason === "escape-key"
+    ) {
+      return;
+    }
+
+    setQuery(nextValue);
+  }
+
   function handleOptionSelect(option: SearchOption | null) {
     if (!option) {
       return;
     }
 
-    const workId = normalizeWorkId(option.book.key);
     setQuery(option.label);
-    setIsOpen(false);
-    setIsComposing(false);
-
-    setSearchHistory((current) => {
-      const next = pushSearchHistory(current, option.label);
-      if (next.join("::") !== current.join("::")) {
-        writeSearchHistory(next);
-      }
-      return next;
-    });
-
-    if (!workId) {
+    if (!openBookDetail(option.book, option.label)) {
       submitSearch(option.label);
-      return;
     }
-
-    void queryClient.prefetchQuery(bookDetailQueryOptions(workId));
-    navigate(`/book/${workId}?q=${encodeURIComponent(option.label)}`, {
-      state: { book: option.book }
-    });
   }
+
+  const badgeAnimationClass = shouldAnimateEntrance ? "animate-[rise_0.6s_ease_forwards]" : "";
+  const searchFrameAnimationClass = shouldAnimateEntrance
+    ? "animate-[rise_0.65s_ease_forwards] [animation-delay:120ms]"
+    : "";
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]">
@@ -215,14 +268,14 @@ export function SearchPage() {
 
         <section className="mx-auto flex min-h-screen w-full max-w-[1240px] flex-col px-5 pb-16 pt-8 sm:px-8 lg:px-10">
           <div className="mx-auto flex w-full flex-1 flex-col items-center justify-center text-center">
-              <div className="animate-[rise_0.6s_ease_forwards]">
+              <div className={badgeAnimationClass}>
                 <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/55 px-4 py-2 text-xs uppercase tracking-[0.35em] text-[var(--muted-foreground)] backdrop-blur-sm">
                   <Sparkles className="size-3.5" />
                   Book Echo
                 </p>
               </div>
 
-              <div className="relative z-30 mt-6 w-full max-w-3xl animate-[rise_0.65s_ease_forwards] [animation-delay:120ms]">
+              <div className={`relative z-30 mt-6 w-full max-w-3xl ${searchFrameAnimationClass}`.trim()}>
                 <div
                   ref={searchFrameRef}
                   className="rounded-[36px] border border-white/70 bg-white/50 p-3 shadow-[0_24px_70px_rgba(95,66,43,0.12)] backdrop-blur-xl"
@@ -242,9 +295,10 @@ export function SearchPage() {
                         items={comboItems}
                         itemToStringLabel={(item) => item.label}
                         itemToStringValue={(item) => item.label}
+                        inputValue={query}
                         open={comboOpen}
                         onOpenChange={setIsOpen}
-                        onInputValueChange={setQuery}
+                        onInputValueChange={handleInputValueChange}
                         onValueChange={(value) => handleOptionSelect(value)}
                         autoHighlight
                       >
@@ -253,9 +307,7 @@ export function SearchPage() {
                           showTrigger={false}
                           showClear={false}
                           placeholder="试试：三体、雪国、博尔赫斯、村上春树……"
-                          value={query}
                           className="h-16 rounded-full border-transparent bg-[#fffaf3] px-5 text-base shadow-none focus-visible:ring-0"
-                          onChange={(event) => setQuery(event.currentTarget.value)}
                           onFocus={() => setIsOpen(true)}
                           onCompositionStart={() => setIsComposing(true)}
                           onCompositionEnd={(event) => {
@@ -356,17 +408,20 @@ export function SearchPage() {
                           <div className="mt-4 flex flex-wrap gap-3">
                             {searchHistory.map((item) => (
                               <button
-                                key={item}
+                                key={item.workId}
                                 type="button"
                                 className="rounded-full border border-[var(--border)] bg-white/80 px-4 py-2 text-sm text-[var(--foreground)] transition hover:border-[var(--primary)]/35 hover:bg-white"
                                 onMouseDown={(event) => event.preventDefault()}
                                 onClick={() => {
-                                  setQuery(item);
+                                  setQuery(item.query);
                                   setIsOpen(false);
-                                  submitSearch(item);
+                                  void queryClient.prefetchQuery(bookDetailQueryOptions(item.workId));
+                                  navigate(`/book/${item.workId}?q=${encodeURIComponent(item.query)}`, {
+                                    state: { book: item.book }
+                                  });
                                 }}
                               >
-                                {item}
+                                {item.book.title}
                               </button>
                             ))}
                           </div>

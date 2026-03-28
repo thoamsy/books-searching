@@ -123,10 +123,8 @@ function DetailCoverPanel({
 
   return (
     <div>
-      <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-[36px] border border-white/70 bg-white/60 p-4 shadow-[0_28px_70px_rgba(95,66,43,0.12)]">
-        <div className="aspect-[3/4] overflow-hidden rounded-[28px]">
-          <BookCover src={cover} title={title} />
-        </div>
+      <div className="mx-auto aspect-[3/4] w-full max-w-[320px] overflow-hidden rounded-[28px] shadow-[0_28px_70px_rgba(95,66,43,0.12)]">
+        <BookCover src={cover} title={title} className="rounded-[28px]" />
       </div>
     </div>
   );
@@ -265,7 +263,9 @@ function ExpandableDescription({ text }: { text: string }) {
       <div className={`relative ${!expanded && shouldCollapse ? "max-h-[28rem] overflow-hidden" : ""}`}>
         <p className="whitespace-pre-line text-base leading-8 text-[var(--muted-foreground)]">{text}</p>
         {!expanded && shouldCollapse ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(248,242,232,0),rgba(248,242,232,0.95)_60%,rgba(248,242,232,1))]" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,rgba(248,242,232,0),rgba(248,242,232,0.16)_28%,rgba(248,242,232,0.72)_72%,rgba(248,242,232,0.96))]">
+            <div className="absolute inset-x-0 bottom-0 h-10 bg-[linear-gradient(180deg,rgba(255,251,244,0),rgba(255,251,244,0.92))]" />
+          </div>
         ) : null}
       </div>
 
