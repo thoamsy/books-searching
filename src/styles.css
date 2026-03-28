@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --font-display: "Cormorant Garamond", serif;
+  --font-sans: "Manrope", sans-serif;
+}
+
+:root {
+  --background: #f6efe5;
+  --foreground: #35271f;
+  --primary: #c96f45;
+  --primary-foreground: #fff8f1;
+  --muted-foreground: #756357;
+  --border: rgba(137, 108, 80, 0.26);
+  --accent: rgba(224, 209, 189, 0.72);
+  --ring: #c96f45;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.82), transparent 36%),
+    linear-gradient(135deg, #f8f2e8 0%, #efe4d4 54%, #e5d6c3 100%);
+  color: var(--foreground);
+  font-family: "Manrope", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
