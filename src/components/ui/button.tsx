@@ -15,10 +15,12 @@ const buttonVariants = cva(
           "border border-[var(--border)] bg-white/70 text-[var(--foreground)] hover:border-[var(--primary)]/35 hover:bg-white"
       },
       size: {
+        xs: "h-8 px-3 text-xs",
         default: "h-11 px-5",
         sm: "h-9 px-4 text-xs",
         lg: "h-12 px-6 text-base",
-        icon: "size-10"
+        icon: "size-10",
+        "icon-xs": "size-6"
       }
     },
     defaultVariants: {
