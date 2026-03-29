@@ -218,7 +218,7 @@ export function SearchPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <main className={`bg-[var(--background)] text-[var(--foreground)] ${searchHistory.length > 0 ? "min-h-[100dvh]" : "h-[100dvh] overflow-hidden"}`}>
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,color-mix(in_oklch,var(--primary)_12%,transparent),transparent_30%)]" />
 
       <div className="relative mx-auto max-w-3xl px-5 pt-16 pb-20 sm:px-8 sm:pt-24">
