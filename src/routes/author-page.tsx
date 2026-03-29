@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { ArrowLeft, CalendarDays, ExternalLink, ListOrdered, LoaderCircle, Star } from "lucide-react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Component, Suspense, useMemo, useState } from "react";
+import type { ErrorInfo, ReactNode } from "react";
+import { ArrowLeft, CalendarDays, ExternalLink, ListOrdered, Star } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { BookCover } from "@/components/book-cover";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,176 @@ function sortBooks(books: SearchBook[], mode: SortMode): SearchBook[] {
   });
 }
 
+/* ------------------------------------------------------------------ */
+/*  Error boundary                                                     */
+/* ------------------------------------------------------------------ */
+
+interface ErrorBoundaryProps {
+  fallback: (props: { error: Error; reset: () => void }) => ReactNode;
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  error: Error | null;
+}
+
+class QueryErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("AuthorPage error boundary:", error, info);
+  }
+
+  reset = () => this.setState({ error: null });
+
+  render() {
+    if (this.state.error) {
+      return this.props.fallback({ error: this.state.error, reset: this.reset });
+    }
+    return this.props.children;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Skeleton fallback                                                  */
+/* ------------------------------------------------------------------ */
+
+function BooksGridSkeleton() {
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
+          相关作品
+        </h2>
+      </div>
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="aspect-[3/4] rounded-2xl bg-white/50" />
+            <div className="mt-3 px-0.5">
+              <div className="h-4 w-3/4 rounded-full bg-white/50" />
+              <div className="mt-2 h-3 w-1/2 rounded-full bg-white/50" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Error fallback                                                     */
+/* ------------------------------------------------------------------ */
+
+function BooksErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
+  const message = error.message.includes("rate-limited")
+    ? "豆瓣当前触发了风控或频率限制，请稍后重试。"
+    : "获取作品列表失败，请稍后再试。";
+
+  return (
+    <div className="mt-8 rounded-[28px] border border-white/70 bg-[var(--surface)] px-8 py-12 text-center">
+      <p className="text-sm text-[var(--destructive)]">{message}</p>
+      <Button variant="outline" className="mt-4" onClick={reset}>
+        重试
+      </Button>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Books section (suspends while loading)                             */
+/* ------------------------------------------------------------------ */
+
+function AuthorBooksContent({ authorName }: { authorName: string }) {
+  const { data } = useSuspenseQuery(searchBooksQueryOptions(authorName));
+  const [sortMode, setSortMode] = useState<SortMode>(readSortPreference);
+  const books = useMemo(() => sortBooks(data.docs, sortMode), [data.docs, sortMode]);
+
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
+          相关作品
+          {books.length > 0 ? (
+            <span className="ml-2 text-[var(--muted-foreground)]/60">{books.length}</span>
+          ) : null}
+        </h2>
+        {books.length > 1 ? (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/50 px-3 py-1.5 text-xs text-[var(--muted-foreground)] transition hover:bg-white/70 hover:text-[var(--foreground)]"
+            onClick={() => {
+              const nextIndex = (SORT_ORDER.indexOf(sortMode) + 1) % SORT_ORDER.length;
+              const next = SORT_ORDER[nextIndex];
+              setSortMode(next);
+              writeSortPreference(next);
+            }}
+          >
+            {sortMode === "default" ? <ListOrdered className="size-3" /> : sortMode === "year" ? <CalendarDays className="size-3" /> : <Star className="size-3" />}
+            {SORT_LABELS[sortMode]}
+          </button>
+        ) : null}
+      </div>
+
+      {books.length === 0 ? (
+        <div className="mt-8 rounded-[28px] border border-white/70 bg-[var(--surface)] px-8 py-12 text-center">
+          <p className="text-sm text-[var(--muted-foreground)]">未找到相关作品</p>
+        </div>
+      ) : (
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6">
+          {books.map((book) => {
+            const workId = normalizeWorkId(book.key);
+            if (!workId) return null;
+
+            return (
+              <Link
+                key={workId}
+                to={`/book/${workId}?q=${encodeURIComponent(authorName)}`}
+                state={{ book }}
+                className="group text-left"
+              >
+                <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]">
+                  <BookCover
+                    src={getCoverUrl(book.coverUrl)}
+                    title={book.title}
+                    className="rounded-2xl transition group-hover:scale-[1.02]"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="mt-3 px-0.5">
+                  <p className="truncate text-sm font-medium text-[var(--foreground)]">
+                    {book.title}
+                  </p>
+                  <div className="mt-1 flex items-center gap-2">
+                    {book.firstPublishYear ? (
+                      <span className="text-xs text-[var(--muted-foreground)]">
+                        {book.firstPublishYear}
+                      </span>
+                    ) : null}
+                    {book.ratingsAverage ? (
+                      <Badge variant="accent" className="gap-1 px-1.5 py-0 text-[10px]">
+                        ★ {book.ratingsAverage.toFixed(1)}
+                      </Badge>
+                    ) : null}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Page shell                                                         */
+/* ------------------------------------------------------------------ */
+
 export function AuthorPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -49,22 +220,6 @@ export function AuthorPage() {
   const enName = searchParams.get("en") ?? undefined;
   const doubanUrl = searchParams.get("url") ?? undefined;
   const decodedName = decodeURIComponent(authorName ?? "");
-  const [sortMode, setSortMode] = useState<SortMode>(readSortPreference);
-
-  const booksQuery = useQuery({
-    ...searchBooksQueryOptions(decodedName),
-    enabled: Boolean(decodedName)
-  });
-
-  const rawBooks = booksQuery.data?.docs ?? [];
-  const books = useMemo(() => sortBooks(rawBooks, sortMode), [rawBooks, sortMode]);
-  const isLoading = booksQuery.isPending;
-  const error =
-    booksQuery.error instanceof Error
-      ? booksQuery.error.message.includes("rate-limited")
-        ? "豆瓣当前触发了风控或频率限制，请稍后重试。"
-        : "获取作品列表失败，请稍后再试。"
-      : "";
 
   return (
     <main className="min-h-screen bg-[var(--background)] pb-20 text-[var(--foreground)]">
@@ -126,100 +281,15 @@ export function AuthorPage() {
 
       {/* Books section */}
       <section className="animate-fade-up mx-auto mt-12 w-full max-w-[1240px] px-5 [animation-delay:160ms] sm:px-8 lg:px-10">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
-            相关作品
-            {books.length > 0 ? (
-              <span className="ml-2 text-[var(--muted-foreground)]/60">{books.length}</span>
-            ) : null}
-          </h2>
-          {books.length > 1 ? (
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/50 px-3 py-1.5 text-xs text-[var(--muted-foreground)] transition hover:bg-white/70 hover:text-[var(--foreground)]"
-              onClick={() => {
-                const nextIndex = (SORT_ORDER.indexOf(sortMode) + 1) % SORT_ORDER.length;
-                const next = SORT_ORDER[nextIndex];
-                setSortMode(next);
-                writeSortPreference(next);
-              }}
-            >
-              {sortMode === "default" ? <ListOrdered className="size-3" /> : sortMode === "year" ? <CalendarDays className="size-3" /> : <Star className="size-3" />}
-              {SORT_LABELS[sortMode]}
-            </button>
-          ) : null}
-        </div>
-
-        {error ? (
-          <div className="mt-8 rounded-[28px] border border-white/70 bg-[var(--surface)] px-8 py-12 text-center">
-            <p className="text-sm text-[var(--destructive)]">{error}</p>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => booksQuery.refetch()}
-            >
-              重试
-            </Button>
-          </div>
-        ) : isLoading ? (
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="aspect-[3/4] rounded-2xl bg-white/50" />
-                <div className="mt-3 px-0.5">
-                  <div className="h-4 w-3/4 rounded-full bg-white/50" />
-                  <div className="mt-2 h-3 w-1/2 rounded-full bg-white/50" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : books.length === 0 ? (
-          <div className="mt-8 rounded-[28px] border border-white/70 bg-[var(--surface)] px-8 py-12 text-center">
-            <p className="text-sm text-[var(--muted-foreground)]">未找到相关作品</p>
-          </div>
-        ) : (
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6">
-            {books.map((book) => {
-              const workId = normalizeWorkId(book.key);
-              if (!workId) return null;
-
-              return (
-                <Link
-                  key={workId}
-                  to={`/book/${workId}?q=${encodeURIComponent(decodedName)}`}
-                  state={{ book }}
-                  className="group text-left"
-                >
-                  <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]">
-                    <BookCover
-                      src={getCoverUrl(book.coverUrl)}
-                      title={book.title}
-                      className="rounded-2xl transition group-hover:scale-[1.02]"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="mt-3 px-0.5">
-                    <p className="truncate text-sm font-medium text-[var(--foreground)]">
-                      {book.title}
-                    </p>
-                    <div className="mt-1 flex items-center gap-2">
-                      {book.firstPublishYear ? (
-                        <span className="text-xs text-[var(--muted-foreground)]">
-                          {book.firstPublishYear}
-                        </span>
-                      ) : null}
-                      {book.ratingsAverage ? (
-                        <Badge variant="accent" className="gap-1 px-1.5 py-0 text-[10px]">
-                          ★ {book.ratingsAverage.toFixed(1)}
-                        </Badge>
-                      ) : null}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        <QueryErrorBoundary
+          fallback={({ error, reset }) => (
+            <BooksErrorFallback error={error} reset={reset} />
+          )}
+        >
+          <Suspense fallback={<BooksGridSkeleton />}>
+            <AuthorBooksContent authorName={decodedName} />
+          </Suspense>
+        </QueryErrorBoundary>
       </section>
     </main>
   );
