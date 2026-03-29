@@ -247,7 +247,7 @@ export function SearchPage() {
               showClear={false}
               aria-label="搜索书籍"
               placeholder="搜索书名、作者……"
-              className="h-13 rounded-2xl border-white/60 bg-[var(--surface-elevated)] px-5 pl-11 text-base font-medium shadow-[var(--shadow-warm-sm)] backdrop-blur-xl transition-shadow focus-within:border-[var(--primary)]/25 focus-within:shadow-[var(--shadow-warm-md)] focus-within:ring-0 focus-visible:ring-0 placeholder:text-[var(--muted-foreground)]/60"
+              className="h-13 rounded-2xl border-white/60 bg-[var(--surface-elevated)] text-base font-medium shadow-[var(--shadow-warm-sm)] backdrop-blur-xl transition-[box-shadow,border-color] duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] has-[[data-slot=input-group-control]:focus-visible]:border-[var(--primary)]/25 has-[[data-slot=input-group-control]:focus-visible]:shadow-[var(--shadow-warm-md)] has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&_input]:pl-11 placeholder:text-[var(--muted-foreground)]/60"
               onFocus={() => setIsOpen(true)}
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={(event) => {
