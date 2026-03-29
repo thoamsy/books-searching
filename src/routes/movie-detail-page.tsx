@@ -340,6 +340,16 @@ function DetailHeroPanel({
           </Badge>
         ) : null}
       </div>
+
+      {movieDetail.honorInfos?.length ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {movieDetail.honorInfos.map((honor) => (
+            <Badge key={honor.title} variant="accent" className="gap-1.5">
+              #{honor.rank} {honor.title}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -506,6 +516,16 @@ function MobileHeroPanel({
           </Badge>
         ) : null}
       </div>
+
+      {movieDetail.honorInfos?.length ? (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {movieDetail.honorInfos.map((honor) => (
+            <Badge key={honor.title} variant="accent" className="gap-1 text-xs">
+              #{honor.rank} {honor.title}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
