@@ -247,7 +247,7 @@ export function SearchPage() {
               showClear={false}
               aria-label="搜索书籍"
               placeholder="搜索书名、作者……"
-              className="h-13 rounded-2xl border-white/60 bg-[var(--surface-elevated)] px-5 pl-12 text-base font-medium shadow-[var(--shadow-warm-sm)] backdrop-blur-xl transition-shadow focus-within:shadow-[var(--shadow-warm-md)] focus-visible:ring-0 placeholder:text-[var(--muted-foreground)]/60"
+              className="h-13 rounded-2xl border-white/60 bg-[var(--surface-elevated)] px-5 pl-11 text-base font-medium shadow-[var(--shadow-warm-sm)] backdrop-blur-xl transition-shadow focus-within:border-[var(--primary)]/25 focus-within:shadow-[var(--shadow-warm-md)] focus-within:ring-0 focus-visible:ring-0 placeholder:text-[var(--muted-foreground)]/60"
               onFocus={() => setIsOpen(true)}
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={(event) => {
@@ -280,7 +280,7 @@ export function SearchPage() {
               ) : null}
             </ComboboxInput>
 
-            <Search className="pointer-events-none absolute top-1/2 left-5 size-[18px] -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <Search className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-[var(--muted-foreground)]" />
 
             <ComboboxContent
               anchor={searchBarRef}
