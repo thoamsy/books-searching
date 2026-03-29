@@ -1,3 +1,9 @@
+export interface HonorInfo {
+  title: string;
+  rank: number;
+  kind: string;
+}
+
 export interface SearchMovie {
   key: string;
   title: string;
@@ -53,4 +59,6 @@ export interface MovieDetail {
   imdbId?: string;
   subjects?: string[];
   infoLink?: string;
+  honorInfos?: HonorInfo[];
+  coverLargeUrl?: string;
 }

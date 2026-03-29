@@ -196,6 +196,8 @@ interface FrodoMovieResponse {
   subtype?: string;
   tags?: { name: string }[];
   aka?: string[];
+  honor_infos?: { title: string; rank: number; kind: string }[];
+  cover?: { image?: { large?: { url: string } } };
 }
 
 export async function getMovieDetail(subjectId: string): Promise<MovieDetail> {
@@ -227,7 +229,9 @@ export async function getMovieDetail(subjectId: string): Promise<MovieDetail> {
     type: isTV ? "tv" : "movie",
     episode: isTV && data.episodes_count ? String(data.episodes_count) : undefined,
     subjects: data.tags?.map((t) => t.name) ?? [],
-    coverUrl: proxifyImageUrl(data.pic?.large ?? data.cover_url),
+    coverUrl: proxifyImageUrl(data.cover?.image?.large?.url ?? data.pic?.large ?? data.cover_url),
+    coverLargeUrl: proxifyImageUrl(data.cover?.image?.large?.url),
+    honorInfos: data.honor_infos?.map((h) => ({ title: h.title, rank: h.rank, kind: h.kind })),
     infoLink: `https://movie.douban.com/subject/${subjectId}/`
   };
 }
