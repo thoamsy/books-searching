@@ -323,20 +323,19 @@ export function SearchPage() {
                             }
                           }}
                         >
-                          {query ? (
-                            <button
-                              type="button"
-                              className="mr-1 inline-flex size-9 items-center justify-center rounded-full text-[var(--muted-foreground)] transition hover:bg-white hover:text-[var(--foreground)]"
-                              onMouseDown={(event) => event.preventDefault()}
-                              onClick={() => {
-                                clearSearch(true);
-                                setIsOpen(true);
-                              }}
-                              aria-label="清除搜索词"
-                            >
-                              <X className="size-4" />
-                            </button>
-                          ) : null}
+                          <button
+                            type="button"
+                            className={`mr-1 inline-flex size-9 items-center justify-center rounded-full text-[var(--muted-foreground)] transition-all duration-200 hover:bg-white hover:text-[var(--foreground)] ${query ? "scale-100 opacity-100" : "pointer-events-none scale-75 opacity-0"}`}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => {
+                              clearSearch(true);
+                              setIsOpen(true);
+                            }}
+                            aria-label="清除搜索词"
+                            tabIndex={query ? 0 : -1}
+                          >
+                            <X className="size-4" />
+                          </button>
                         </ComboboxInput>
 
                         <ComboboxContent
@@ -405,12 +404,12 @@ export function SearchPage() {
                             </button>
                           </div>
 
-                          <div className="mt-4 flex flex-wrap gap-3">
+                          <div className="mt-4 flex flex-col gap-2">
                             {searchHistory.map((item) => (
                               <button
                                 key={item.workId}
                                 type="button"
-                                className="rounded-full border border-[var(--border)] bg-white/80 px-4 py-2 text-sm text-[var(--foreground)] transition hover:border-[var(--primary)]/35 hover:bg-white"
+                                className="flex items-center gap-3 rounded-[18px] px-3 py-2.5 text-left transition hover:bg-[var(--accent)]"
                                 onMouseDown={(event) => event.preventDefault()}
                                 onClick={() => {
                                   setQuery(item.query);
@@ -421,7 +420,15 @@ export function SearchPage() {
                                   });
                                 }}
                               >
-                                {item.book.title}
+                                <div className="h-12 w-9 shrink-0 overflow-hidden rounded-[10px] border border-white/70 bg-white/70">
+                                  <BookCover src={getCoverUrl(item.book.coverUrl)} title={item.book.title} className="rounded-[10px]" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.book.title}</p>
+                                  <p className="truncate text-xs text-[var(--muted-foreground)]">
+                                    {item.book.authorName?.slice(0, 2).join(" / ") || ""}
+                                  </p>
+                                </div>
                               </button>
                             ))}
                           </div>

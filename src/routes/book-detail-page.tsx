@@ -77,7 +77,39 @@ export function BookDetailPage() {
           </div>
         </div>
       ) : (
-        <section className="mx-auto mt-8 grid w-full max-w-[1240px] gap-10 px-5 sm:px-8 lg:grid-cols-[320px_1fr] lg:items-start lg:px-10">
+        <section className="mx-auto mt-8 w-full max-w-[1240px] px-5 sm:px-8 lg:px-10">
+          {/* Mobile: horizontal compact layout */}
+          <div className="flex gap-5 lg:hidden">
+            <div className="w-[120px] shrink-0">
+              {detailQuery.isPending ? (
+                <div className="aspect-[3/4] overflow-hidden rounded-[20px]">
+                  {fallbackBook?.coverUrl ? (
+                    <BookCover src={fallbackBook.coverUrl} title={fallbackBook?.title ?? "封面"} className="rounded-[20px] opacity-70 saturate-75" />
+                  ) : (
+                    <div className="h-full w-full animate-pulse rounded-[20px] bg-white/70" />
+                  )}
+                </div>
+              ) : (
+                <div className="aspect-[3/4] overflow-hidden rounded-[20px] shadow-[0_16px_40px_rgba(95,66,43,0.12)]">
+                  <BookCover
+                    src={getCoverUrl(detailQuery.data!.coverUrl ?? fallbackBook?.coverUrl)}
+                    title={detailQuery.data!.title ?? fallbackBook?.title ?? "未知书名"}
+                    className="rounded-[20px]"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              {detailQuery.isPending ? (
+                <MobileHeroSkeleton fallbackBook={fallbackBook} />
+              ) : (
+                <MobileHeroPanel bookDetail={detailQuery.data!} fallbackBook={fallbackBook} />
+              )}
+            </div>
+          </div>
+
+          {/* Desktop: original two-column layout */}
+          <div className="hidden lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
           {detailQuery.isPending ? (
             <CoverPanelSkeleton title={fallbackBook?.title} coverUrl={fallbackBook?.coverUrl} />
           ) : (
@@ -92,6 +124,24 @@ export function BookDetailPage() {
             )}
 
             <div className="grid gap-8 lg:grid-cols-[1.45fr_0.95fr]">
+              {detailQuery.isPending ? (
+                <DescriptionPanelSkeleton />
+              ) : (
+                <DetailDescriptionPanel bookDetail={detailQuery.data!} fallbackBook={fallbackBook} />
+              )}
+
+              {detailQuery.isPending ? (
+                <SidebarPanelSkeleton />
+              ) : (
+                <DetailSidebarPanel bookDetail={detailQuery.data!} fallbackBook={fallbackBook} />
+              )}
+            </div>
+          </div>
+          </div>
+
+          {/* Mobile: content panels below the hero */}
+          <div className="mt-8 space-y-8 lg:hidden">
+            <div className="grid gap-8">
               {detailQuery.isPending ? (
                 <DescriptionPanelSkeleton />
               ) : (
@@ -173,7 +223,7 @@ function DetailHeroPanel({
         {bookDetail.pageCount || fallbackBook?.pageCount ? (
           <Badge className="gap-2">
             <BookOpen className="size-3.5" />
-            {(bookDetail.pageCount ?? fallbackBook?.pageCount ?? "页数未知")} pages
+            {(bookDetail.pageCount ?? fallbackBook?.pageCount ?? "页数未知")} 页
           </Badge>
         ) : null}
         {bookDetail.ratingsAverage || fallbackBook?.ratingsAverage ? (
@@ -263,8 +313,8 @@ function ExpandableDescription({ text }: { text: string }) {
       <div className={`relative ${!expanded && shouldCollapse ? "max-h-[28rem] overflow-hidden" : ""}`}>
         <p className="whitespace-pre-line text-base leading-8 text-[var(--muted-foreground)]">{text}</p>
         {!expanded && shouldCollapse ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,rgba(248,242,232,0),rgba(248,242,232,0.16)_28%,rgba(248,242,232,0.72)_72%,rgba(248,242,232,0.96))]">
-            <div className="absolute inset-x-0 bottom-0 h-10 bg-[linear-gradient(180deg,rgba(255,251,244,0),rgba(255,251,244,0.92))]" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.1)_28%,rgba(255,255,255,0.45)_72%,rgba(255,255,255,0.6))]">
+            <div className="absolute inset-x-0 bottom-0 h-10 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.55))]" />
           </div>
         ) : null}
       </div>
@@ -291,6 +341,76 @@ function InfoBlock({ label, value }: { label: string; value: React.ReactNode }) 
   );
 }
 
+function MobileHeroPanel({
+  bookDetail,
+  fallbackBook
+}: {
+  bookDetail: BookDetail;
+  fallbackBook?: SearchBook;
+}) {
+  const title = bookDetail?.title ?? fallbackBook?.title ?? "未知书名";
+  const authors = bookDetail.authors?.length
+    ? bookDetail.authors
+    : fallbackBook?.authorName ?? [];
+
+  return (
+    <div>
+      <h1 className="font-display text-3xl leading-tight sm:text-4xl">{title}</h1>
+      {authors.length > 0 && (
+        <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+          {authors.slice(0, 3).join(" / ")}
+        </p>
+      )}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {bookDetail.firstPublishDate || fallbackBook?.firstPublishYear ? (
+          <Badge className="gap-1.5 text-xs">
+            <CalendarDays className="size-3" />
+            {bookDetail.firstPublishDate ?? fallbackBook?.firstPublishYear}
+          </Badge>
+        ) : null}
+        {bookDetail.pageCount || fallbackBook?.pageCount ? (
+          <Badge className="gap-1.5 text-xs">
+            <BookOpen className="size-3" />
+            {(bookDetail.pageCount ?? fallbackBook?.pageCount ?? "页数未知")} 页
+          </Badge>
+        ) : null}
+        {bookDetail.ratingsAverage || fallbackBook?.ratingsAverage ? (
+          <Badge variant="accent" className="gap-1.5 text-xs">
+            <Star className="size-3 fill-current" />
+            {(bookDetail.ratingsAverage ?? fallbackBook?.ratingsAverage)?.toFixed(1)}
+          </Badge>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function MobileHeroSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
+  return (
+    <div>
+      {fallbackBook?.title ? (
+        <h1 className="font-display text-3xl leading-tight sm:text-4xl">{fallbackBook.title}</h1>
+      ) : (
+        <div className="space-y-2">
+          <div className="h-9 w-full max-w-[16rem] animate-pulse rounded-full bg-white/70" />
+          <div className="h-9 w-full max-w-[10rem] animate-pulse rounded-full bg-white/70" />
+        </div>
+      )}
+      {fallbackBook?.authorName?.length ? (
+        <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+          {fallbackBook.authorName.join(" / ")}
+        </p>
+      ) : (
+        <div className="mt-3 h-5 w-32 animate-pulse rounded-full bg-white/70" />
+      )}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <div className="h-7 w-20 animate-pulse rounded-full bg-white/70" />
+        <div className="h-7 w-16 animate-pulse rounded-full bg-white/70" />
+      </div>
+    </div>
+  );
+}
+
 function CoverPanelSkeleton({
   title,
   coverUrl
@@ -300,14 +420,12 @@ function CoverPanelSkeleton({
 }) {
   return (
     <div>
-      <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-[36px] border border-white/70 bg-white/60 p-4 shadow-[0_28px_70px_rgba(95,66,43,0.12)]">
-        <div className="aspect-[3/4] overflow-hidden rounded-[28px]">
-          {coverUrl ? (
-            <BookCover src={coverUrl} title={title ?? "封面"} className="opacity-70 saturate-75" />
-          ) : (
-            <div className="h-full w-full animate-pulse rounded-[28px] bg-white/70" />
-          )}
-        </div>
+      <div className="mx-auto aspect-[3/4] w-full max-w-[320px] overflow-hidden rounded-[28px] shadow-[0_28px_70px_rgba(95,66,43,0.12)]">
+        {coverUrl ? (
+          <BookCover src={coverUrl} title={title ?? "封面"} className="rounded-[28px] opacity-70 saturate-75" />
+        ) : (
+          <div className="h-full w-full animate-pulse rounded-[28px] bg-white/70" />
+        )}
       </div>
     </div>
   );
