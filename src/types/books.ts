@@ -37,6 +37,17 @@ export interface BookDetail {
   subtitle?: string;
 }
 
+export interface SuggestItem {
+  type: "book" | "author";
+  id: string;
+  title: string;
+  url: string;
+  coverUrl?: string;
+  authorName?: string;
+  year?: string;
+  enName?: string;
+}
+
 export interface AuthorDetail {
   key: string;
   name: string;

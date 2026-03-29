@@ -1,4 +1,4 @@
-import type { AuthorDetail, BookDetail, SearchBook, SearchResponse } from "@/types/books";
+import type { AuthorDetail, BookDetail, SearchBook, SearchResponse, SuggestItem } from "@/types/books";
 
 const API_BASE = (import.meta.env.VITE_DOUBAN_PROXY_BASE ?? "").replace(/\/$/, "");
 
@@ -27,11 +27,9 @@ function proxifyImageUrl(url?: string) {
   return `${API_BASE}/api/douban/image?url=${encodeURIComponent(normalized)}`;
 }
 
-function fetchProxy(path: string) {
+function fetchProxy(path: string, accept = "text/html,application/xhtml+xml") {
   return fetch(`${API_BASE}${path}`, {
-    headers: {
-      Accept: "text/html,application/xhtml+xml"
-    }
+    headers: { Accept: accept }
   });
 }
 
@@ -144,9 +142,35 @@ export async function searchBooks(query: string, limit = 18): Promise<SearchResp
   };
 }
 
-export async function getSuggestions(query: string) {
-  const result = await searchBooks(query, 6);
-  return result.docs;
+interface DoubanSuggestEntry {
+  type: "a" | "b";
+  id: string;
+  title: string;
+  url: string;
+  pic?: string;
+  author_name?: string;
+  year?: string;
+  en_name?: string;
+}
+
+export async function getSuggestions(query: string): Promise<SuggestItem[]> {
+  const response = await fetchProxy(`/api/douban/suggest?q=${encodeURIComponent(query)}`, "application/json");
+  if (!response.ok) {
+    throw new Error("Failed to fetch suggestions.");
+  }
+
+  const data: DoubanSuggestEntry[] = await response.json();
+
+  return data.map((entry) => ({
+    type: entry.type === "a" ? "author" : "book",
+    id: entry.id,
+    title: entry.title,
+    url: entry.url,
+    coverUrl: proxifyImageUrl(entry.pic),
+    authorName: entry.author_name,
+    year: entry.year,
+    enName: entry.en_name
+  }));
 }
 
 export async function getBookDetail(workId: string): Promise<BookDetail> {
@@ -245,6 +269,17 @@ function splitPeople(value: string) {
     .split(/[\/,，]/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+export function suggestItemToSearchBook(item: SuggestItem): SearchBook {
+  return {
+    key: item.id,
+    title: item.title,
+    authorName: item.authorName ? [item.authorName] : [],
+    coverUrl: item.coverUrl,
+    firstPublishYear: item.year ? Number(item.year) : undefined,
+    externalUrl: item.url
+  };
 }
 
 export async function getAuthorDetail(authorKey: string): Promise<AuthorDetail> {

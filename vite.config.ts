@@ -98,6 +98,9 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      "/api/douban/suggest": createDoubanProxy("https://book.douban.com", (path) =>
+        path.replace(/^\/api\/douban\/suggest/, "/j/subject_suggest")
+      ),
       "/api/douban/search": createDoubanProxy("https://www.douban.com", (path) =>
         path.replace(/^\/api\/douban\/search/, "/search")
       ),

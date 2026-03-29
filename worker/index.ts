@@ -51,6 +51,13 @@ export default {
       });
     }
 
+    if (url.pathname === "/api/douban/suggest") {
+      const query = url.searchParams.get("q") ?? "";
+      const target = new URL("https://book.douban.com/j/subject_suggest");
+      target.searchParams.set("q", query);
+      return proxyRequest(target.toString(), request);
+    }
+
     if (url.pathname === "/api/douban/search") {
       const query = url.searchParams.get("q") ?? "";
       const target = new URL("https://www.douban.com/search");

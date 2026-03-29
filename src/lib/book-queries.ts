@@ -13,7 +13,8 @@ export function suggestionsQueryOptions(query: string) {
   return queryOptions({
     queryKey: ["books", "suggestions", query],
     queryFn: () => getSuggestions(query),
-    enabled: Boolean(query.trim())
+    enabled: Boolean(query.trim()),
+    staleTime: 60_000
   });
 }
 

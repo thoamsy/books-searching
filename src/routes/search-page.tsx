@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { LoaderCircle, Search, X } from "lucide-react";
+import { LoaderCircle, Search, User, X } from "lucide-react";
 import { BookCover } from "@/components/book-cover";
 import {
   Combobox,
@@ -13,11 +13,10 @@ import {
   ComboboxList
 } from "@/components/ui/combobox";
 import { useDebounce } from "@/hooks/use-debounce";
-import { getCoverUrl, normalizeWorkId } from "@/lib/books-api";
-import { bookDetailQueryOptions, suggestionsQueryOptions } from "@/lib/book-queries";
-import { queryClient } from "@/lib/query-client";
+import { getCoverUrl, normalizeWorkId, suggestItemToSearchBook } from "@/lib/books-api";
+import { suggestionsQueryOptions } from "@/lib/book-queries";
 import { useLocation, useNavigate } from "react-router-dom";
-import type { SearchBook } from "@/types/books";
+import type { SearchBook, SuggestItem } from "@/types/books";
 
 const SEARCH_HISTORY_KEY = "book-echo-search-history";
 const SEARCH_HISTORY_LIMIT = 10;
@@ -27,8 +26,9 @@ type SearchOption = {
   label: string;
   meta?: string;
   year?: string;
-  kind: "suggestion";
-  book: SearchBook;
+  kind: "book" | "author";
+  book?: SearchBook;
+  suggest: SuggestItem;
 };
 
 interface RecentSearchEntry {
@@ -88,14 +88,8 @@ function pushSearchHistory(items: RecentSearchEntry[], entry: RecentSearchEntry)
   return [nextEntry, ...items.filter((item) => item.workId !== nextEntry.workId)].slice(0, SEARCH_HISTORY_LIMIT);
 }
 
-function getSuggestionOptionId(book: SearchBook, index: number) {
-  return [
-    book.key || "unknown",
-    book.externalUrl || "no-url",
-    book.coverUrl || "no-cover",
-    book.firstPublishYear ? String(book.firstPublishYear) : "no-year",
-    String(index)
-  ].join("::");
+function getSuggestionOptionId(item: SuggestItem, index: number) {
+  return `${item.type}::${item.id}::${index}`;
 }
 
 const getOptionLabel = (item: SearchOption) => item.label;
@@ -121,7 +115,7 @@ export function SearchPage() {
     enabled: !isComposing && Boolean(debouncedQuery.trim())
   });
 
-  const suggestions = suggestionsQuery.data ?? [];
+  const suggestItems = suggestionsQuery.data ?? [];
   const isSuggesting = suggestionsQuery.isFetching;
   const error =
     suggestionsQuery.error instanceof Error
@@ -149,7 +143,6 @@ export function SearchPage() {
     saveRecentBook(book, workId, searchQuery);
     setIsOpen(false);
     setIsComposing(false);
-    void queryClient.prefetchQuery(bookDetailQueryOptions(workId));
     navigate(`/book/${workId}?q=${encodeURIComponent(searchQuery)}`, {
       state: { book }
     });
@@ -170,23 +163,28 @@ export function SearchPage() {
       return;
     }
 
-    const matchedSuggestion = suggestions.find((item) => item.title === trimmed) ?? suggestions[0];
-    if (!matchedSuggestion) {
+    const bookItems = suggestItems.filter((item) => item.type === "book");
+    const matched = bookItems.find((item) => item.title === trimmed) ?? bookItems[0];
+    if (!matched) {
       setIsOpen(true);
       return;
     }
 
-    openBookDetail(matchedSuggestion, matchedSuggestion.title);
+    openBookDetail(suggestItemToSearchBook(matched), matched.title);
   }
 
-  const suggestionOptions = suggestions.map(
+  const suggestionOptions = suggestItems.map(
     (item, index): SearchOption => ({
       id: getSuggestionOptionId(item, index),
       label: item.title,
-      meta: item.authorName.slice(0, 2).join(" / ") || "作者信息暂缺",
-      year: item.firstPublishYear ? String(item.firstPublishYear) : "",
-      kind: "suggestion",
-      book: item
+      meta:
+        item.type === "author"
+          ? item.enName ?? "作者"
+          : item.authorName || "作者信息暂缺",
+      year: item.year ?? "",
+      kind: item.type === "author" ? "author" : "book",
+      book: item.type === "book" ? suggestItemToSearchBook(item) : undefined,
+      suggest: item
     })
   );
   const comboOpen = isOpen && query.trim().length > 0 && (suggestionOptions.length > 0 || isSuggesting);
@@ -211,8 +209,20 @@ export function SearchPage() {
       return;
     }
 
+    if (option.kind === "author") {
+      const params = new URLSearchParams();
+      if (option.suggest.coverUrl) params.set("photo", option.suggest.coverUrl);
+      if (option.suggest.enName) params.set("en", option.suggest.enName);
+      if (option.suggest.url) params.set("url", option.suggest.url);
+      const qs = params.toString();
+      setIsOpen(false);
+      setIsComposing(false);
+      navigate(`/author/${encodeURIComponent(option.label)}${qs ? `?${qs}` : ""}`);
+      return;
+    }
+
     setQuery(option.label);
-    if (!openBookDetail(option.book, option.label)) {
+    if (option.book && !openBookDetail(option.book, option.label)) {
       submitSearch(option.label);
     }
   }
@@ -292,7 +302,7 @@ export function SearchPage() {
                 <ComboboxLabel className="px-5 py-2 text-left text-[11px] uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
                   搜索建议
                 </ComboboxLabel>
-                {isSuggesting && suggestions.length === 0 ? (
+                {isSuggesting && suggestItems.length === 0 ? (
                   <div role="status" aria-live="polite" className="flex items-center gap-2.5 px-5 py-3 text-sm text-[var(--muted-foreground)]">
                     <LoaderCircle className="size-4 animate-spin" />
                     正在搜索…
@@ -307,18 +317,30 @@ export function SearchPage() {
                   <ComboboxItem
                     key={item.id}
                     value={item}
-                    className="mx-0 flex items-center justify-between gap-4 rounded-none px-5 py-2.5 data-highlighted:bg-[var(--accent)]/60"
+                    className="mx-0 flex items-center justify-between gap-4 rounded-lg px-5 py-2.5 data-highlighted:bg-[var(--accent)]/60"
                   >
                     <div className="flex min-w-0 items-center gap-3.5">
-                      <div className="h-14 w-10 shrink-0 overflow-hidden rounded-lg border border-white/60 bg-white/50">
-                        <BookCover src={getCoverUrl(item.book.coverUrl)} title={item.label} className="rounded-lg" loading="lazy" />
-                      </div>
+                      {item.kind === "author" ? (
+                        <div className="flex h-14 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/60 bg-white/50">
+                          {item.suggest.coverUrl ? (
+                            <img src={item.suggest.coverUrl} alt={item.label} className="h-full w-full rounded-lg object-cover" loading="lazy" />
+                          ) : (
+                            <User className="size-5 text-[var(--muted-foreground)]" />
+                          )}
+                        </div>
+                      ) : (
+                        <div className="h-14 w-10 shrink-0 overflow-hidden rounded-lg border border-white/60 bg-white/50">
+                          <BookCover src={getCoverUrl(item.suggest.coverUrl)} title={item.label} className="rounded-lg" loading="lazy" />
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.label}</p>
                         <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">{item.meta}</p>
                       </div>
                     </div>
-                    {item.year ? (
+                    {item.kind === "author" ? (
+                      <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">作者</span>
+                    ) : item.year ? (
                       <span className="shrink-0 text-xs text-[var(--muted-foreground)]">{item.year}</span>
                     ) : null}
                   </ComboboxItem>

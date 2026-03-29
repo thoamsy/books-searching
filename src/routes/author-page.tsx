@@ -1,0 +1,173 @@
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, ExternalLink, LoaderCircle } from "lucide-react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { BookCover } from "@/components/book-cover";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { getCoverUrl, normalizeWorkId } from "@/lib/books-api";
+import { searchBooksQueryOptions } from "@/lib/book-queries";
+
+export function AuthorPage() {
+  const navigate = useNavigate();
+  const { authorName } = useParams();
+  const [searchParams] = useSearchParams();
+  const photoUrl = searchParams.get("photo") ?? undefined;
+  const enName = searchParams.get("en") ?? undefined;
+  const doubanUrl = searchParams.get("url") ?? undefined;
+  const decodedName = decodeURIComponent(authorName ?? "");
+
+  const booksQuery = useQuery({
+    ...searchBooksQueryOptions(decodedName),
+    enabled: Boolean(decodedName)
+  });
+
+  const books = booksQuery.data?.docs ?? [];
+  const isLoading = booksQuery.isPending;
+  const error =
+    booksQuery.error instanceof Error
+      ? booksQuery.error.message.includes("rate-limited")
+        ? "豆瓣当前触发了风控或频率限制，请稍后重试。"
+        : "获取作品列表失败，请稍后再试。"
+      : "";
+
+  return (
+    <main className="min-h-screen bg-[var(--background)] pb-20 text-[var(--foreground)]">
+      <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-6 sm:px-8 lg:px-10">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/65 px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
+        >
+          <ArrowLeft className="size-4" />
+          返回
+        </button>
+      </div>
+
+      {/* Author hero */}
+      <section className="animate-fade-up mx-auto mt-8 w-full max-w-[1240px] px-5 [animation-delay:80ms] sm:px-8 lg:px-10">
+        <div className="flex items-start gap-6 sm:items-center sm:gap-8">
+          <div className="size-20 shrink-0 overflow-hidden rounded-full border-2 border-white/80 shadow-[var(--shadow-warm-sm)] sm:size-28">
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt={decodedName}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-[var(--accent)]">
+                <span className="font-display text-2xl text-[var(--muted-foreground)] sm:text-3xl">
+                  {decodedName.replace(/[\[\]（）()【】\s]/g, "").charAt(0) || "?"}
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
+              作者
+            </p>
+            <h1 className="mt-1 font-display text-3xl leading-tight sm:text-5xl">
+              {decodedName}
+            </h1>
+            {enName ? (
+              <p className="mt-1.5 text-sm tracking-wide text-[var(--muted-foreground)]">
+                {enName}
+              </p>
+            ) : null}
+            {doubanUrl ? (
+              <a
+                href={doubanUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--primary)] transition hover:underline"
+              >
+                豆瓣主页
+                <ExternalLink className="size-3" />
+              </a>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      {/* Books section */}
+      <section className="animate-fade-up mx-auto mt-12 w-full max-w-[1240px] px-5 [animation-delay:160ms] sm:px-8 lg:px-10">
+        <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
+          相关作品
+          {books.length > 0 ? (
+            <span className="ml-2 text-[var(--muted-foreground)]/60">{books.length}</span>
+          ) : null}
+        </h2>
+
+        {error ? (
+          <div className="mt-8 rounded-[28px] border border-white/70 bg-[var(--surface)] px-8 py-12 text-center">
+            <p className="text-sm text-[var(--destructive)]">{error}</p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => booksQuery.refetch()}
+            >
+              重试
+            </Button>
+          </div>
+        ) : isLoading ? (
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="aspect-[3/4] rounded-2xl bg-white/50" />
+                <div className="mt-3 px-0.5">
+                  <div className="h-4 w-3/4 rounded-full bg-white/50" />
+                  <div className="mt-2 h-3 w-1/2 rounded-full bg-white/50" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : books.length === 0 ? (
+          <div className="mt-8 rounded-[28px] border border-white/70 bg-[var(--surface)] px-8 py-12 text-center">
+            <p className="text-sm text-[var(--muted-foreground)]">未找到相关作品</p>
+          </div>
+        ) : (
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {books.map((book) => {
+              const workId = normalizeWorkId(book.key);
+              if (!workId) return null;
+
+              return (
+                <Link
+                  key={workId}
+                  to={`/book/${workId}?q=${encodeURIComponent(decodedName)}`}
+                  state={{ book }}
+                  className="group text-left"
+                >
+                  <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]">
+                    <BookCover
+                      src={getCoverUrl(book.coverUrl)}
+                      title={book.title}
+                      className="rounded-2xl transition group-hover:scale-[1.02]"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="mt-3 px-0.5">
+                    <p className="truncate text-sm font-medium text-[var(--foreground)]">
+                      {book.title}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      {book.firstPublishYear ? (
+                        <span className="text-xs text-[var(--muted-foreground)]">
+                          {book.firstPublishYear}
+                        </span>
+                      ) : null}
+                      {book.ratingsAverage ? (
+                        <Badge variant="accent" className="gap-1 px-1.5 py-0 text-[10px]">
+                          ★ {book.ratingsAverage.toFixed(1)}
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}

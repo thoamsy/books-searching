@@ -9,7 +9,7 @@ import {
   Star,
   UserRound
 } from "lucide-react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { BookCover } from "@/components/book-cover";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ interface LocationState {
 
 export function BookDetailPage() {
   const { workId } = useParams();
+  const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
   const fallbackBook = state.book;
@@ -58,13 +59,14 @@ export function BookDetailPage() {
   return (
     <main className="min-h-screen bg-[var(--background)] pb-16 text-[var(--foreground)]">
       <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-6 sm:px-8 lg:px-10">
-        <Link
-          to="/"
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/65 px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
         >
           <ArrowLeft className="size-4" />
-          返回检索
-        </Link>
+          返回
+        </button>
       </div>
 
       {errorMessage ? (
@@ -203,7 +205,7 @@ function DetailHeroPanel({
       <div className="mt-5 flex flex-wrap gap-3">
         {bookDetail.authors?.length ? (
           bookDetail.authors.map((author) => (
-            <Link key={author} to={`/?q=${encodeURIComponent(author)}`}>
+            <Link key={author} to={`/author/${encodeURIComponent(author)}`}>
               <Badge className="gap-2 transition hover:border-[var(--primary)]/35 hover:bg-white">
                 <UserRound className="size-3.5" />
                 {author}
@@ -212,7 +214,7 @@ function DetailHeroPanel({
           ))
         ) : fallbackBook?.authorName?.length ? (
           fallbackBook.authorName.map((author) => (
-            <Link key={author} to={`/?q=${encodeURIComponent(author)}`}>
+            <Link key={author} to={`/author/${encodeURIComponent(author)}`}>
               <Badge className="gap-2 transition hover:border-[var(--primary)]/35 hover:bg-white">
                 <UserRound className="size-3.5" />
                 {author}
