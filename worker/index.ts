@@ -1,3 +1,7 @@
+interface Env {
+  ASSETS: Fetcher;
+}
+
 const DEFAULT_HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -37,7 +41,7 @@ async function proxyRequest(target: string, request: Request) {
 }
 
 export default {
-  async fetch(request: Request) {
+  async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
@@ -70,6 +74,6 @@ export default {
       return proxyRequest(source, request);
     }
 
-    return new Response("Not found", { status: 404 });
+    return env.ASSETS.fetch(request);
   }
 };

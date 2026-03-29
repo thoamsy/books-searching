@@ -165,11 +165,11 @@ function DetailCoverPanel({
   bookDetail,
   fallbackBook
 }: {
-  bookDetail: BookDetail;
+  bookDetail?: BookDetail;
   fallbackBook?: SearchBook;
 }) {
-  const title = bookDetail.title ?? fallbackBook?.title ?? "未知书名";
-  const cover = getCoverUrl(bookDetail.coverUrl ?? fallbackBook?.coverUrl);
+  const title = bookDetail?.title ?? fallbackBook?.title ?? "未知书名";
+  const cover = getCoverUrl(bookDetail?.coverUrl ?? fallbackBook?.coverUrl);
 
   return (
     <div>

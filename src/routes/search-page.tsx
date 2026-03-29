@@ -278,10 +278,10 @@ export function SearchPage() {
               <div className={`relative z-30 mt-6 w-full max-w-3xl ${searchFrameAnimationClass}`.trim()}>
                 <div
                   ref={searchFrameRef}
-                  className="rounded-[36px] border border-white/70 bg-white/50 p-3 shadow-[0_24px_70px_rgba(95,66,43,0.12)] backdrop-blur-xl"
+                  className="rounded-[30px] border border-white/65 bg-white/42 p-2.5 shadow-[0_18px_52px_rgba(95,66,43,0.1)] backdrop-blur-xl"
                 >
                   <form
-                    className="flex flex-col gap-3 sm:flex-row"
+                    className="flex flex-col gap-2.5 sm:flex-row"
                     onSubmit={(event) => {
                       event.preventDefault();
                       if (comboOpen) {
@@ -290,7 +290,10 @@ export function SearchPage() {
                       submitSearch(query);
                     }}
                   >
-                    <div ref={searchShellRef} className="relative flex-1">
+                    <div
+                      ref={searchShellRef}
+                      className="relative flex-1 rounded-[24px] border border-white/55 bg-[#fbf4ea]/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
+                    >
                       <Combobox<SearchOption>
                         items={comboItems}
                         itemToStringLabel={(item) => item.label}
@@ -307,7 +310,7 @@ export function SearchPage() {
                           showTrigger={false}
                           showClear={false}
                           placeholder="试试：三体、雪国、博尔赫斯、村上春树……"
-                          className="h-16 rounded-full border-transparent bg-[#fffaf3] px-5 text-base shadow-none focus-visible:ring-0"
+                          className="h-[62px] rounded-[24px] border-transparent bg-transparent px-6 text-[17px] font-medium text-[var(--foreground)] shadow-none focus-visible:ring-0 placeholder:text-[color:rgba(117,99,87,0.88)]"
                           onFocus={() => setIsOpen(true)}
                           onCompositionStart={() => setIsComposing(true)}
                           onCompositionEnd={(event) => {
@@ -341,7 +344,7 @@ export function SearchPage() {
                         <ComboboxContent
                           anchor={searchFrameRef}
                           side="top"
-                          className="w-(--anchor-width) max-w-none min-w-(--anchor-width) rounded-[28px] border border-white/70 bg-white/92 p-2 shadow-[0_28px_80px_rgba(96,65,42,0.14)] backdrop-blur-xl"
+                          className="w-(--anchor-width) max-w-none min-w-(--anchor-width) rounded-[24px] border border-white/70 bg-white/92 p-2 shadow-[0_20px_48px_rgba(96,65,42,0.12)] backdrop-blur-xl"
                         >
                           {showSuggestions ? (
                             <ComboboxGroup>
@@ -363,7 +366,7 @@ export function SearchPage() {
                               <ComboboxItem
                                 key={item.id}
                                 value={item}
-                                className="items-center justify-between gap-4 rounded-[22px] px-3 py-3 data-highlighted:bg-[var(--accent)]"
+                                className="items-center justify-between gap-4 rounded-[18px] px-3 py-3 data-highlighted:bg-[var(--accent)]"
                               >
                                 <div className="flex min-w-0 items-center gap-3">
                                   <div className="h-16 w-12 shrink-0 overflow-hidden rounded-[16px] border border-white/70 bg-white/70">
@@ -384,7 +387,7 @@ export function SearchPage() {
                       </Combobox>
 
                       {showHistoryPanel ? (
-                        <div className="absolute right-0 bottom-full z-40 mb-3 w-full rounded-[28px] border border-white/70 bg-white/92 p-4 shadow-[0_28px_80px_rgba(96,65,42,0.14)] backdrop-blur-xl">
+                        <div className="absolute right-0 bottom-full z-40 mb-3 w-full rounded-[24px] border border-white/70 bg-white/92 p-4 shadow-[0_20px_48px_rgba(96,65,42,0.12)] backdrop-blur-xl">
                           <div className="flex items-center justify-between gap-3">
                             <div className="text-left text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
                               最近搜索
@@ -436,7 +439,11 @@ export function SearchPage() {
                       ) : null}
                     </div>
 
-                    <Button type="submit" size="lg" className="h-16 rounded-[28px] px-8">
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="h-[62px] rounded-[24px] px-7 sm:min-w-[224px] bg-[color:var(--primary)] shadow-[0_10px_24px_rgba(201,111,69,0.2)] hover:translate-y-0 hover:bg-[#c46b42]"
+                    >
                       {isSuggesting ? <LoaderCircle className="size-5 animate-spin" /> : <Search className="size-5" />}
                       打开书籍
                     </Button>
