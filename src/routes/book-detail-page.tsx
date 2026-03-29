@@ -286,6 +286,12 @@ function DetailHeroPanel({
         </div>
       )}
 
+      {bookDetail.translator?.length ? (
+        <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+          译者: {bookDetail.translator.join(" / ")}
+        </p>
+      ) : null}
+
       <div className="mt-3 flex flex-wrap items-center gap-2.5">
         {bookDetail.firstPublishDate || fallbackBook?.firstPublishYear ? (
           <Badge className="gap-2">
@@ -306,6 +312,16 @@ function DetailHeroPanel({
           </Badge>
         ) : null}
       </div>
+
+      {bookDetail.honorInfos?.length ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {bookDetail.honorInfos.map((honor) => (
+            <Badge key={honor.title} variant="accent" className="gap-1.5">
+              #{honor.rank} {honor.title}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -350,6 +366,26 @@ function DetailSidebarPanel({
           )}
         </div>
       </section>
+
+      {bookDetail.subjectCollections?.length ? (
+        <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
+          <h3 className="font-display text-xl font-medium sm:text-2xl">上榜</h3>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {bookDetail.subjectCollections.map((c) => (
+              <Badge key={c.id}>{c.title}</Badge>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {bookDetail.catalog ? (
+        <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
+          <h3 className="font-display text-xl font-medium sm:text-2xl">目录</h3>
+          <p className="mt-4 max-h-48 overflow-y-auto whitespace-pre-line text-sm leading-7 text-[var(--muted-foreground)]">
+            {bookDetail.catalog}
+          </p>
+        </section>
+      ) : null}
 
       <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">书目信息</h3>
@@ -450,6 +486,12 @@ function MobileHeroPanel({
         </div>
       )}
 
+      {bookDetail.translator?.length ? (
+        <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+          译者: {bookDetail.translator.join(" / ")}
+        </p>
+      ) : null}
+
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
         {bookDetail.firstPublishDate || fallbackBook?.firstPublishYear ? (
           <Badge className="gap-1.5 text-xs">
@@ -470,6 +512,16 @@ function MobileHeroPanel({
           </Badge>
         ) : null}
       </div>
+
+      {bookDetail.honorInfos?.length ? (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {bookDetail.honorInfos.map((honor) => (
+            <Badge key={honor.title} variant="accent" className="gap-1 text-xs">
+              #{honor.rank} {honor.title}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
