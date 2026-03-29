@@ -19,10 +19,21 @@ export interface SearchResponse {
   docs: SearchBook[];
 }
 
+export interface HonorInfo {
+  title: string;
+  rank: number;
+  kind: string;
+}
+
+export interface SubjectCollection {
+  id: string;
+  title: string;
+}
+
 export interface BookDetail {
   key: string;
   title: string;
-  description?: string | { value?: string };
+  description?: string;
   firstPublishDate?: string;
   subjects?: string[];
   coverUrl?: string;
@@ -35,6 +46,10 @@ export interface BookDetail {
   identifiers?: string[];
   originalTitle?: string;
   subtitle?: string;
+  translator?: string[];
+  catalog?: string;
+  honorInfos?: HonorInfo[];
+  subjectCollections?: SubjectCollection[];
 }
 
 export interface SuggestItem {
