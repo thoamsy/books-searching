@@ -6,25 +6,47 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+const DOUBAN_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+  "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+  Referer: "https://www.douban.com/",
+  Cookie: "bid=JKl8gT2Nxfw"
+};
+
 function createDoubanProxy(target: string, rewrite: ProxyOptions["rewrite"]) {
   return {
     target,
     changeOrigin: true,
     rewrite,
+    selfHandleResponse: true,
     configure(proxy) {
       proxy.on("proxyReq", (proxyReq) => {
-        proxyReq.setHeader(
-          "User-Agent",
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-        );
-        proxyReq.setHeader("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
-        proxyReq.setHeader("Referer", "https://www.douban.com/");
+        for (const [key, value] of Object.entries(DOUBAN_HEADERS)) {
+          proxyReq.setHeader(key, value);
+        }
+      });
+      proxy.on("proxyRes", (proxyRes, _req, res) => {
+        // Douban may redirect to sec.douban.com for security challenges.
+        // Intercept and return 429 instead of leaking the redirect to the browser.
+        if (proxyRes.statusCode && proxyRes.statusCode >= 300 && proxyRes.statusCode < 400
+          && proxyRes.headers.location?.includes("sec.douban.com")) {
+          res.writeHead(429, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "rate-limited" }));
+          return;
+        }
+        res.writeHead(proxyRes.statusCode ?? 200, proxyRes.headers);
+        proxyRes.pipe(res);
       });
     }
   } satisfies ProxyOptions;
 }
 
 export default defineConfig({
+  test: {
+    environment: "jsdom",
+    testTimeout: 30_000
+  },
   plugins: [
     {
       name: "douban-image-proxy",
@@ -63,6 +85,46 @@ export default defineConfig({
           } catch {
             res.statusCode = 502;
             res.end("Image proxy error");
+          }
+        });
+      }
+    },
+    {
+      name: "douban-movie-detail-proxy",
+      configureServer(server) {
+        const FRODO_HEADERS = {
+          "User-Agent": "MicroMessenger/7.0.0 (iPhone; iOS 14.0; Scale/2.00)",
+          Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html"
+        };
+
+        server.middlewares.use(async (req, res, next) => {
+          const match = req.url?.match(/^\/api\/douban\/movie\/(\d+)\/?$/);
+          if (!match) return next();
+
+          const subjectId = match[1];
+          const apikey = "0ac44ae016490db2204ce0a042db2916";
+
+          try {
+            // Try /movie/ first, fall back to /tv/
+            let upstream = await fetch(
+              `https://frodo.douban.com/api/v2/movie/${subjectId}?apikey=${apikey}`,
+              { headers: FRODO_HEADERS }
+            );
+            if (upstream.status === 400 || upstream.status === 404) {
+              upstream = await fetch(
+                `https://frodo.douban.com/api/v2/tv/${subjectId}?apikey=${apikey}`,
+                { headers: FRODO_HEADERS }
+              );
+            }
+
+            const body = await upstream.text();
+            res.statusCode = upstream.status;
+            res.setHeader("Content-Type", upstream.headers.get("content-type") ?? "application/json");
+            res.setHeader("Cache-Control", "public, max-age=300");
+            res.end(body);
+          } catch {
+            res.statusCode = 502;
+            res.end(JSON.stringify({ error: "proxy error" }));
           }
         });
       }
@@ -106,6 +168,12 @@ export default defineConfig({
       ),
       "/api/douban/book": createDoubanProxy("https://book.douban.com", (path) =>
         path.replace(/^\/api\/douban\/book/, "/subject")
+      ),
+      "/api/douban/movie/suggest": createDoubanProxy("https://movie.douban.com", (path) =>
+        path.replace(/^\/api\/douban\/movie\/suggest/, "/j/subject_suggest")
+      ),
+      "/api/douban/movie/search": createDoubanProxy("https://www.douban.com", (path) =>
+        path.replace(/^\/api\/douban\/movie\/search/, "/search")
       )
     }
   }
