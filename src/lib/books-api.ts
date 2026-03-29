@@ -173,106 +173,55 @@ export async function getSuggestions(query: string): Promise<SuggestItem[]> {
   }));
 }
 
+interface FrodoBookResponse {
+  id: string;
+  title: string;
+  original_title?: string;
+  subtitle?: string[];
+  intro?: string;
+  author?: string[];
+  translator?: string[];
+  press?: string[];
+  pubdate?: string[];
+  pages?: string[];
+  price?: string[];
+  pic?: { large?: string; normal?: string };
+  cover_url?: string;
+  rating?: { value?: number; count?: number };
+  catalog?: string;
+  honor_infos?: { title: string; rank: number; kind: string }[];
+  subject_collections?: { id: string; title: string }[];
+  tags?: { name: string }[];
+}
+
 export async function getBookDetail(workId: string): Promise<BookDetail> {
-  const response = await fetchProxy(`/api/douban/book/${workId}/`);
+  const response = await fetchProxy(`/api/douban/book/${workId}/`, "application/json");
   if (!response.ok) {
     throw new Error("Failed to fetch book details.");
   }
 
-  const html = await response.text();
-  assertDoubanHtmlAvailable(html);
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const infoNode = doc.querySelector("#info");
-  const infoLines = getInfoLines(infoNode);
-  const description = getLongestText(doc.querySelectorAll(".related_info .intro"));
-  const identifiers = [getInfoValue(infoLines, "ISBN"), getInfoValue(infoLines, "统一书号")]
-    .filter(Boolean)
-    .map((value) => value as string);
-  const ratingText = textContent(doc.querySelector("strong.rating_num"));
-  const ratingCountText = textContent(doc.querySelector("a.rating_people > span"));
+  const data: FrodoBookResponse = await response.json();
 
   return {
     key: workId,
-    title: textContent(doc.querySelector("#wrapper h1 span")) || "未知书名",
-    subtitle: getInfoValue(infoLines, "副标题"),
-    originalTitle: getInfoValue(infoLines, "原作名"),
-    description,
-    firstPublishDate: getInfoValue(infoLines, "出版年"),
-    subjects: Array.from(doc.querySelectorAll("#db-tags-section a"))
-      .map((node) => textContent(node))
-      .filter(Boolean),
-    coverUrl: proxifyImageUrl(doc.querySelector("#mainpic img")?.getAttribute("src") ?? undefined),
-    authors: splitPeople(getInfoValue(infoLines, "作者")),
-    publisher: getInfoValue(infoLines, "出版社"),
-    pageCount: parseInteger(getInfoValue(infoLines, "页数")),
-    ratingsAverage: parseRating(ratingText),
-    ratingsCount: parseInteger(ratingCountText),
-    infoLink: `https://book.douban.com/subject/${workId}/`,
-    identifiers
+    title: data.title || "未知书名",
+    originalTitle: data.original_title,
+    subtitle: data.subtitle?.[0],
+    description: data.intro,
+    firstPublishDate: data.pubdate?.[0],
+    authors: data.author ?? [],
+    translator: data.translator ?? [],
+    publisher: data.press?.[0],
+    pageCount: data.pages?.[0] ? Number.parseInt(data.pages[0], 10) || undefined : undefined,
+    ratingsAverage: data.rating?.value,
+    ratingsCount: data.rating?.count,
+    subjects: data.tags?.map((t) => t.name) ?? [],
+    coverUrl: proxifyImageUrl(data.pic?.large ?? data.cover_url),
+    catalog: data.catalog,
+    honorInfos: data.honor_infos?.map((h) => ({ title: h.title, rank: h.rank, kind: h.kind })),
+    subjectCollections: data.subject_collections?.map((c) => ({ id: c.id, title: c.title })),
+    infoLink: `https://book.douban.com/subject/${workId}/`
   };
-}
-
-function getInfoLines(infoNode?: Element | null) {
-  if (!infoNode) {
-    return [];
-  }
-
-  const lines: string[] = [];
-  let currentLine = "";
-
-  infoNode.childNodes.forEach((node) => {
-    if (node.nodeName === "BR") {
-      const trimmed = currentLine.replace(/\s+/g, " ").trim();
-      if (trimmed) {
-        lines.push(trimmed);
-      }
-      currentLine = "";
-      return;
-    }
-
-    currentLine += node.textContent ?? "";
-  });
-
-  const trailing = currentLine.replace(/\s+/g, " ").trim();
-  if (trailing) {
-    lines.push(trailing);
-  }
-
-  return lines;
-}
-
-function getInfoValue(lines: string[], label: string) {
-  const normalizedLabel = label.replace(/[：:]/g, "");
-  const line = lines.find((item) => item.replace(/\s+/g, "").startsWith(normalizedLabel));
-  if (!line) {
-    return "";
-  }
-
-  return line
-    .replace(new RegExp(`^${label}\\s*[：:]?\\s*`), "")
-    .replace(new RegExp(`^${normalizedLabel}\\s*[：:]?\\s*`), "")
-    .trim();
-}
-
-function getLongestText(nodes: NodeListOf<Element>) {
-  return Array.from(nodes).reduce(
-    (longest, node) => {
-      const text = textContent(node);
-      return text.length > longest.length ? text : longest;
-    },
-    ""
-  );
-}
-
-function splitPeople(value: string) {
-  if (!value) {
-    return [];
-  }
-
-  return value
-    .split(/[\/,，]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
 }
 
 export function suggestItemToSearchBook(item: SuggestItem): SearchBook {
@@ -294,10 +243,3 @@ export function normalizeWorkId(key: string) {
   return key.replace(/[^\d]/g, "");
 }
 
-export function getTextValue(value?: string | { value?: string }) {
-  if (!value) {
-    return "";
-  }
-
-  return typeof value === "string" ? value : value.value ?? "";
-}

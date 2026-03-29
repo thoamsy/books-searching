@@ -15,7 +15,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { BookCover } from "@/components/book-cover";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getCoverUrl, getTextValue } from "@/lib/books-api";
+import { getCoverUrl } from "@/lib/books-api";
 import { bookDetailQueryOptions } from "@/lib/book-queries";
 import type { BookDetail, SearchBook } from "@/types/books";
 
@@ -317,7 +317,7 @@ function DetailDescriptionPanel({
   bookDetail: BookDetail;
   fallbackBook?: SearchBook;
 }) {
-  const description = getTextValue(bookDetail.description) || fallbackBook?.description || "";
+  const description = bookDetail.description || fallbackBook?.description || "";
 
   return (
     <article className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-7 shadow-[var(--shadow-warm-md)]">

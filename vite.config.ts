@@ -90,6 +90,39 @@ export default defineConfig({
       }
     },
     {
+      name: "douban-book-detail-proxy",
+      configureServer(server) {
+        const FRODO_HEADERS = {
+          "User-Agent": "MicroMessenger/7.0.0 (iPhone; iOS 14.0; Scale/2.00)",
+          Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html"
+        };
+
+        server.middlewares.use(async (req, res, next) => {
+          const match = req.url?.match(/^\/api\/douban\/book\/(\d+)\/?$/);
+          if (!match) return next();
+
+          const subjectId = match[1];
+          const apikey = "0ac44ae016490db2204ce0a042db2916";
+
+          try {
+            const upstream = await fetch(
+              `https://frodo.douban.com/api/v2/book/${subjectId}?apikey=${apikey}`,
+              { headers: FRODO_HEADERS }
+            );
+
+            const body = await upstream.text();
+            res.statusCode = upstream.status;
+            res.setHeader("Content-Type", upstream.headers.get("content-type") ?? "application/json");
+            res.setHeader("Cache-Control", "public, max-age=300");
+            res.end(body);
+          } catch {
+            res.statusCode = 502;
+            res.end(JSON.stringify({ error: "proxy error" }));
+          }
+        });
+      }
+    },
+    {
       name: "douban-movie-detail-proxy",
       configureServer(server) {
         const FRODO_HEADERS = {
@@ -165,9 +198,6 @@ export default defineConfig({
       ),
       "/api/douban/search": createDoubanProxy("https://www.douban.com", (path) =>
         path.replace(/^\/api\/douban\/search/, "/search")
-      ),
-      "/api/douban/book": createDoubanProxy("https://book.douban.com", (path) =>
-        path.replace(/^\/api\/douban\/book/, "/subject")
       ),
       "/api/douban/movie/suggest": createDoubanProxy("https://movie.douban.com", (path) =>
         path.replace(/^\/api\/douban\/movie\/suggest/, "/j/subject_suggest")

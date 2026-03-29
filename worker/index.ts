@@ -80,7 +80,14 @@ export default {
     const bookMatch = url.pathname.match(/^\/api\/douban\/book\/(\d+)\/?$/);
     if (bookMatch) {
       const subjectId = bookMatch[1];
-      return proxyRequest(`https://book.douban.com/subject/${subjectId}/`, request, { cacheTtl: 86400 });
+      const frodoHeaders = {
+        "User-Agent": "MicroMessenger/7.0.0 (iPhone; iOS 14.0; Scale/2.00)",
+        Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html"
+      };
+      return proxyRequest(
+        `https://frodo.douban.com/api/v2/book/${subjectId}?apikey=0ac44ae016490db2204ce0a042db2916`,
+        request, { cacheTtl: 86400, extraHeaders: frodoHeaders }
+      );
     }
 
     if (url.pathname === "/api/douban/movie/suggest") {
