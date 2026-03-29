@@ -1,5 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Component, Suspense } from "react";
+import type { ErrorInfo, ReactNode } from "react";
+import { useState } from "react";
 import {
   ArrowLeft,
   BookOpen,
@@ -21,19 +23,171 @@ interface LocationState {
   book?: SearchBook;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Error boundary                                                     */
+/* ------------------------------------------------------------------ */
+
+interface ErrorBoundaryProps {
+  fallback: (props: { error: Error; reset: () => void }) => ReactNode;
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  error: Error | null;
+}
+
+class QueryErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("BookDetailPage error boundary:", error, info);
+  }
+
+  reset = () => this.setState({ error: null });
+
+  render() {
+    if (this.state.error) {
+      return this.props.fallback({ error: this.state.error, reset: this.reset });
+    }
+    return this.props.children;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Error fallback                                                     */
+/* ------------------------------------------------------------------ */
+
+function DetailErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
+  const message = error.message.includes("rate-limited")
+    ? "豆瓣详情页当前触发了风控或频率限制，请稍后重试。"
+    : "书籍详情获取失败，请稍后重试。";
+
+  return (
+    <div className="mx-auto mt-10 w-full max-w-[1240px] px-5 text-center sm:px-8 lg:px-10">
+      <div className="rounded-[32px] border border-white/70 bg-[var(--surface)] px-8 py-12">
+        <p className="text-lg text-[var(--destructive)]">{message}</p>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <Button variant="outline" onClick={reset}>
+            <RotateCw className="size-4" />
+            重试
+          </Button>
+          <Link to="/">
+            <Button variant="ghost">返回搜索</Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Skeleton fallback                                                  */
+/* ------------------------------------------------------------------ */
+
+function BookDetailSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
+  return (
+    <section className="mx-auto mt-8 w-full max-w-[1240px] px-5 sm:px-8 lg:px-10">
+      {/* Mobile skeleton */}
+      <div className="animate-fade-up flex gap-5 [animation-delay:80ms] lg:hidden">
+        <div className="w-[120px] shrink-0">
+          <div className="aspect-[3/4] overflow-hidden rounded-[20px]">
+            {fallbackBook?.coverUrl ? (
+              <BookCover src={fallbackBook.coverUrl} title={fallbackBook?.title ?? "封面"} className="rounded-[20px] opacity-70 saturate-75" />
+            ) : (
+              <div className="h-full w-full animate-pulse rounded-[20px] bg-white/70" />
+            )}
+          </div>
+        </div>
+        <div className="min-w-0 flex-1">
+          <MobileHeroSkeleton fallbackBook={fallbackBook} />
+        </div>
+      </div>
+
+      {/* Desktop skeleton */}
+      <div className="animate-fade-up hidden [animation-delay:80ms] lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
+        <CoverPanelSkeleton title={fallbackBook?.title} coverUrl={fallbackBook?.coverUrl} />
+        <div className="space-y-10">
+          <HeroPanelSkeleton fallbackBook={fallbackBook} />
+          <div className="grid gap-8 lg:grid-cols-[1.45fr_0.95fr]">
+            <DescriptionPanelSkeleton />
+            <SidebarPanelSkeleton />
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile content skeleton */}
+      <div className="animate-fade-up mt-10 space-y-8 [animation-delay:160ms] lg:hidden">
+        <div className="grid gap-8">
+          <DescriptionPanelSkeleton />
+          <SidebarPanelSkeleton />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Content (suspends while loading)                                   */
+/* ------------------------------------------------------------------ */
+
+function BookDetailContent({ workId, fallbackBook }: { workId: string; fallbackBook?: SearchBook }) {
+  const { data: bookDetail } = useSuspenseQuery(bookDetailQueryOptions(workId));
+
+  return (
+    <section className="mx-auto mt-8 w-full max-w-[1240px] px-5 sm:px-8 lg:px-10">
+      {/* Mobile: horizontal compact layout */}
+      <div className="animate-fade-up flex gap-5 [animation-delay:80ms] lg:hidden">
+        <div className="w-[120px] shrink-0">
+          <div className="aspect-[3/4] overflow-hidden rounded-[20px] shadow-[var(--shadow-warm-sm)]">
+            <BookCover
+              src={getCoverUrl(bookDetail.coverUrl ?? fallbackBook?.coverUrl)}
+              title={bookDetail.title ?? fallbackBook?.title ?? "未知书名"}
+              className="rounded-[20px]"
+            />
+          </div>
+        </div>
+        <div className="min-w-0 flex-1">
+          <MobileHeroPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
+        </div>
+      </div>
+
+      {/* Desktop: original two-column layout */}
+      <div className="animate-fade-up hidden [animation-delay:80ms] lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
+        <DetailCoverPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
+        <div className="space-y-10">
+          <DetailHeroPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
+          <div className="grid gap-8 lg:grid-cols-[1.45fr_0.95fr]">
+            <DetailDescriptionPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
+            <DetailSidebarPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile: content panels below the hero */}
+      <div className="animate-fade-up mt-10 space-y-8 [animation-delay:160ms] lg:hidden">
+        <div className="grid gap-8">
+          <DetailDescriptionPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
+          <DetailSidebarPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Page shell                                                         */
+/* ------------------------------------------------------------------ */
+
 export function BookDetailPage() {
   const { workId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
   const fallbackBook = state.book;
-  const searchQuery = new URLSearchParams(location.search).get("q") ?? "";
-
-  const detailQuery = useQuery({
-    ...bookDetailQueryOptions(workId ?? ""),
-    enabled: Boolean(workId),
-    throwOnError: false
-  });
 
   if (!workId) {
     return (
@@ -49,11 +203,6 @@ export function BookDetailPage() {
       </main>
     );
   }
-  const errorMessage = detailQuery.error
-    ? detailQuery.error instanceof Error && detailQuery.error.message.includes("rate-limited")
-      ? "豆瓣详情页当前触发了风控或频率限制，请稍后重试。"
-      : "书籍详情获取失败，请稍后重试。"
-    : "";
 
   return (
     <main className="min-h-screen bg-[var(--background)] pb-16 text-[var(--foreground)]">
@@ -68,107 +217,22 @@ export function BookDetailPage() {
         </button>
       </div>
 
-      {errorMessage ? (
-        <div className="mx-auto mt-10 w-full max-w-[1240px] px-5 text-center sm:px-8 lg:px-10">
-          <div className="rounded-[32px] border border-white/70 bg-[var(--surface)] px-8 py-12">
-            <p className="text-lg text-[var(--destructive)]">{errorMessage}</p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Button variant="outline" onClick={() => detailQuery.refetch()}>
-                <RotateCw className="size-4" />
-                重试
-              </Button>
-              <Link to="/">
-                <Button variant="ghost">
-                  返回搜索
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <section className="mx-auto mt-8 w-full max-w-[1240px] px-5 sm:px-8 lg:px-10">
-          {/* Mobile: horizontal compact layout */}
-          <div className="animate-fade-up flex gap-5 [animation-delay:80ms] lg:hidden">
-            <div className="w-[120px] shrink-0">
-              {detailQuery.isPending ? (
-                <div className="aspect-[3/4] overflow-hidden rounded-[20px]">
-                  {fallbackBook?.coverUrl ? (
-                    <BookCover src={fallbackBook.coverUrl} title={fallbackBook?.title ?? "封面"} className="rounded-[20px] opacity-70 saturate-75" />
-                  ) : (
-                    <div className="h-full w-full animate-pulse rounded-[20px] bg-white/70" />
-                  )}
-                </div>
-              ) : (
-                <div className="aspect-[3/4] overflow-hidden rounded-[20px] shadow-[var(--shadow-warm-sm)]">
-                  <BookCover
-                    src={getCoverUrl(detailQuery.data!.coverUrl ?? fallbackBook?.coverUrl)}
-                    title={detailQuery.data!.title ?? fallbackBook?.title ?? "未知书名"}
-                    className="rounded-[20px]"
-                  />
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              {detailQuery.isPending ? (
-                <MobileHeroSkeleton fallbackBook={fallbackBook} />
-              ) : (
-                <MobileHeroPanel bookDetail={detailQuery.data!} fallbackBook={fallbackBook} />
-              )}
-            </div>
-          </div>
-
-          {/* Desktop: original two-column layout */}
-          <div className="animate-fade-up hidden [animation-delay:80ms] lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
-          {detailQuery.isPending ? (
-            <CoverPanelSkeleton title={fallbackBook?.title} coverUrl={fallbackBook?.coverUrl} />
-          ) : (
-            <DetailCoverPanel bookDetail={detailQuery.data!} fallbackBook={fallbackBook} />
-          )}
-
-          <div className="space-y-10">
-            {detailQuery.isPending ? (
-              <HeroPanelSkeleton fallbackBook={fallbackBook} />
-            ) : (
-              <DetailHeroPanel bookDetail={detailQuery.data!} fallbackBook={fallbackBook} />
-            )}
-
-            <div className="grid gap-8 lg:grid-cols-[1.45fr_0.95fr]">
-              {detailQuery.isPending ? (
-                <DescriptionPanelSkeleton />
-              ) : (
-                <DetailDescriptionPanel bookDetail={detailQuery.data!} fallbackBook={fallbackBook} />
-              )}
-
-              {detailQuery.isPending ? (
-                <SidebarPanelSkeleton />
-              ) : (
-                <DetailSidebarPanel bookDetail={detailQuery.data!} fallbackBook={fallbackBook} />
-              )}
-            </div>
-          </div>
-          </div>
-
-          {/* Mobile: content panels below the hero */}
-          <div className="animate-fade-up mt-10 space-y-8 [animation-delay:160ms] lg:hidden">
-            <div className="grid gap-8">
-              {detailQuery.isPending ? (
-                <DescriptionPanelSkeleton />
-              ) : (
-                <DetailDescriptionPanel bookDetail={detailQuery.data!} fallbackBook={fallbackBook} />
-              )}
-
-              {detailQuery.isPending ? (
-                <SidebarPanelSkeleton />
-              ) : (
-                <DetailSidebarPanel bookDetail={detailQuery.data!} fallbackBook={fallbackBook} />
-              )}
-            </div>
-          </div>
-        </section>
-      )}
+      <QueryErrorBoundary
+        fallback={({ error, reset }) => (
+          <DetailErrorFallback error={error} reset={reset} />
+        )}
+      >
+        <Suspense fallback={<BookDetailSkeleton fallbackBook={fallbackBook} />}>
+          <BookDetailContent workId={workId} fallbackBook={fallbackBook} />
+        </Suspense>
+      </QueryErrorBoundary>
     </main>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Content panels                                                     */
+/* ------------------------------------------------------------------ */
 
 function DetailCoverPanel({
   bookDetail,
@@ -313,6 +377,10 @@ function DetailSidebarPanel({
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Shared helpers                                                     */
+/* ------------------------------------------------------------------ */
+
 function ExpandableDescription({ text }: { text: string }) {
   const shouldCollapse = text.length > 420;
   const [expanded, setExpanded] = useState(false);
@@ -405,6 +473,10 @@ function MobileHeroPanel({
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Skeleton sub-components                                            */
+/* ------------------------------------------------------------------ */
 
 function MobileHeroSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
   return (

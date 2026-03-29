@@ -255,9 +255,13 @@ function getInfoValue(lines: string[], label: string) {
 }
 
 function getLongestText(nodes: NodeListOf<Element>) {
-  return Array.from(nodes)
-    .map((node) => textContent(node))
-    .sort((left, right) => right.length - left.length)[0] ?? "";
+  return Array.from(nodes).reduce(
+    (longest, node) => {
+      const text = textContent(node);
+      return text.length > longest.length ? text : longest;
+    },
+    ""
+  );
 }
 
 function splitPeople(value: string) {
