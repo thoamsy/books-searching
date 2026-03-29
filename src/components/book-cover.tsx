@@ -6,9 +6,10 @@ interface BookCoverProps {
   src: string | null;
   title: string;
   className?: string;
+  loading?: "lazy" | "eager";
 }
 
-export function BookCover({ src, title, className }: BookCoverProps) {
+export function BookCover({ src, title, className, loading = "eager" }: BookCoverProps) {
   const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
@@ -20,6 +21,7 @@ export function BookCover({ src, title, className }: BookCoverProps) {
       <img
         src={src}
         alt=""
+        loading={loading}
         className={cn("h-full w-full rounded-[24px] object-cover", className)}
         onError={() => setImageFailed(true)}
       />

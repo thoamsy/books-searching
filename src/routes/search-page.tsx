@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { LoaderCircle, Search, Sparkles, Trash2, X } from "lucide-react";
+import { LoaderCircle, Search, X } from "lucide-react";
 import { BookCover } from "@/components/book-cover";
-import { Button } from "@/components/ui/button";
 import {
   Combobox,
   ComboboxContent,
@@ -21,11 +20,16 @@ import { useLocation, useNavigate } from "react-router-dom";
 import type { SearchBook } from "@/types/books";
 
 const SEARCH_HISTORY_KEY = "book-echo-search-history";
-const SEARCH_HISTORY_LIMIT = 8;
-const SEARCH_PAGE_ANIMATION_SEEN_KEY = "book-echo-search-page-animation-seen";
+const SEARCH_HISTORY_LIMIT = 10;
 
-type SearchOption =
-  | { id: string; label: string; meta?: string; year?: string; kind: "suggestion"; book: SearchBook };
+type SearchOption = {
+  id: string;
+  label: string;
+  meta?: string;
+  year?: string;
+  kind: "suggestion";
+  book: SearchBook;
+};
 
 interface RecentSearchEntry {
   workId: string;
@@ -33,9 +37,9 @@ interface RecentSearchEntry {
   book: SearchBook;
 }
 
-function readSearchHistory() {
+function readSearchHistory(): RecentSearchEntry[] {
   if (typeof window === "undefined") {
-    return [] as RecentSearchEntry[];
+    return [];
   }
 
   try {
@@ -80,11 +84,7 @@ function pushSearchHistory(items: RecentSearchEntry[], entry: RecentSearchEntry)
     return items;
   }
 
-  const nextEntry = {
-    ...entry,
-    query: trimmedQuery
-  };
-
+  const nextEntry = { ...entry, query: trimmedQuery };
   return [nextEntry, ...items.filter((item) => item.workId !== nextEntry.workId)].slice(0, SEARCH_HISTORY_LIMIT);
 }
 
@@ -98,48 +98,22 @@ function getSuggestionOptionId(book: SearchBook, index: number) {
   ].join("::");
 }
 
-function shouldPlaySearchEntranceAnimation() {
-  if (typeof window === "undefined") {
-    return true;
-  }
-
-  return window.sessionStorage.getItem(SEARCH_PAGE_ANIMATION_SEEN_KEY) !== "true";
-}
+const getOptionLabel = (item: SearchOption) => item.label;
 
 export function SearchPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const initialQueryFromUrl = new URLSearchParams(location.search).get("q")?.trim() ?? "";
-  const [shouldAnimateEntrance] = useState(shouldPlaySearchEntranceAnimation);
   const [query, setQuery] = useState(initialQueryFromUrl);
   const [isOpen, setIsOpen] = useState(Boolean(initialQueryFromUrl));
   const [isComposing, setIsComposing] = useState(false);
-  const [searchHistory, setSearchHistory] = useState<RecentSearchEntry[]>([]);
+  const [searchHistory, setSearchHistory] = useState(readSearchHistory);
   const inputRef = useRef<HTMLInputElement>(null);
-  const searchFrameRef = useRef<HTMLDivElement>(null);
-  const searchShellRef = useRef<HTMLDivElement>(null);
+  const searchBarRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 260);
 
   useEffect(() => {
     inputRef.current?.focus();
-    setSearchHistory(readSearchHistory());
-
-    if (shouldAnimateEntrance) {
-      window.sessionStorage.setItem(SEARCH_PAGE_ANIMATION_SEEN_KEY, "true");
-    }
-  }, [shouldAnimateEntrance]);
-
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      if (!searchShellRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-    };
   }, []);
 
   const suggestionsQuery = useQuery({
@@ -190,7 +164,9 @@ export function SearchPage() {
     }
 
     if (!trimmed) {
-      clearSearch(true);
+      setQuery("");
+      setIsOpen(false);
+      window.requestAnimationFrame(() => inputRef.current?.focus());
       return;
     }
 
@@ -203,18 +179,6 @@ export function SearchPage() {
     openBookDetail(matchedSuggestion, matchedSuggestion.title);
   }
 
-  function clearSearch(shouldFocus = false) {
-    setQuery("");
-    setIsOpen(false);
-
-    if (shouldFocus) {
-      window.requestAnimationFrame(() => {
-        inputRef.current?.focus();
-      });
-    }
-  }
-
-  const showHistory = searchHistory.length > 0;
   const suggestionOptions = suggestions.map(
     (item, index): SearchOption => ({
       id: getSuggestionOptionId(item, index),
@@ -225,10 +189,7 @@ export function SearchPage() {
       book: item
     })
   );
-  const comboItems = suggestionOptions;
-  const showSuggestions = isOpen && query.trim().length > 0;
-  const showHistoryPanel = isOpen && query.trim().length === 0 && showHistory;
-  const comboOpen = showSuggestions && (comboItems.length > 0 || isSuggesting);
+  const comboOpen = isOpen && query.trim().length > 0 && (suggestionOptions.length > 0 || isSuggesting);
 
   function handleInputValueChange(nextValue: string, details: { reason: string }) {
     if (
@@ -256,203 +217,177 @@ export function SearchPage() {
     }
   }
 
-  const badgeAnimationClass = shouldAnimateEntrance ? "animate-[rise_0.6s_ease_forwards]" : "";
-  const searchFrameAnimationClass = shouldAnimateEntrance
-    ? "animate-[rise_0.65s_ease_forwards] [animation-delay:120ms]"
-    : "";
-
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]">
-      <div className="relative min-h-screen">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(201,111,69,0.16),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(117,87,63,0.14),transparent_32%)]" />
+    <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,color-mix(in_oklch,var(--primary)_12%,transparent),transparent_30%)]" />
 
-        <section className="mx-auto flex min-h-screen w-full max-w-[1240px] flex-col px-5 pb-16 pt-8 sm:px-8 lg:px-10">
-          <div className="mx-auto flex w-full flex-1 flex-col items-center justify-center text-center">
-              <div className={badgeAnimationClass}>
-                <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/55 px-4 py-2 text-xs uppercase tracking-[0.35em] text-[var(--muted-foreground)] backdrop-blur-sm">
-                  <Sparkles className="size-3.5" />
-                  Book Echo
-                </p>
-              </div>
+      <div className="relative mx-auto max-w-3xl px-5 pt-16 pb-20 sm:px-8 sm:pt-24">
+        <header className="animate-fade-up mb-10">
+          <p className="text-xs uppercase tracking-[0.4em] text-[var(--muted-foreground)]">Book Echo</p>
+          <h1 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">
+            找到你的<br />下一本书
+          </h1>
+        </header>
 
-              <div className={`relative z-30 mt-6 w-full max-w-3xl ${searchFrameAnimationClass}`.trim()}>
-                <div
-                  ref={searchFrameRef}
-                  className="rounded-[30px] border border-white/65 bg-white/42 p-2.5 shadow-[0_18px_52px_rgba(95,66,43,0.1)] backdrop-blur-xl"
+        <div ref={searchBarRef} className="animate-fade-up relative mb-14 [animation-delay:80ms]">
+          <Combobox<SearchOption>
+            items={suggestionOptions}
+            itemToStringLabel={getOptionLabel}
+            itemToStringValue={getOptionLabel}
+            inputValue={query}
+            open={comboOpen}
+            onOpenChange={setIsOpen}
+            onInputValueChange={handleInputValueChange}
+            onValueChange={handleOptionSelect}
+            autoHighlight
+          >
+            <ComboboxInput
+              ref={inputRef}
+              showTrigger={false}
+              showClear={false}
+              aria-label="搜索书籍"
+              placeholder="搜索书名、作者……"
+              className="h-13 rounded-2xl border-white/60 bg-[var(--surface-elevated)] px-5 pl-12 text-base font-medium shadow-[var(--shadow-warm-sm)] backdrop-blur-xl transition-shadow focus-within:shadow-[var(--shadow-warm-md)] focus-visible:ring-0 placeholder:text-[var(--muted-foreground)]/60"
+              onFocus={() => setIsOpen(true)}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={(event) => {
+                setIsComposing(false);
+                setQuery(event.currentTarget.value);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setIsOpen(false);
+                  if (query) {
+                    setQuery("");
+                  }
+                }
+              }}
+            >
+              {query ? (
+                <button
+                  type="button"
+                  className="mr-1 inline-flex size-8 items-center justify-center rounded-full text-[var(--muted-foreground)] transition hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    setQuery("");
+                    setIsOpen(false);
+                    window.requestAnimationFrame(() => inputRef.current?.focus());
+                  }}
+                  aria-label="清除搜索词"
                 >
-                  <form
-                    className="flex flex-col gap-2.5 sm:flex-row"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      if (comboOpen) {
-                        return;
-                      }
-                      submitSearch(query);
-                    }}
+                  <X className="size-4" />
+                </button>
+              ) : null}
+            </ComboboxInput>
+
+            <Search className="pointer-events-none absolute top-1/2 left-5 size-[18px] -translate-y-1/2 text-[var(--muted-foreground)]" />
+
+            <ComboboxContent
+              anchor={searchBarRef}
+              side="bottom"
+              sideOffset={8}
+              className="w-(--anchor-width) max-w-none min-w-(--anchor-width) rounded-2xl border border-white/70 bg-[var(--surface-elevated)] py-2 shadow-[var(--shadow-warm-dropdown)] backdrop-blur-xl"
+            >
+              <ComboboxGroup>
+                <ComboboxLabel className="px-5 py-2 text-left text-[11px] uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
+                  搜索建议
+                </ComboboxLabel>
+                {isSuggesting && suggestions.length === 0 ? (
+                  <div role="status" aria-live="polite" className="flex items-center gap-2.5 px-5 py-3 text-sm text-[var(--muted-foreground)]">
+                    <LoaderCircle className="size-4 animate-spin" />
+                    正在搜索…
+                  </div>
+                ) : null}
+              </ComboboxGroup>
+
+              <ComboboxEmpty className="px-5 py-3 text-sm">没有找到相关书籍</ComboboxEmpty>
+
+              <ComboboxList>
+                {(item: SearchOption) => (
+                  <ComboboxItem
+                    key={item.id}
+                    value={item}
+                    className="mx-0 flex items-center justify-between gap-4 rounded-none px-5 py-2.5 data-highlighted:bg-[var(--accent)]/60"
                   >
-                    <div
-                      ref={searchShellRef}
-                      className="relative flex-1 rounded-[24px] border border-white/55 bg-[#fbf4ea]/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
-                    >
-                      <Combobox<SearchOption>
-                        items={comboItems}
-                        itemToStringLabel={(item) => item.label}
-                        itemToStringValue={(item) => item.label}
-                        inputValue={query}
-                        open={comboOpen}
-                        onOpenChange={setIsOpen}
-                        onInputValueChange={handleInputValueChange}
-                        onValueChange={(value) => handleOptionSelect(value)}
-                        autoHighlight
-                      >
-                        <ComboboxInput
-                          ref={inputRef}
-                          showTrigger={false}
-                          showClear={false}
-                          placeholder="试试：三体、雪国、博尔赫斯、村上春树……"
-                          className="h-[62px] rounded-[24px] border-transparent bg-transparent px-6 text-[17px] font-medium text-[var(--foreground)] shadow-none focus-visible:ring-0 placeholder:text-[color:rgba(117,99,87,0.88)]"
-                          onFocus={() => setIsOpen(true)}
-                          onCompositionStart={() => setIsComposing(true)}
-                          onCompositionEnd={(event) => {
-                            setIsComposing(false);
-                            setQuery(event.currentTarget.value);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Escape") {
-                              setIsOpen(false);
-                              if (query) {
-                                setQuery("");
-                              }
-                            }
-                          }}
-                        >
-                          <button
-                            type="button"
-                            className={`mr-1 inline-flex size-9 items-center justify-center rounded-full text-[var(--muted-foreground)] transition-all duration-200 hover:bg-white hover:text-[var(--foreground)] ${query ? "scale-100 opacity-100" : "pointer-events-none scale-75 opacity-0"}`}
-                            onMouseDown={(event) => event.preventDefault()}
-                            onClick={() => {
-                              clearSearch(true);
-                              setIsOpen(true);
-                            }}
-                            aria-label="清除搜索词"
-                            tabIndex={query ? 0 : -1}
-                          >
-                            <X className="size-4" />
-                          </button>
-                        </ComboboxInput>
-
-                        <ComboboxContent
-                          anchor={searchFrameRef}
-                          side="top"
-                          className="w-(--anchor-width) max-w-none min-w-(--anchor-width) rounded-[24px] border border-white/70 bg-white/92 p-2 shadow-[0_20px_48px_rgba(96,65,42,0.12)] backdrop-blur-xl"
-                        >
-                          {showSuggestions ? (
-                            <ComboboxGroup>
-                              <ComboboxLabel className="px-3 py-2 text-left text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
-                                自动建议
-                              </ComboboxLabel>
-                              {isSuggesting ? (
-                                <div className="flex items-center gap-2 rounded-[22px] px-3 py-4 text-sm text-[var(--muted-foreground)]">
-                                  <LoaderCircle className="size-4 animate-spin" />
-                                  正在获取建议...
-                                </div>
-                              ) : null}
-                            </ComboboxGroup>
-                          ) : null}
-
-                          <ComboboxEmpty>没有可用建议，回车直接搜索。</ComboboxEmpty>
-                          <ComboboxList className="space-y-1">
-                            {(item: SearchOption) => (
-                              <ComboboxItem
-                                key={item.id}
-                                value={item}
-                                className="items-center justify-between gap-4 rounded-[18px] px-3 py-3 data-highlighted:bg-[var(--accent)]"
-                              >
-                                <div className="flex min-w-0 items-center gap-3">
-                                  <div className="h-16 w-12 shrink-0 overflow-hidden rounded-[16px] border border-white/70 bg-white/70">
-                                    <BookCover src={getCoverUrl(item.book.coverUrl)} title={item.label} className="rounded-[16px]" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="truncate font-medium text-[var(--foreground)]">{item.label}</p>
-                                    <p className="mt-1 truncate text-sm text-[var(--muted-foreground)]">{item.meta}</p>
-                                  </div>
-                                </div>
-                                {"year" in item && item.year ? (
-                                  <span className="text-xs text-[var(--muted-foreground)]">{item.year}</span>
-                                ) : null}
-                              </ComboboxItem>
-                            )}
-                          </ComboboxList>
-                        </ComboboxContent>
-                      </Combobox>
-
-                      {showHistoryPanel ? (
-                        <div className="absolute right-0 bottom-full z-40 mb-3 w-full rounded-[24px] border border-white/70 bg-white/92 p-4 shadow-[0_20px_48px_rgba(96,65,42,0.12)] backdrop-blur-xl">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="text-left text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
-                              最近搜索
-                            </div>
-                            <button
-                              type="button"
-                              className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-[11px] tracking-[0.18em] normal-case text-[var(--muted-foreground)] transition hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
-                              onMouseDown={(event) => event.preventDefault()}
-                              onClick={() => {
-                                setSearchHistory([]);
-                                writeSearchHistory([]);
-                                inputRef.current?.focus();
-                              }}
-                            >
-                              <Trash2 className="size-3.5" />
-                              清空
-                            </button>
-                          </div>
-
-                          <div className="mt-4 flex flex-col gap-2">
-                            {searchHistory.map((item) => (
-                              <button
-                                key={item.workId}
-                                type="button"
-                                className="flex items-center gap-3 rounded-[18px] px-3 py-2.5 text-left transition hover:bg-[var(--accent)]"
-                                onMouseDown={(event) => event.preventDefault()}
-                                onClick={() => {
-                                  setQuery(item.query);
-                                  setIsOpen(false);
-                                  void queryClient.prefetchQuery(bookDetailQueryOptions(item.workId));
-                                  navigate(`/book/${item.workId}?q=${encodeURIComponent(item.query)}`, {
-                                    state: { book: item.book }
-                                  });
-                                }}
-                              >
-                                <div className="h-12 w-9 shrink-0 overflow-hidden rounded-[10px] border border-white/70 bg-white/70">
-                                  <BookCover src={getCoverUrl(item.book.coverUrl)} title={item.book.title} className="rounded-[10px]" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.book.title}</p>
-                                  <p className="truncate text-xs text-[var(--muted-foreground)]">
-                                    {item.book.authorName?.slice(0, 2).join(" / ") || ""}
-                                  </p>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
+                    <div className="flex min-w-0 items-center gap-3.5">
+                      <div className="h-14 w-10 shrink-0 overflow-hidden rounded-lg border border-white/60 bg-white/50">
+                        <BookCover src={getCoverUrl(item.book.coverUrl)} title={item.label} className="rounded-lg" loading="lazy" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.label}</p>
+                        <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">{item.meta}</p>
+                      </div>
                     </div>
+                    {item.year ? (
+                      <span className="shrink-0 text-xs text-[var(--muted-foreground)]">{item.year}</span>
+                    ) : null}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
 
-                    <Button
-                      type="submit"
-                      size="lg"
-                      className="h-[62px] rounded-[24px] px-7 sm:min-w-[224px] bg-[color:var(--primary)] shadow-[0_10px_24px_rgba(201,111,69,0.2)] hover:translate-y-0 hover:bg-[#c46b42]"
-                    >
-                      {isSuggesting ? <LoaderCircle className="size-5 animate-spin" /> : <Search className="size-5" />}
-                      打开书籍
-                    </Button>
-                  </form>
-                </div>
-              </div>
-              {error ? <p className="mt-6 text-center text-sm text-[var(--primary)]">{error}</p> : null}
+          {error ? (
+            <div role="alert" className="mt-4 flex items-center gap-3">
+              <p className="text-sm text-[var(--destructive)]">{error}</p>
+              <button
+                type="button"
+                className="shrink-0 text-sm font-medium text-[var(--foreground)] underline decoration-[var(--border)] underline-offset-4 transition hover:decoration-[var(--foreground)]"
+                onClick={() => suggestionsQuery.refetch()}
+              >
+                重试
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        {searchHistory.length > 0 ? (
+          <section className="animate-fade-up [animation-delay:160ms]">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近翻阅</h2>
+              <button
+                type="button"
+                className="text-xs text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
+                onClick={() => {
+                  setSearchHistory([]);
+                  writeSearchHistory([]);
+                }}
+              >
+                清空
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {searchHistory.map((item) => (
+                <button
+                  key={item.workId}
+                  type="button"
+                  className="group text-left"
+                  onClick={() => openBookDetail(item.book, item.query)}
+                >
+                  <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]">
+                    <BookCover
+                      src={getCoverUrl(item.book.coverUrl)}
+                      title={item.book.title}
+                      className="rounded-2xl transition group-hover:scale-[1.02]"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="mt-3 px-0.5">
+                    <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.book.title}</p>
+                    <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">
+                      {item.book.authorName?.slice(0, 2).join(" / ") || ""}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <div className="animate-fade-up py-12 text-center [animation-delay:160ms]">
+            <p className="text-sm text-[var(--muted-foreground)]">搜索一本书，它会出现在这里</p>
           </div>
-        </section>
+        )}
       </div>
     </main>
   );

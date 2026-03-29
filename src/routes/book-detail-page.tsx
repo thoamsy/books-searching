@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
+import { type ReactNode, useState } from "react";
 import {
   ArrowLeft,
   BookOpen,
   CalendarDays,
   ExternalLink,
+  RotateCw,
   Star,
   UserRound
 } from "lucide-react";
@@ -27,12 +28,18 @@ export function BookDetailPage() {
   const fallbackBook = state.book;
   const searchQuery = new URLSearchParams(location.search).get("q") ?? "";
 
+  const detailQuery = useQuery({
+    ...bookDetailQueryOptions(workId ?? ""),
+    enabled: Boolean(workId),
+    throwOnError: false
+  });
+
   if (!workId) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--background)] px-6 text-center">
         <div>
-          <p className="text-lg text-[var(--primary)]">缺少书籍标识。</p>
-          <Link to={searchQuery ? `/?q=${encodeURIComponent(searchQuery)}` : "/"}>
+          <p className="text-lg text-[var(--foreground)]">未找到该书籍，可能链接已失效。</p>
+          <Link to="/">
             <Button variant="outline" className="mt-6">
               返回搜索
             </Button>
@@ -41,11 +48,6 @@ export function BookDetailPage() {
       </main>
     );
   }
-
-  const detailQuery = useQuery({
-    ...bookDetailQueryOptions(workId),
-    throwOnError: false
-  });
   const errorMessage =
     detailQuery.error instanceof Error
       ? detailQuery.error.message.includes("rate-limited")
@@ -55,9 +57,9 @@ export function BookDetailPage() {
 
   return (
     <main className="min-h-screen bg-[var(--background)] pb-16 text-[var(--foreground)]">
-      <div className="mx-auto w-full max-w-[1240px] px-5 pt-6 sm:px-8 lg:px-10">
+      <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-6 sm:px-8 lg:px-10">
         <Link
-          to={searchQuery ? `/?q=${encodeURIComponent(searchQuery)}` : "/"}
+          to="/"
           className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/65 px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
         >
           <ArrowLeft className="size-4" />
@@ -67,19 +69,25 @@ export function BookDetailPage() {
 
       {errorMessage ? (
         <div className="mx-auto mt-10 w-full max-w-[1240px] px-5 text-center sm:px-8 lg:px-10">
-          <div className="rounded-[32px] border border-white/70 bg-white/60 px-8 py-12">
-            <p className="text-lg text-[var(--primary)]">{errorMessage}</p>
-            <Link to={searchQuery ? `/?q=${encodeURIComponent(searchQuery)}` : "/"}>
-              <Button variant="outline" className="mt-6">
-                返回搜索
+          <div className="rounded-[32px] border border-white/70 bg-[var(--surface)] px-8 py-12">
+            <p className="text-lg text-[var(--destructive)]">{errorMessage}</p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Button variant="outline" onClick={() => detailQuery.refetch()}>
+                <RotateCw className="size-4" />
+                重试
               </Button>
-            </Link>
+              <Link to="/">
+                <Button variant="ghost">
+                  返回搜索
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       ) : (
         <section className="mx-auto mt-8 w-full max-w-[1240px] px-5 sm:px-8 lg:px-10">
           {/* Mobile: horizontal compact layout */}
-          <div className="flex gap-5 lg:hidden">
+          <div className="animate-fade-up flex gap-5 [animation-delay:80ms] lg:hidden">
             <div className="w-[120px] shrink-0">
               {detailQuery.isPending ? (
                 <div className="aspect-[3/4] overflow-hidden rounded-[20px]">
@@ -90,7 +98,7 @@ export function BookDetailPage() {
                   )}
                 </div>
               ) : (
-                <div className="aspect-[3/4] overflow-hidden rounded-[20px] shadow-[0_16px_40px_rgba(95,66,43,0.12)]">
+                <div className="aspect-[3/4] overflow-hidden rounded-[20px] shadow-[var(--shadow-warm-sm)]">
                   <BookCover
                     src={getCoverUrl(detailQuery.data!.coverUrl ?? fallbackBook?.coverUrl)}
                     title={detailQuery.data!.title ?? fallbackBook?.title ?? "未知书名"}
@@ -109,7 +117,7 @@ export function BookDetailPage() {
           </div>
 
           {/* Desktop: original two-column layout */}
-          <div className="hidden lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
+          <div className="animate-fade-up hidden [animation-delay:80ms] lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
           {detailQuery.isPending ? (
             <CoverPanelSkeleton title={fallbackBook?.title} coverUrl={fallbackBook?.coverUrl} />
           ) : (
@@ -140,7 +148,7 @@ export function BookDetailPage() {
           </div>
 
           {/* Mobile: content panels below the hero */}
-          <div className="mt-8 space-y-8 lg:hidden">
+          <div className="animate-fade-up mt-8 space-y-8 [animation-delay:160ms] lg:hidden">
             <div className="grid gap-8">
               {detailQuery.isPending ? (
                 <DescriptionPanelSkeleton />
@@ -172,10 +180,8 @@ function DetailCoverPanel({
   const cover = getCoverUrl(bookDetail?.coverUrl ?? fallbackBook?.coverUrl);
 
   return (
-    <div>
-      <div className="mx-auto aspect-[3/4] w-full max-w-[320px] overflow-hidden rounded-[28px] shadow-[0_28px_70px_rgba(95,66,43,0.12)]">
-        <BookCover src={cover} title={title} className="rounded-[28px]" />
-      </div>
+    <div className="mx-auto aspect-[3/4] w-full max-w-[320px] overflow-hidden rounded-[28px] shadow-[var(--shadow-warm-lg)]">
+      <BookCover src={cover} title={title} className="rounded-[28px]" />
     </div>
   );
 }
@@ -189,7 +195,7 @@ function DetailHeroPanel({
 }) {
   return (
     <div>
-      <p className="text-sm uppercase tracking-[0.28em] text-[var(--muted-foreground)]">Book Detail</p>
+      <p className="text-sm uppercase tracking-[0.28em] text-[var(--muted-foreground)]">书籍详情</p>
       <h1 className="mt-3 max-w-4xl font-display text-5xl leading-none sm:text-6xl">
         {bookDetail?.title ?? fallbackBook?.title ?? "未知书名"}
       </h1>
@@ -247,7 +253,7 @@ function DetailDescriptionPanel({
   const description = getTextValue(bookDetail.description) || fallbackBook?.description || "";
 
   return (
-    <article className="rounded-[32px] border border-white/70 bg-white/60 p-7 shadow-[0_24px_60px_rgba(76,54,39,0.08)]">
+    <article className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-7 shadow-[var(--shadow-warm-md)]">
       <h2 className="font-display text-3xl">内容简介</h2>
       <ExpandableDescription
         text={description || "当前来源没有提供简介信息。你可以返回搜索查看更多相关版本。"}
@@ -267,7 +273,7 @@ function DetailSidebarPanel({
 
   return (
     <aside className="space-y-5">
-      <section className="rounded-[32px] border border-white/70 bg-white/60 p-6">
+      <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
         <h3 className="font-display text-2xl">主题标签</h3>
         <div className="mt-4 flex flex-wrap gap-2">
           {subjects.length ? (
@@ -278,7 +284,7 @@ function DetailSidebarPanel({
         </div>
       </section>
 
-      <section className="rounded-[32px] border border-white/70 bg-white/60 p-6">
+      <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
         <h3 className="font-display text-2xl">书目信息</h3>
         <div className="mt-4 space-y-4">
           <InfoBlock label="出版社" value={bookDetail.publisher ?? fallbackBook?.publisher ?? "暂无出版社信息"} />
@@ -332,7 +338,7 @@ function ExpandableDescription({ text }: { text: string }) {
   );
 }
 
-function InfoBlock({ label, value }: { label: string; value: React.ReactNode }) {
+function InfoBlock({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
       <p className="text-base font-semibold">{label}</p>
@@ -419,14 +425,12 @@ function CoverPanelSkeleton({
   coverUrl?: string;
 }) {
   return (
-    <div>
-      <div className="mx-auto aspect-[3/4] w-full max-w-[320px] overflow-hidden rounded-[28px] shadow-[0_28px_70px_rgba(95,66,43,0.12)]">
-        {coverUrl ? (
-          <BookCover src={coverUrl} title={title ?? "封面"} className="rounded-[28px] opacity-70 saturate-75" />
-        ) : (
-          <div className="h-full w-full animate-pulse rounded-[28px] bg-white/70" />
-        )}
-      </div>
+    <div className="mx-auto aspect-[3/4] w-full max-w-[320px] overflow-hidden rounded-[28px] shadow-[var(--shadow-warm-lg)]">
+      {coverUrl ? (
+        <BookCover src={coverUrl} title={title ?? "封面"} className="rounded-[28px] opacity-70 saturate-75" />
+      ) : (
+        <div className="h-full w-full animate-pulse rounded-[28px] bg-white/70" />
+      )}
     </div>
   );
 }
@@ -434,7 +438,7 @@ function CoverPanelSkeleton({
 function HeroPanelSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
   return (
     <div>
-      <p className="text-sm uppercase tracking-[0.28em] text-[var(--muted-foreground)]">Book Detail</p>
+      <p className="text-sm uppercase tracking-[0.28em] text-[var(--muted-foreground)]">书籍详情</p>
       {fallbackBook?.title ? (
         <h1 className="mt-3 max-w-4xl font-display text-5xl leading-none sm:text-6xl">{fallbackBook.title}</h1>
       ) : (
@@ -463,7 +467,7 @@ function HeroPanelSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
 
 function DescriptionPanelSkeleton() {
   return (
-    <article className="rounded-[32px] border border-white/70 bg-white/60 p-7 shadow-[0_24px_60px_rgba(76,54,39,0.08)]">
+    <article className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-7 shadow-[var(--shadow-warm-md)]">
       <h2 className="font-display text-3xl">内容简介</h2>
       <div className="mt-6 space-y-4">
         {Array.from({ length: 8 }).map((_, index) => (
@@ -482,7 +486,7 @@ function DescriptionPanelSkeleton() {
 function SidebarPanelSkeleton() {
   return (
     <aside className="space-y-5">
-      <section className="rounded-[32px] border border-white/70 bg-white/60 p-6">
+      <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
         <h3 className="font-display text-2xl">主题标签</h3>
         <div className="mt-4 flex flex-wrap gap-2">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -491,7 +495,7 @@ function SidebarPanelSkeleton() {
         </div>
       </section>
 
-      <section className="rounded-[32px] border border-white/70 bg-white/60 p-6">
+      <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
         <h3 className="font-display text-2xl">书目信息</h3>
         <div className="mt-4 space-y-5">
           {Array.from({ length: 3 }).map((_, index) => (
