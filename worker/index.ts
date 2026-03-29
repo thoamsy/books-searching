@@ -17,10 +17,11 @@ function corsHeaders(origin: string | null) {
   };
 }
 
-async function proxyRequest(target: string, request: Request) {
+async function proxyRequest(target: string, request: Request, extraHeaders?: Record<string, string>) {
   const upstream = await fetch(target, {
     headers: {
-      ...DEFAULT_HEADERS
+      ...DEFAULT_HEADERS,
+      ...extraHeaders
     },
     cf: {
       cacheEverything: true,
@@ -55,7 +56,7 @@ export default {
       const query = url.searchParams.get("q") ?? "";
       const target = new URL("https://book.douban.com/j/subject_suggest");
       target.searchParams.set("q", query);
-      return proxyRequest(target.toString(), request);
+      return proxyRequest(target.toString(), request, { Referer: "https://book.douban.com/" });
     }
 
     if (url.pathname === "/api/douban/search") {
