@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, Search, User, X } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookCover } from "@/components/book-cover";
 import {
   Combobox,
@@ -15,11 +16,13 @@ import {
 import { useDebounce } from "@/hooks/use-debounce";
 import { getCoverUrl, normalizeWorkId, suggestItemToSearchBook } from "@/lib/books-api";
 import { suggestionsQueryOptions } from "@/lib/book-queries";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { SearchBook, SuggestItem } from "@/types/books";
 
 const SEARCH_HISTORY_KEY = "book-echo-search-history";
 const SEARCH_HISTORY_LIMIT = 10;
+const AUTHOR_HISTORY_KEY = "book-echo-author-history";
+const AUTHOR_HISTORY_LIMIT = 8;
 
 type SearchOption = {
   id: string;
@@ -35,6 +38,13 @@ interface RecentSearchEntry {
   workId: string;
   query: string;
   book: SearchBook;
+}
+
+interface RecentAuthorEntry {
+  name: string;
+  photoUrl?: string;
+  enName?: string;
+  url?: string;
 }
 
 function readSearchHistory(): RecentSearchEntry[] {
@@ -88,6 +98,32 @@ function pushSearchHistory(items: RecentSearchEntry[], entry: RecentSearchEntry)
   return [nextEntry, ...items.filter((item) => item.workId !== nextEntry.workId)].slice(0, SEARCH_HISTORY_LIMIT);
 }
 
+function readAuthorHistory(): RecentAuthorEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(AUTHOR_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is RecentAuthorEntry =>
+        item && typeof item === "object" && typeof item.name === "string"
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeAuthorHistory(items: RecentAuthorEntry[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(AUTHOR_HISTORY_KEY, JSON.stringify(items));
+}
+
+function pushAuthorHistory(items: RecentAuthorEntry[], entry: RecentAuthorEntry) {
+  if (!entry.name.trim()) return items;
+  return [entry, ...items.filter((item) => item.name !== entry.name)].slice(0, AUTHOR_HISTORY_LIMIT);
+}
+
 function getSuggestionOptionId(item: SuggestItem, index: number) {
   return `${item.type}::${item.id}::${index}`;
 }
@@ -102,6 +138,7 @@ export function SearchPage() {
   const [isOpen, setIsOpen] = useState(Boolean(initialQueryFromUrl));
   const [isComposing, setIsComposing] = useState(false);
   const [searchHistory, setSearchHistory] = useState(readSearchHistory);
+  const [authorHistory, setAuthorHistory] = useState(readAuthorHistory);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 260);
@@ -210,6 +247,17 @@ export function SearchPage() {
     }
 
     if (option.kind === "author") {
+      const entry: RecentAuthorEntry = {
+        name: option.label,
+        photoUrl: option.suggest.coverUrl,
+        enName: option.suggest.enName,
+        url: option.suggest.url
+      };
+      setAuthorHistory((current) => {
+        const next = pushAuthorHistory(current, entry);
+        writeAuthorHistory(next);
+        return next;
+      });
       const params = new URLSearchParams();
       if (option.suggest.coverUrl) params.set("photo", option.suggest.coverUrl);
       if (option.suggest.enName) params.set("en", option.suggest.enName);
@@ -363,48 +411,97 @@ export function SearchPage() {
           ) : null}
         </div>
 
-        {searchHistory.length > 0 ? (
-          <section className="animate-fade-up [animation-delay:160ms]">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近翻阅</h2>
-              <button
-                type="button"
-                className="text-xs text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
-                onClick={() => {
-                  setSearchHistory([]);
-                  writeSearchHistory([]);
-                }}
-              >
-                清空
-              </button>
-            </div>
+        {searchHistory.length > 0 || authorHistory.length > 0 ? (
+          <div className="animate-fade-up space-y-8 [animation-delay:160ms]">
+            {authorHistory.length > 0 ? (
+              <section>
+                <h2 className="mb-4 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近关注的作者</h2>
 
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {searchHistory.map((item) => (
-                <button
-                  key={item.workId}
-                  type="button"
-                  className="group text-left"
-                  onClick={() => openBookDetail(item.book, item.query)}
-                >
-                  <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]">
-                    <BookCover
-                      src={getCoverUrl(item.book.coverUrl)}
-                      title={item.book.title}
-                      className="rounded-2xl transition group-hover:scale-[1.02]"
-                      loading="lazy"
-                    />
+                {/* Mobile: horizontal scroll */}
+                <div className="flex gap-3 overflow-x-auto pb-2 sm:hidden">
+                  {authorHistory.map((author) => (
+                    <AuthorAvatarCard key={author.name} author={author} />
+                  ))}
+                </div>
+
+                {/* Desktop: stacked avatars with hover expand */}
+                <TooltipProvider delayDuration={150}>
+                  <div className="group/stack hidden items-center sm:flex">
+                    <div className="flex items-center">
+                      {authorHistory.map((author, index) => (
+                        <Tooltip key={author.name}>
+                          <TooltipTrigger asChild>
+                            <Link
+                              to={buildAuthorUrl(author)}
+                              className="relative block shrink-0 transition-[margin] duration-300 ease-out group-hover/stack:mr-2"
+                              style={{ marginLeft: index === 0 ? 0 : "-0.75rem", zIndex: authorHistory.length - index }}
+                            >
+                              <div className="size-10 overflow-hidden rounded-full border-2 border-[var(--background)] shadow-sm transition-transform duration-200 hover:scale-110">
+                                {author.photoUrl ? (
+                                  <img src={author.photoUrl} alt={author.name} className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-[var(--accent)] text-xs font-medium text-[var(--muted-foreground)]">
+                                    {author.name.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
+                                  </div>
+                                )}
+                              </div>
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent>{author.name}</TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
                   </div>
-                  <div className="mt-3 px-0.5">
-                    <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.book.title}</p>
-                    <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">
-                      {item.book.authorName?.slice(0, 2).join(" / ") || ""}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
+                </TooltipProvider>
+              </section>
+            ) : null}
+
+            {searchHistory.length > 0 ? (
+              <section>
+                <div className="mb-5 flex items-center justify-between">
+                  <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近翻阅</h2>
+                  <button
+                    type="button"
+                    className="text-xs text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
+                    onClick={() => {
+                      setSearchHistory([]);
+                      writeSearchHistory([]);
+                      setAuthorHistory([]);
+                      writeAuthorHistory([]);
+                    }}
+                  >
+                    清空
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {searchHistory.map((item) => (
+                    <button
+                      key={item.workId}
+                      type="button"
+                      className="group text-left"
+                      onClick={() => openBookDetail(item.book, item.query)}
+                    >
+                      <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]">
+                        <BookCover
+                          src={getCoverUrl(item.book.coverUrl)}
+                          title={item.book.title}
+                          className="rounded-2xl transition group-hover:scale-[1.02]"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="mt-3 px-0.5">
+                        <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.book.title}</p>
+                        <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">
+                          {item.book.authorName?.slice(0, 2).join(" / ") || ""}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </div>
         ) : (
           <div className="animate-fade-up py-12 text-center [animation-delay:160ms]">
             <p className="text-sm text-[var(--muted-foreground)]">搜索一本书，它会出现在这里</p>
@@ -412,5 +509,34 @@ export function SearchPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function buildAuthorUrl(author: RecentAuthorEntry) {
+  const params = new URLSearchParams();
+  if (author.photoUrl) params.set("photo", author.photoUrl);
+  if (author.enName) params.set("en", author.enName);
+  if (author.url) params.set("url", author.url);
+  const qs = params.toString();
+  return `/author/${encodeURIComponent(author.name)}${qs ? `?${qs}` : ""}`;
+}
+
+function AuthorAvatarCard({ author }: { author: RecentAuthorEntry }) {
+  return (
+    <Link
+      to={buildAuthorUrl(author)}
+      className="flex shrink-0 items-center gap-2.5 rounded-full border border-white/60 bg-white/50 py-1.5 pr-4 pl-1.5 transition hover:bg-white/70"
+    >
+      <div className="size-8 overflow-hidden rounded-full">
+        {author.photoUrl ? (
+          <img src={author.photoUrl} alt={author.name} className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-[var(--accent)] text-xs font-medium text-[var(--muted-foreground)]">
+            {author.name.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
+          </div>
+        )}
+      </div>
+      <span className="whitespace-nowrap text-sm text-[var(--foreground)]">{author.name}</span>
+    </Link>
   );
 }

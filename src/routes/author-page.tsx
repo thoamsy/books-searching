@@ -1,11 +1,44 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ExternalLink, LoaderCircle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowLeft, CalendarDays, ExternalLink, ListOrdered, LoaderCircle, Star } from "lucide-react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { BookCover } from "@/components/book-cover";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCoverUrl, normalizeWorkId } from "@/lib/books-api";
 import { searchBooksQueryOptions } from "@/lib/book-queries";
+import type { SearchBook } from "@/types/books";
+
+type SortMode = "default" | "year" | "rating";
+
+const SORT_KEY = "book-echo-author-sort";
+const SORT_LABELS: Record<SortMode, string> = {
+  default: "默认",
+  year: "出版时间",
+  rating: "评分"
+};
+const SORT_ORDER: SortMode[] = ["default", "year", "rating"];
+
+function readSortPreference(): SortMode {
+  if (typeof window === "undefined") return "default";
+  const value = window.localStorage.getItem(SORT_KEY);
+  return SORT_ORDER.includes(value as SortMode) ? (value as SortMode) : "default";
+}
+
+function writeSortPreference(mode: SortMode) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(SORT_KEY, mode);
+}
+
+function sortBooks(books: SearchBook[], mode: SortMode): SearchBook[] {
+  if (mode === "default") return books;
+  return [...books].sort((a, b) => {
+    if (mode === "year") {
+      return (b.firstPublishYear ?? 0) - (a.firstPublishYear ?? 0);
+    }
+    return (b.ratingsAverage ?? 0) - (a.ratingsAverage ?? 0);
+  });
+}
 
 export function AuthorPage() {
   const navigate = useNavigate();
@@ -15,13 +48,15 @@ export function AuthorPage() {
   const enName = searchParams.get("en") ?? undefined;
   const doubanUrl = searchParams.get("url") ?? undefined;
   const decodedName = decodeURIComponent(authorName ?? "");
+  const [sortMode, setSortMode] = useState<SortMode>(readSortPreference);
 
   const booksQuery = useQuery({
     ...searchBooksQueryOptions(decodedName),
     enabled: Boolean(decodedName)
   });
 
-  const books = booksQuery.data?.docs ?? [];
+  const rawBooks = booksQuery.data?.docs ?? [];
+  const books = useMemo(() => sortBooks(rawBooks, sortMode), [rawBooks, sortMode]);
   const isLoading = booksQuery.isPending;
   const error =
     booksQuery.error instanceof Error
@@ -90,12 +125,29 @@ export function AuthorPage() {
 
       {/* Books section */}
       <section className="animate-fade-up mx-auto mt-12 w-full max-w-[1240px] px-5 [animation-delay:160ms] sm:px-8 lg:px-10">
-        <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
-          相关作品
-          {books.length > 0 ? (
-            <span className="ml-2 text-[var(--muted-foreground)]/60">{books.length}</span>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
+            相关作品
+            {books.length > 0 ? (
+              <span className="ml-2 text-[var(--muted-foreground)]/60">{books.length}</span>
+            ) : null}
+          </h2>
+          {books.length > 1 ? (
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/50 px-3 py-1.5 text-xs text-[var(--muted-foreground)] transition hover:bg-white/70 hover:text-[var(--foreground)]"
+              onClick={() => {
+                const nextIndex = (SORT_ORDER.indexOf(sortMode) + 1) % SORT_ORDER.length;
+                const next = SORT_ORDER[nextIndex];
+                setSortMode(next);
+                writeSortPreference(next);
+              }}
+            >
+              {sortMode === "default" ? <ListOrdered className="size-3" /> : sortMode === "year" ? <CalendarDays className="size-3" /> : <Star className="size-3" />}
+              {SORT_LABELS[sortMode]}
+            </button>
           ) : null}
-        </h2>
+        </div>
 
         {error ? (
           <div className="mt-8 rounded-[28px] border border-white/70 bg-[var(--surface)] px-8 py-12 text-center">
