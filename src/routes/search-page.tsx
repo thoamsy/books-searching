@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { LoaderCircle, Search, User, X } from "lucide-react";
+import { Film, LoaderCircle, Search, Tv, User, X } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookCover } from "@/components/book-cover";
 import {
@@ -16,29 +16,42 @@ import {
 import { useDebounce } from "@/hooks/use-debounce";
 import { getCoverUrl, normalizeWorkId, suggestItemToSearchBook } from "@/lib/books-api";
 import { suggestionsQueryOptions } from "@/lib/book-queries";
+import { movieSuggestionsQueryOptions } from "@/lib/movie-queries";
+import { suggestItemToSearchMovie } from "@/lib/movies-api";
 import { cn } from "@/lib/utils";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { SearchBook, SuggestItem } from "@/types/books";
+import type { MovieSuggestItem, SearchMovie } from "@/types/movies";
 
 const SEARCH_HISTORY_KEY = "book-echo-search-history";
 const SEARCH_HISTORY_LIMIT = 10;
 const AUTHOR_HISTORY_KEY = "book-echo-author-history";
 const AUTHOR_HISTORY_LIMIT = 8;
+const MOVIE_HISTORY_KEY = "book-echo-movie-history";
+const MOVIE_HISTORY_LIMIT = 10;
 
 type SearchOption = {
   id: string;
   label: string;
   meta?: string;
   year?: string;
-  kind: "book" | "author";
+  kind: "book" | "author" | "movie" | "tv";
   book?: SearchBook;
-  suggest: SuggestItem;
+  movie?: SearchMovie;
+  suggest?: SuggestItem;
+  movieSuggest?: MovieSuggestItem;
 };
 
 interface RecentSearchEntry {
   workId: string;
   query: string;
   book: SearchBook;
+}
+
+interface RecentMovieEntry {
+  subjectId: string;
+  query: string;
+  movie: SearchMovie;
 }
 
 interface RecentAuthorEntry {
@@ -125,8 +138,38 @@ function pushAuthorHistory(items: RecentAuthorEntry[], entry: RecentAuthorEntry)
   return [entry, ...items.filter((item) => item.name !== entry.name)].slice(0, AUTHOR_HISTORY_LIMIT);
 }
 
+function readMovieHistory(): RecentMovieEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(MOVIE_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is RecentMovieEntry =>
+        item && typeof item === "object" && typeof item.subjectId === "string" && item.movie
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeMovieHistory(items: RecentMovieEntry[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(MOVIE_HISTORY_KEY, JSON.stringify(items));
+}
+
+function pushMovieHistory(items: RecentMovieEntry[], entry: RecentMovieEntry) {
+  if (!entry.query.trim()) return items;
+  return [entry, ...items.filter((item) => item.subjectId !== entry.subjectId)].slice(0, MOVIE_HISTORY_LIMIT);
+}
+
 function getSuggestionOptionId(item: SuggestItem, index: number) {
   return `${item.type}::${item.id}::${index}`;
+}
+
+function getMovieSuggestionOptionId(item: MovieSuggestItem, index: number) {
+  return `movie::${item.id}::${index}`;
 }
 
 const getOptionLabel = (item: SearchOption) => item.label;
@@ -140,11 +183,13 @@ export function SearchPage() {
   const [isComposing, setIsComposing] = useState(false);
   const [searchHistory, setSearchHistory] = useState(readSearchHistory);
   const [authorHistory, setAuthorHistory] = useState(readAuthorHistory);
+  const [movieHistory, setMovieHistory] = useState(readMovieHistory);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 260);
   const hasBookHistory = searchHistory.length > 0;
-  const hasHistory = hasBookHistory || authorHistory.length > 0;
+  const hasMovieHistory = movieHistory.length > 0;
+  const hasHistory = hasBookHistory || hasMovieHistory || authorHistory.length > 0;
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -155,11 +200,17 @@ export function SearchPage() {
     enabled: !isComposing && Boolean(debouncedQuery.trim())
   });
 
+  const movieSuggestionsQuery = useQuery({
+    ...movieSuggestionsQueryOptions(debouncedQuery),
+    enabled: !isComposing && Boolean(debouncedQuery.trim())
+  });
+
   const suggestItems = suggestionsQuery.data ?? [];
-  const isSuggesting = suggestionsQuery.isFetching;
+  const movieSuggestItems = movieSuggestionsQuery.data ?? [];
+  const isSuggesting = suggestionsQuery.isFetching || movieSuggestionsQuery.isFetching;
   const error =
-    suggestionsQuery.error instanceof Error
-      ? suggestionsQuery.error.message.includes("rate-limited")
+    (suggestionsQuery.error instanceof Error || movieSuggestionsQuery.error instanceof Error)
+      ? (suggestionsQuery.error?.message ?? movieSuggestionsQuery.error?.message ?? "").includes("rate-limited")
         ? "豆瓣当前触发了风控或频率限制，请稍后重试。"
         : "搜索服务暂时不可用，请稍后再试。"
       : "";
@@ -189,6 +240,31 @@ export function SearchPage() {
     return true;
   }
 
+  function saveRecentMovie(movie: SearchMovie, subjectId: string, searchQuery: string) {
+    setMovieHistory((current) => {
+      const next = pushMovieHistory(current, { subjectId, query: searchQuery, movie });
+      if (next !== current) {
+        writeMovieHistory(next);
+      }
+      return next;
+    });
+  }
+
+  function openMovieDetail(movie: SearchMovie, searchQuery: string) {
+    const subjectId = movie.key;
+    if (!subjectId) {
+      return false;
+    }
+
+    saveRecentMovie(movie, subjectId, searchQuery);
+    setIsOpen(false);
+    setIsComposing(false);
+    navigate(`/movie/${subjectId}?q=${encodeURIComponent(searchQuery)}`, {
+      state: { movie }
+    });
+    return true;
+  }
+
   function submitSearch(term: string) {
     const trimmed = term.trim();
 
@@ -203,18 +279,38 @@ export function SearchPage() {
       return;
     }
 
+    // Try book suggestions first
     const bookItems = suggestItems.filter((item) => item.type === "book");
-    const matched = bookItems.find((item) => item.title === trimmed) ?? bookItems[0];
-    if (!matched) {
-      setIsOpen(true);
+    const matchedBook = bookItems.find((item) => item.title === trimmed) ?? bookItems[0];
+
+    // Try movie suggestions
+    const matchedMovie = movieSuggestItems.find((item) => item.title === trimmed) ?? movieSuggestItems[0];
+
+    // Prefer exact title match
+    if (matchedBook?.title === trimmed) {
+      openBookDetail(suggestItemToSearchBook(matchedBook), matchedBook.title);
+      return;
+    }
+    if (matchedMovie?.title === trimmed) {
+      openMovieDetail(suggestItemToSearchMovie(matchedMovie), matchedMovie.title);
       return;
     }
 
-    openBookDetail(suggestItemToSearchBook(matched), matched.title);
+    // Fall back to first available
+    if (matchedBook) {
+      openBookDetail(suggestItemToSearchBook(matchedBook), matchedBook.title);
+      return;
+    }
+    if (matchedMovie) {
+      openMovieDetail(suggestItemToSearchMovie(matchedMovie), matchedMovie.title);
+      return;
+    }
+
+    setIsOpen(true);
   }
 
-  const suggestionOptions = suggestItems.map(
-    (item, index): SearchOption => ({
+  const bookSuggestionOptions: SearchOption[] = suggestItems.map(
+    (item, index) => ({
       id: getSuggestionOptionId(item, index),
       label: item.title,
       meta:
@@ -222,11 +318,25 @@ export function SearchPage() {
           ? item.enName ?? "作者"
           : item.authorName || "作者信息暂缺",
       year: item.year ?? "",
-      kind: item.type === "author" ? "author" : "book",
+      kind: item.type === "author" ? "author" as const : "book" as const,
       book: item.type === "book" ? suggestItemToSearchBook(item) : undefined,
       suggest: item
     })
   );
+
+  const movieSuggestionOptions: SearchOption[] = movieSuggestItems.map(
+    (item, index) => ({
+      id: getMovieSuggestionOptionId(item, index),
+      label: item.title,
+      meta: item.subTitle || (item.type === "tv" ? "电视剧" : "电影"),
+      year: item.year ?? "",
+      kind: item.episode ? "tv" as const : "movie" as const,
+      movie: suggestItemToSearchMovie(item),
+      movieSuggest: item
+    })
+  );
+
+  const suggestionOptions = [...bookSuggestionOptions, ...movieSuggestionOptions];
   const comboOpen = isOpen && query.trim().length > 0 && (suggestionOptions.length > 0 || isSuggesting);
 
   function handleInputValueChange(nextValue: string, details: { reason: string }) {
@@ -239,7 +349,7 @@ export function SearchPage() {
       return;
     }
 
-    if (option.kind === "author") {
+    if (option.kind === "author" && option.suggest) {
       const entry: RecentAuthorEntry = {
         name: option.label,
         photoUrl: option.suggest.coverUrl,
@@ -254,6 +364,12 @@ export function SearchPage() {
       setIsOpen(false);
       setIsComposing(false);
       navigate(buildAuthorUrl(entry));
+      return;
+    }
+
+    if ((option.kind === "movie" || option.kind === "tv") && option.movie) {
+      setQuery(option.label);
+      openMovieDetail(option.movie, option.label);
       return;
     }
 
@@ -277,7 +393,7 @@ export function SearchPage() {
         <header className={cn("animate-fade-up", hasBookHistory ? "mb-10" : "mb-8 text-center")}>
           <p className="text-xs uppercase tracking-[0.4em] text-[var(--primary)]/70">Book Echo</p>
           <h1 className="mt-3 font-display text-4xl font-medium leading-tight sm:text-5xl">
-            找到你的<span className="text-[var(--primary)]">下一本书</span>
+            找到你的<span className="text-[var(--primary)]">下一本书或电影</span>
           </h1>
         </header>
 
@@ -297,8 +413,8 @@ export function SearchPage() {
               ref={inputRef}
               showTrigger={false}
               showClear={false}
-              aria-label="搜索书籍"
-              placeholder="搜索书名、作者……"
+              aria-label="搜索书籍和影视"
+              placeholder="搜索书名、电影、电视剧……"
               className="h-13 rounded-2xl border-white/60 bg-[var(--surface-elevated)] text-base font-medium shadow-[var(--shadow-warm-sm)] backdrop-blur-xl transition-[box-shadow,border-color] duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] has-[[data-slot=input-group-control]:focus-visible]:border-[var(--primary)]/25 has-[[data-slot=input-group-control]:focus-visible]:shadow-[var(--shadow-warm-md)] has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&_input]:pl-11 placeholder:text-[var(--muted-foreground)]/60"
               onFocus={() => setIsOpen(true)}
               onCompositionStart={() => setIsComposing(true)}
@@ -352,7 +468,7 @@ export function SearchPage() {
                 ) : null}
               </ComboboxGroup>
 
-              <ComboboxEmpty className="px-5 py-3 text-sm">没有找到相关书籍</ComboboxEmpty>
+              <ComboboxEmpty className="px-5 py-3 text-sm">没有找到相关结果</ComboboxEmpty>
 
               <ComboboxList>
                 {(item: SearchOption) => (
@@ -364,15 +480,25 @@ export function SearchPage() {
                     <div className="flex min-w-0 items-center gap-3.5">
                       {item.kind === "author" ? (
                         <div className="flex h-14 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/60 bg-white/50">
-                          {item.suggest.coverUrl ? (
+                          {item.suggest?.coverUrl ? (
                             <img src={item.suggest.coverUrl} alt={item.label} className="h-full w-full rounded-lg object-cover" loading="lazy" />
                           ) : (
                             <User className="size-5 text-[var(--muted-foreground)]" />
                           )}
                         </div>
+                      ) : (item.kind === "movie" || item.kind === "tv") ? (
+                        <div className="h-14 w-10 shrink-0 overflow-hidden rounded-lg border border-white/60 bg-white/50">
+                          {item.movieSuggest?.coverUrl ? (
+                            <img src={item.movieSuggest.coverUrl} alt={item.label} className="h-full w-full rounded-lg object-cover" loading="lazy" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center">
+                              {item.kind === "tv" ? <Tv className="size-5 text-[var(--muted-foreground)]" /> : <Film className="size-5 text-[var(--muted-foreground)]" />}
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <div className="h-14 w-10 shrink-0 overflow-hidden rounded-lg border border-white/60 bg-white/50">
-                          <BookCover src={getCoverUrl(item.suggest.coverUrl)} title={item.label} className="rounded-lg" loading="lazy" />
+                          <BookCover src={getCoverUrl(item.suggest?.coverUrl)} title={item.label} className="rounded-lg" loading="lazy" />
                         </div>
                       )}
                       <div className="min-w-0">
@@ -382,6 +508,10 @@ export function SearchPage() {
                     </div>
                     {item.kind === "author" ? (
                       <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">作者</span>
+                    ) : (item.kind === "movie" || item.kind === "tv") ? (
+                      <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">
+                        {item.kind === "tv" ? "电视剧" : "电影"}{item.year ? ` · ${item.year}` : ""}
+                      </span>
                     ) : item.year ? (
                       <span className="shrink-0 text-xs text-[var(--muted-foreground)]">{item.year}</span>
                     ) : null}
@@ -450,6 +580,43 @@ export function SearchPage() {
               </section>
             ) : null}
 
+            {movieHistory.length > 0 ? (
+              <section>
+                <h2 className="mb-5 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近观影</h2>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {movieHistory.map((item) => (
+                    <button
+                      key={item.subjectId}
+                      type="button"
+                      className="group text-left"
+                      onClick={() => openMovieDetail(item.movie, item.query)}
+                    >
+                      <div className="aspect-[2/3] overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]">
+                        {item.movie.coverUrl ? (
+                          <img
+                            src={item.movie.coverUrl}
+                            alt={item.movie.title}
+                            className="h-full w-full rounded-2xl object-cover transition group-hover:scale-[1.02]"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center rounded-2xl bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(231,211,185,0.94))]">
+                            <Film className="size-10 text-[var(--muted-foreground)]" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-3 px-0.5">
+                        <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.movie.title}</p>
+                        <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">
+                          {item.movie.director?.slice(0, 2).join(" / ") || item.movie.year || ""}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             {searchHistory.length > 0 ? (
               <section>
                 <div className="mb-5 flex items-center justify-between">
@@ -462,6 +629,8 @@ export function SearchPage() {
                       writeSearchHistory([]);
                       setAuthorHistory([]);
                       writeAuthorHistory([]);
+                      setMovieHistory([]);
+                      writeMovieHistory([]);
                     }}
                   >
                     清空
