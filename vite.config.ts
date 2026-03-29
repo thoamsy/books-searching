@@ -76,7 +76,7 @@ export default defineConfig({
         name: "Book Echo",
         short_name: "Book Echo",
         description: "Search books, authors, and editions in a clean PWA.",
-        theme_color: "#c96f45",
+        theme_color: "#f6efe5",
         background_color: "#f6efe5",
         display: "standalone",
         start_url: "/",
