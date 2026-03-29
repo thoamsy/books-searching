@@ -58,6 +58,10 @@ describe("movies-api integration", () => {
       expect(detail.genre).toBeInstanceOf(Array);
       expect(detail.ratingsAverage).toBeGreaterThan(0);
       expect(detail.infoLink).toContain("1292052");
+
+      // New Frodo fields
+      expect(detail.honorInfos).toBeInstanceOf(Array);
+      expect(detail.coverUrl).toBeTruthy();
     });
 
     it("throws on non-existent subject id", async () => {

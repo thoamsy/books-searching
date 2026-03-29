@@ -46,16 +46,21 @@ describe("books-api integration", () => {
 
   describe("getBookDetail", () => {
     it("returns book detail for a known subject id", async () => {
-      // 活着 by 余华 - a well-known book on Douban
+      // 活着 by 余华 - a well-known book on Douban (via Frodo JSON API)
       const detail = await getBookDetail("4913064");
 
-      expect(detail).toHaveProperty("key", "4913064");
-      expect(detail).toHaveProperty("title");
+      expect(detail.key).toBe("4913064");
       expect(detail.title).toBeTruthy();
-      expect(detail).toHaveProperty("authors");
-      expect(detail).toHaveProperty("description");
-      expect(detail).toHaveProperty("infoLink");
+      expect(detail.authors).toBeInstanceOf(Array);
+      expect(detail.authors!.length).toBeGreaterThan(0);
+      expect(detail.description).toBeTruthy();
       expect(detail.infoLink).toContain("4913064");
+
+      // New Frodo fields
+      expect(detail.honorInfos).toBeInstanceOf(Array);
+      expect(detail.subjectCollections).toBeInstanceOf(Array);
+      expect(detail.translator).toBeInstanceOf(Array);
+      expect(typeof detail.catalog === "string" || detail.catalog === undefined).toBe(true);
     });
 
     it("throws on non-existent subject id", async () => {
