@@ -49,19 +49,18 @@ export function BookDetailPage() {
       </main>
     );
   }
-  const errorMessage =
-    detailQuery.error instanceof Error
-      ? detailQuery.error.message.includes("rate-limited")
-        ? "豆瓣详情页当前触发了风控或频率限制，请稍后重试。"
-        : "书籍详情获取失败，请稍后重试。"
-      : "";
+  const errorMessage = detailQuery.error
+    ? detailQuery.error instanceof Error && detailQuery.error.message.includes("rate-limited")
+      ? "豆瓣详情页当前触发了风控或频率限制，请稍后重试。"
+      : "书籍详情获取失败，请稍后重试。"
+    : "";
 
   return (
     <main className="min-h-screen bg-[var(--background)] pb-16 text-[var(--foreground)]">
       <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-6 sm:px-8 lg:px-10">
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")}
           className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/65 px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
         >
           <ArrowLeft className="size-4" />
@@ -150,7 +149,7 @@ export function BookDetailPage() {
           </div>
 
           {/* Mobile: content panels below the hero */}
-          <div className="animate-fade-up mt-8 space-y-8 [animation-delay:160ms] lg:hidden">
+          <div className="animate-fade-up mt-10 space-y-8 [animation-delay:160ms] lg:hidden">
             <div className="grid gap-8">
               {detailQuery.isPending ? (
                 <DescriptionPanelSkeleton />
@@ -195,33 +194,35 @@ function DetailHeroPanel({
   bookDetail: BookDetail;
   fallbackBook?: SearchBook;
 }) {
+  const authors = bookDetail.authors?.length
+    ? bookDetail.authors
+    : fallbackBook?.authorName ?? [];
+
   return (
     <div>
       <p className="text-sm uppercase tracking-[0.28em] text-[var(--muted-foreground)]">书籍详情</p>
-      <h1 className="mt-3 max-w-4xl font-display text-5xl leading-none sm:text-6xl">
+      <h1 className="mt-3 max-w-4xl font-display text-4xl font-medium leading-none sm:text-5xl lg:text-6xl">
         {bookDetail?.title ?? fallbackBook?.title ?? "未知书名"}
       </h1>
 
-      <div className="mt-5 flex flex-wrap gap-3">
-        {bookDetail.authors?.length ? (
-          bookDetail.authors.map((author) => (
-            <Link key={author} to={`/author/${encodeURIComponent(author)}`}>
-              <Badge className="gap-2 transition hover:border-[var(--primary)]/35 hover:bg-white">
-                <UserRound className="size-3.5" />
+      {authors.length > 0 && (
+        <div className="mt-5 flex flex-wrap items-center gap-2.5">
+          {authors.map((author) => (
+            <Link
+              key={author}
+              to={`/author/${encodeURIComponent(author)}`}
+              className="group/author inline-flex items-center gap-1.5 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-3 py-1 text-sm font-medium text-[var(--primary)] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/[0.1] hover:shadow-[0_4px_12px_color-mix(in_oklch,var(--primary)_12%,transparent)]"
+            >
+              <UserRound className="size-3.5" />
+              <span className="bg-[linear-gradient(var(--primary),var(--primary))] bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/author:bg-[length:100%_1.5px]">
                 {author}
-              </Badge>
+              </span>
             </Link>
-          ))
-        ) : fallbackBook?.authorName?.length ? (
-          fallbackBook.authorName.map((author) => (
-            <Link key={author} to={`/author/${encodeURIComponent(author)}`}>
-              <Badge className="gap-2 transition hover:border-[var(--primary)]/35 hover:bg-white">
-                <UserRound className="size-3.5" />
-                {author}
-              </Badge>
-            </Link>
-          ))
-        ) : null}
+          ))}
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2.5">
         {bookDetail.firstPublishDate || fallbackBook?.firstPublishYear ? (
           <Badge className="gap-2">
             <CalendarDays className="size-3.5" />
@@ -256,7 +257,7 @@ function DetailDescriptionPanel({
 
   return (
     <article className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-7 shadow-[var(--shadow-warm-md)]">
-      <h2 className="font-display text-3xl">内容简介</h2>
+      <h2 className="font-display text-2xl font-medium sm:text-3xl">内容简介</h2>
       <ExpandableDescription
         text={description || "当前来源没有提供简介信息。你可以返回搜索查看更多相关版本。"}
       />
@@ -274,9 +275,9 @@ function DetailSidebarPanel({
   const subjects = (bookDetail.subjects ?? fallbackBook?.subject ?? []).slice(0, 12);
 
   return (
-    <aside className="space-y-5">
+    <aside className="space-y-6">
       <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
-        <h3 className="font-display text-2xl">主题标签</h3>
+        <h3 className="font-display text-xl font-medium sm:text-2xl">主题标签</h3>
         <div className="mt-4 flex flex-wrap gap-2">
           {subjects.length ? (
             subjects.map((subject) => <Badge key={subject}>{subject}</Badge>)
@@ -287,7 +288,7 @@ function DetailSidebarPanel({
       </section>
 
       <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
-        <h3 className="font-display text-2xl">书目信息</h3>
+        <h3 className="font-display text-xl font-medium sm:text-2xl">书目信息</h3>
         <div className="mt-4 space-y-4">
           <InfoBlock label="出版社" value={bookDetail.publisher ?? fallbackBook?.publisher ?? "暂无出版社信息"} />
           <InfoBlock label="页数" value={bookDetail.pageCount ?? fallbackBook?.pageCount ?? "暂无页数信息"} />
@@ -319,7 +320,7 @@ function ExpandableDescription({ text }: { text: string }) {
   return (
     <div className="mt-4">
       <div className={`relative ${!expanded && shouldCollapse ? "max-h-[28rem] overflow-hidden" : ""}`}>
-        <p className="whitespace-pre-line text-base leading-8 text-[var(--muted-foreground)]">{text}</p>
+        <p className="whitespace-pre-line text-[15px] leading-7 text-[var(--muted-foreground)]">{text}</p>
         {!expanded && shouldCollapse ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.1)_28%,rgba(255,255,255,0.45)_72%,rgba(255,255,255,0.6))]">
             <div className="absolute inset-x-0 bottom-0 h-10 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.55))]" />
@@ -365,11 +366,23 @@ function MobileHeroPanel({
     <div>
       <h1 className="font-display text-3xl leading-tight sm:text-4xl">{title}</h1>
       {authors.length > 0 && (
-        <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-          {authors.slice(0, 3).join(" / ")}
-        </p>
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          {authors.slice(0, 3).map((author) => (
+            <Link
+              key={author}
+              to={`/author/${encodeURIComponent(author)}`}
+              className="group/author inline-flex items-center gap-1 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-2.5 py-0.5 text-xs font-medium text-[var(--primary)] transition-all hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/[0.1]"
+            >
+              <UserRound className="size-3" />
+              <span className="bg-[linear-gradient(var(--primary),var(--primary))] bg-[length:0%_1px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/author:bg-[length:100%_1px]">
+                {author}
+              </span>
+            </Link>
+          ))}
+        </div>
       )}
-      <div className="mt-3 flex flex-wrap gap-2">
+
+      <div className="mt-2.5 flex flex-wrap items-center gap-2">
         {bookDetail.firstPublishDate || fallbackBook?.firstPublishYear ? (
           <Badge className="gap-1.5 text-xs">
             <CalendarDays className="size-3" />
@@ -442,26 +455,32 @@ function HeroPanelSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
     <div>
       <p className="text-sm uppercase tracking-[0.28em] text-[var(--muted-foreground)]">书籍详情</p>
       {fallbackBook?.title ? (
-        <h1 className="mt-3 max-w-4xl font-display text-5xl leading-none sm:text-6xl">{fallbackBook.title}</h1>
+        <h1 className="mt-3 max-w-4xl font-display text-4xl font-medium leading-none sm:text-5xl lg:text-6xl">{fallbackBook.title}</h1>
       ) : (
         <div className="mt-4 space-y-3">
           <div className="h-14 w-full max-w-[34rem] animate-pulse rounded-full bg-white/70" />
           <div className="h-14 w-full max-w-[22rem] animate-pulse rounded-full bg-white/70" />
         </div>
       )}
-      <div className="mt-5 flex flex-wrap gap-3">
-        {fallbackBook?.authorName?.length ? (
-          <Badge className="gap-2">
-            <UserRound className="size-3.5" />
-            {fallbackBook.authorName.join(" / ")}
-          </Badge>
-        ) : (
-          <>
-            <div className="h-10 w-40 animate-pulse rounded-full bg-white/70" />
-            <div className="h-10 w-28 animate-pulse rounded-full bg-white/70" />
-            <div className="h-10 w-32 animate-pulse rounded-full bg-white/70" />
-          </>
-        )}
+      {fallbackBook?.authorName?.length ? (
+        <div className="mt-5 flex flex-wrap gap-2.5">
+          {fallbackBook.authorName.map((author) => (
+            <div key={author} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--primary)]/15 bg-[var(--primary)]/[0.04] px-3 py-1 text-sm text-[var(--primary)]/70">
+              <UserRound className="size-3.5" />
+              {author}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-5 flex flex-wrap gap-2.5">
+          <div className="h-8 w-32 animate-pulse rounded-full bg-[var(--primary)]/[0.06]" />
+          <div className="h-8 w-24 animate-pulse rounded-full bg-[var(--primary)]/[0.06]" />
+        </div>
+      )}
+      <div className="mt-3 flex flex-wrap gap-2.5">
+        <div className="h-7 w-20 animate-pulse rounded-full bg-white/70" />
+        <div className="h-7 w-16 animate-pulse rounded-full bg-white/70" />
+        <div className="h-7 w-14 animate-pulse rounded-full bg-white/70" />
       </div>
     </div>
   );
@@ -470,7 +489,7 @@ function HeroPanelSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
 function DescriptionPanelSkeleton() {
   return (
     <article className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-7 shadow-[var(--shadow-warm-md)]">
-      <h2 className="font-display text-3xl">内容简介</h2>
+      <h2 className="font-display text-2xl font-medium sm:text-3xl">内容简介</h2>
       <div className="mt-6 space-y-4">
         {Array.from({ length: 8 }).map((_, index) => (
           <div
@@ -487,9 +506,9 @@ function DescriptionPanelSkeleton() {
 
 function SidebarPanelSkeleton() {
   return (
-    <aside className="space-y-5">
+    <aside className="space-y-6">
       <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
-        <h3 className="font-display text-2xl">主题标签</h3>
+        <h3 className="font-display text-xl font-medium sm:text-2xl">主题标签</h3>
         <div className="mt-4 flex flex-wrap gap-2">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="h-8 w-20 animate-pulse rounded-full bg-white/70" />
@@ -498,7 +517,7 @@ function SidebarPanelSkeleton() {
       </section>
 
       <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
-        <h3 className="font-display text-2xl">书目信息</h3>
+        <h3 className="font-display text-xl font-medium sm:text-2xl">书目信息</h3>
         <div className="mt-4 space-y-5">
           {Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="space-y-2">

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ArrowLeft, CalendarDays, ExternalLink, ListOrdered, LoaderCircle, Star } from "lucide-react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { BookCover } from "@/components/book-cover";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ function sortBooks(books: SearchBook[], mode: SortMode): SearchBook[] {
 }
 
 export function AuthorPage() {
+  const location = useLocation();
   const navigate = useNavigate();
   const { authorName } = useParams();
   const [searchParams] = useSearchParams();
@@ -70,7 +71,7 @@ export function AuthorPage() {
       <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-6 sm:px-8 lg:px-10">
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")}
           className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/65 px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
         >
           <ArrowLeft className="size-4" />
@@ -100,7 +101,7 @@ export function AuthorPage() {
             <p className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
               作者
             </p>
-            <h1 className="mt-1 font-display text-3xl leading-tight sm:text-5xl">
+            <h1 className="mt-1 font-display text-3xl font-medium leading-tight sm:text-4xl lg:text-5xl">
               {decodedName}
             </h1>
             {enName ? (
@@ -161,7 +162,7 @@ export function AuthorPage() {
             </Button>
           </div>
         ) : isLoading ? (
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="animate-pulse">
                 <div className="aspect-[3/4] rounded-2xl bg-white/50" />
@@ -177,7 +178,7 @@ export function AuthorPage() {
             <p className="text-sm text-[var(--muted-foreground)]">未找到相关作品</p>
           </div>
         ) : (
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6">
             {books.map((book) => {
               const workId = normalizeWorkId(book.key);
               if (!workId) return null;

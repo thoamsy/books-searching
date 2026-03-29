@@ -17,15 +17,15 @@ function corsHeaders(origin: string | null) {
   };
 }
 
-async function proxyRequest(target: string, request: Request, extraHeaders?: Record<string, string>) {
+async function proxyRequest(target: string, request: Request, options?: { extraHeaders?: Record<string, string>; cacheTtl?: number }) {
   const upstream = await fetch(target, {
     headers: {
       ...DEFAULT_HEADERS,
-      ...extraHeaders
+      ...options?.extraHeaders
     },
     cf: {
       cacheEverything: true,
-      cacheTtl: 300
+      cacheTtl: options?.cacheTtl ?? 300
     }
   });
 
@@ -56,7 +56,7 @@ export default {
       const query = url.searchParams.get("q") ?? "";
       const target = new URL("https://book.douban.com/j/subject_suggest");
       target.searchParams.set("q", query);
-      return proxyRequest(target.toString(), request, { Referer: "https://book.douban.com/" });
+      return proxyRequest(target.toString(), request, { extraHeaders: { Referer: "https://book.douban.com/" } });
     }
 
     if (url.pathname === "/api/douban/search") {
@@ -64,13 +64,13 @@ export default {
       const target = new URL("https://www.douban.com/search");
       target.searchParams.set("cat", "1001");
       target.searchParams.set("q", query);
-      return proxyRequest(target.toString(), request);
+      return proxyRequest(target.toString(), request, { cacheTtl: 1800 });
     }
 
     const bookMatch = url.pathname.match(/^\/api\/douban\/book\/(\d+)\/?$/);
     if (bookMatch) {
       const subjectId = bookMatch[1];
-      return proxyRequest(`https://book.douban.com/subject/${subjectId}/`, request);
+      return proxyRequest(`https://book.douban.com/subject/${subjectId}/`, request, { cacheTtl: 86400 });
     }
 
     if (url.pathname === "/api/douban/image") {
@@ -79,7 +79,7 @@ export default {
         return new Response("Missing image url", { status: 400 });
       }
 
-      return proxyRequest(source, request);
+      return proxyRequest(source, request, { cacheTtl: 604800 });
     }
 
     return env.ASSETS.fetch(request);

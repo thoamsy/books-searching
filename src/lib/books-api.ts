@@ -1,4 +1,4 @@
-import type { AuthorDetail, BookDetail, SearchBook, SearchResponse, SuggestItem } from "@/types/books";
+import type { BookDetail, SearchBook, SearchResponse, SuggestItem } from "@/types/books";
 
 const API_BASE = (import.meta.env.VITE_DOUBAN_PROXY_BASE ?? "").replace(/\/$/, "");
 
@@ -279,13 +279,6 @@ export function suggestItemToSearchBook(item: SuggestItem): SearchBook {
     coverUrl: item.coverUrl,
     firstPublishYear: item.year ? Number(item.year) : undefined,
     externalUrl: item.url
-  };
-}
-
-export async function getAuthorDetail(authorKey: string): Promise<AuthorDetail> {
-  return {
-    key: authorKey,
-    name: authorKey
   };
 }
 

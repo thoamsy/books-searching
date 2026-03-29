@@ -142,6 +142,7 @@ export function SearchPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 260);
+  const hasHistory = searchHistory.length > 0 || authorHistory.length > 0;
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -258,14 +259,9 @@ export function SearchPage() {
         writeAuthorHistory(next);
         return next;
       });
-      const params = new URLSearchParams();
-      if (option.suggest.coverUrl) params.set("photo", option.suggest.coverUrl);
-      if (option.suggest.enName) params.set("en", option.suggest.enName);
-      if (option.suggest.url) params.set("url", option.suggest.url);
-      const qs = params.toString();
       setIsOpen(false);
       setIsComposing(false);
-      navigate(`/author/${encodeURIComponent(option.label)}${qs ? `?${qs}` : ""}`);
+      navigate(buildAuthorUrl(entry));
       return;
     }
 
@@ -276,18 +272,18 @@ export function SearchPage() {
   }
 
   return (
-    <main className={`bg-[var(--background)] text-[var(--foreground)] ${searchHistory.length > 0 ? "min-h-[100dvh]" : "h-[100dvh] overflow-hidden"}`}>
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,color-mix(in_oklch,var(--primary)_12%,transparent),transparent_30%)]" />
+    <main className={`bg-[var(--background)] text-[var(--foreground)] ${hasHistory ? "min-h-[100dvh]" : "flex h-[100dvh] flex-col overflow-hidden"}`}>
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top,color-mix(in_oklch,var(--primary)_10%,transparent)_0%,transparent_50%),radial-gradient(ellipse_at_bottom_right,color-mix(in_oklch,var(--primary)_6%,transparent)_0%,transparent_40%)]" />
 
-      <div className="relative mx-auto max-w-3xl px-5 pt-16 pb-20 sm:px-8 sm:pt-24">
-        <header className="animate-fade-up mb-10">
-          <p className="text-xs uppercase tracking-[0.4em] text-[var(--muted-foreground)]">Book Echo</p>
-          <h1 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">
-            找到你的<br />下一本书
+      <div className={`relative mx-auto w-full max-w-3xl px-5 pb-20 sm:px-8 ${hasHistory ? "pt-16 sm:pt-24" : "flex flex-1 flex-col justify-center pt-0"}`}>
+        <header className={`animate-fade-up ${hasHistory ? "mb-10" : "mb-8 text-center"}`}>
+          <p className="text-xs uppercase tracking-[0.4em] text-[var(--primary)]/70">Book Echo</p>
+          <h1 className="mt-3 font-display text-4xl font-medium leading-tight sm:text-5xl">
+            找到你的<span className="text-[var(--primary)]">下一本书</span>
           </h1>
         </header>
 
-        <div ref={searchBarRef} className="animate-fade-up relative mb-14 [animation-delay:80ms]">
+        <div ref={searchBarRef} className={`animate-fade-up relative [animation-delay:80ms] ${hasHistory ? "mb-14" : "mb-6"}`}>
           <Combobox<SearchOption>
             items={suggestionOptions}
             itemToStringLabel={getOptionLabel}
@@ -338,7 +334,7 @@ export function SearchPage() {
               ) : null}
             </ComboboxInput>
 
-            <Search className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <Search className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-[var(--primary)]/60" />
 
             <ComboboxContent
               anchor={searchBarRef}
@@ -411,8 +407,8 @@ export function SearchPage() {
           ) : null}
         </div>
 
-        {searchHistory.length > 0 || authorHistory.length > 0 ? (
-          <div className="animate-fade-up space-y-8 [animation-delay:160ms]">
+        {!hasHistory ? null : (
+          <div className="animate-fade-up space-y-10 [animation-delay:160ms]">
             {authorHistory.length > 0 ? (
               <section>
                 <h2 className="mb-4 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近关注的作者</h2>
@@ -501,10 +497,6 @@ export function SearchPage() {
                 </div>
               </section>
             ) : null}
-          </div>
-        ) : (
-          <div className="animate-fade-up py-12 text-center [animation-delay:160ms]">
-            <p className="text-sm text-[var(--muted-foreground)]">搜索一本书，它会出现在这里</p>
           </div>
         )}
       </div>

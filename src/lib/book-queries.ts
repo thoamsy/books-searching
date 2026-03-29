@@ -5,7 +5,8 @@ export function searchBooksQueryOptions(query: string) {
   return queryOptions({
     queryKey: ["books", "search", query],
     queryFn: () => searchBooks(query),
-    enabled: Boolean(query.trim())
+    enabled: Boolean(query.trim()),
+    staleTime: 5 * 60_000
   });
 }
 
