@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { DepthLink } from "@/components/depth-link";
 import { BookCover } from "@/components/book-cover";
 
 interface MediaCardProps {
@@ -23,7 +23,7 @@ export function MediaCard({
   state
 }: MediaCardProps) {
   return (
-    <Link to={to} state={state} className="group flex flex-col gap-2.5">
+    <DepthLink to={to} state={state} className="group flex flex-col gap-2.5">
       <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl bg-[var(--muted)] shadow-[var(--shadow-warm-sm)] transition-shadow group-hover:shadow-[var(--shadow-warm-md)]">
         <BookCover
           src={coverUrl}
@@ -53,6 +53,6 @@ export function MediaCard({
           </div>
         ) : null}
       </div>
-    </Link>
+    </DepthLink>
   );
 }
