@@ -15,8 +15,10 @@ import { ExpandableDescription, InfoBlock } from "@/components/expandable-descri
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCoverUrl } from "@/lib/books-api";
 import { bookDetailQueryOptions } from "@/lib/book-queries";
+import { cn } from "@/lib/utils";
 import type { BookDetail, SearchBook } from "@/types/books";
 
 interface LocationState {
@@ -37,7 +39,7 @@ function BookDetailSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
             {fallbackBook?.coverUrl ? (
               <BookCover src={fallbackBook.coverUrl} title={fallbackBook?.title ?? "封面"} className="rounded-[20px] opacity-70 saturate-75" />
             ) : (
-              <div className="h-full w-full animate-pulse rounded-[20px] bg-white/70" />
+              <Skeleton className="h-full w-full rounded-[20px] bg-white/70" />
             )}
           </div>
         </div>
@@ -443,8 +445,8 @@ function MobileHeroSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
         <h1 className="font-display text-3xl leading-tight sm:text-4xl">{fallbackBook.title}</h1>
       ) : (
         <div className="flex flex-col gap-2">
-          <div className="h-9 w-full max-w-[16rem] animate-pulse rounded-full bg-white/70" />
-          <div className="h-9 w-full max-w-[10rem] animate-pulse rounded-full bg-white/70" />
+          <Skeleton className="h-9 w-full max-w-[16rem] rounded-full bg-white/70" />
+          <Skeleton className="h-9 w-full max-w-[10rem] rounded-full bg-white/70" />
         </div>
       )}
       {fallbackBook?.authorName?.length ? (
@@ -452,11 +454,11 @@ function MobileHeroSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
           {fallbackBook.authorName.join(" / ")}
         </p>
       ) : (
-        <div className="mt-3 h-5 w-32 animate-pulse rounded-full bg-white/70" />
+        <Skeleton className="mt-3 h-5 w-32 rounded-full bg-white/70" />
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        <div className="h-7 w-20 animate-pulse rounded-full bg-white/70" />
-        <div className="h-7 w-16 animate-pulse rounded-full bg-white/70" />
+        <Skeleton className="h-7 w-20 rounded-full bg-white/70" />
+        <Skeleton className="h-7 w-16 rounded-full bg-white/70" />
       </div>
     </div>
   );
@@ -474,7 +476,7 @@ function CoverPanelSkeleton({
       {coverUrl ? (
         <BookCover src={coverUrl} title={title ?? "封面"} className="rounded-[28px] opacity-70 saturate-75" />
       ) : (
-        <div className="h-full w-full animate-pulse rounded-[28px] bg-white/70" />
+        <Skeleton className="h-full w-full rounded-[28px] bg-white/70" />
       )}
     </div>
   );
@@ -488,8 +490,8 @@ function HeroPanelSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
         <h1 className="mt-3 max-w-4xl font-display text-4xl font-medium leading-none sm:text-5xl lg:text-6xl">{fallbackBook.title}</h1>
       ) : (
         <div className="mt-4 flex flex-col gap-3">
-          <div className="h-14 w-full max-w-[34rem] animate-pulse rounded-full bg-white/70" />
-          <div className="h-14 w-full max-w-[22rem] animate-pulse rounded-full bg-white/70" />
+          <Skeleton className="h-14 w-full max-w-[34rem] rounded-full bg-white/70" />
+          <Skeleton className="h-14 w-full max-w-[22rem] rounded-full bg-white/70" />
         </div>
       )}
       {fallbackBook?.authorName?.length ? (
@@ -503,14 +505,14 @@ function HeroPanelSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
         </div>
       ) : (
         <div className="mt-5 flex flex-wrap gap-2.5">
-          <div className="h-8 w-32 animate-pulse rounded-full bg-[var(--primary)]/[0.06]" />
-          <div className="h-8 w-24 animate-pulse rounded-full bg-[var(--primary)]/[0.06]" />
+          <Skeleton className="h-8 w-32 rounded-full bg-[var(--primary)]/[0.06]" />
+          <Skeleton className="h-8 w-24 rounded-full bg-[var(--primary)]/[0.06]" />
         </div>
       )}
       <div className="mt-3 flex flex-wrap gap-2.5">
-        <div className="h-7 w-20 animate-pulse rounded-full bg-white/70" />
-        <div className="h-7 w-16 animate-pulse rounded-full bg-white/70" />
-        <div className="h-7 w-14 animate-pulse rounded-full bg-white/70" />
+        <Skeleton className="h-7 w-20 rounded-full bg-white/70" />
+        <Skeleton className="h-7 w-16 rounded-full bg-white/70" />
+        <Skeleton className="h-7 w-14 rounded-full bg-white/70" />
       </div>
     </div>
   );
@@ -522,11 +524,9 @@ function DescriptionPanelSkeleton() {
       <h2 className="font-display text-2xl font-medium sm:text-3xl">内容简介</h2>
       <div className="mt-6 flex flex-col gap-4">
         {Array.from({ length: 8 }).map((_, index) => (
-          <div
+          <Skeleton
             key={index}
-            className={`h-6 animate-pulse rounded-full bg-white/70 ${
-              index === 7 ? "w-2/3" : "w-full"
-            }`}
+            className={cn("h-6 rounded-full bg-white/70", index === 7 ? "w-2/3" : "w-full")}
           />
         ))}
       </div>
@@ -541,7 +541,7 @@ function SidebarPanelSkeleton() {
         <h3 className="font-display text-xl font-medium sm:text-2xl">主题标签</h3>
         <div className="mt-4 flex flex-wrap gap-2">
           {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-8 w-20 animate-pulse rounded-full bg-white/70" />
+            <Skeleton key={index} className="h-8 w-20 rounded-full bg-white/70" />
           ))}
         </div>
       </section>
@@ -551,11 +551,11 @@ function SidebarPanelSkeleton() {
         <div className="mt-4 flex flex-col gap-5">
           {Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="flex flex-col gap-2">
-              <div className="h-5 w-24 animate-pulse rounded-full bg-white/70" />
-              <div className="h-5 w-full animate-pulse rounded-full bg-white/70" />
+              <Skeleton className="h-5 w-24 rounded-full bg-white/70" />
+              <Skeleton className="h-5 w-full rounded-full bg-white/70" />
             </div>
           ))}
-          <div className="h-5 w-32 animate-pulse rounded-full bg-white/70" />
+          <Skeleton className="h-5 w-32 rounded-full bg-white/70" />
         </div>
       </section>
     </aside>
