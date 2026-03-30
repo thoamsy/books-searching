@@ -18,17 +18,11 @@ import { getCoverUrl, normalizeWorkId, suggestItemToSearchBook } from "@/lib/boo
 import { suggestionsQueryOptions } from "@/lib/book-queries";
 import { movieSuggestionsQueryOptions } from "@/lib/movie-queries";
 import { suggestItemToSearchMovie } from "@/lib/movies-api";
+import { createHistoryStore } from "@/lib/history-utils";
 import { cn } from "@/lib/utils";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { SearchBook, SuggestItem } from "@/types/books";
 import type { MovieSuggestItem, SearchMovie } from "@/types/movies";
-
-const SEARCH_HISTORY_KEY = "book-echo-search-history";
-const SEARCH_HISTORY_LIMIT = 10;
-const AUTHOR_HISTORY_KEY = "book-echo-author-history";
-const AUTHOR_HISTORY_LIMIT = 8;
-const MOVIE_HISTORY_KEY = "book-echo-movie-history";
-const MOVIE_HISTORY_LIMIT = 10;
 
 type SearchOption = {
   id: string;
@@ -61,108 +55,35 @@ interface RecentAuthorEntry {
   url?: string;
 }
 
-function readSearchHistory(): RecentSearchEntry[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
+const bookHistoryStore = createHistoryStore<RecentSearchEntry>({
+  key: "book-echo-search-history",
+  limit: 10,
+  validate: (item): item is RecentSearchEntry =>
+    item != null && typeof item === "object" &&
+    typeof (item as RecentSearchEntry).workId === "string" &&
+    typeof (item as RecentSearchEntry).query === "string" &&
+    Boolean((item as RecentSearchEntry).book?.title),
+  dedupKey: (item) => item.workId
+});
 
-  try {
-    const raw = window.localStorage.getItem(SEARCH_HISTORY_KEY);
-    if (!raw) {
-      return [];
-    }
+const authorHistoryStore = createHistoryStore<RecentAuthorEntry>({
+  key: "book-echo-author-history",
+  limit: 8,
+  validate: (item): item is RecentAuthorEntry =>
+    item != null && typeof item === "object" &&
+    typeof (item as RecentAuthorEntry).name === "string",
+  dedupKey: (item) => item.name
+});
 
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter((item): item is RecentSearchEntry => {
-      if (!item || typeof item !== "object") {
-        return false;
-      }
-
-      const candidate = item as Partial<RecentSearchEntry>;
-      return (
-        typeof candidate.workId === "string" &&
-        typeof candidate.query === "string" &&
-        Boolean(candidate.book && typeof candidate.book === "object" && typeof candidate.book.title === "string")
-      );
-    });
-  } catch {
-    return [];
-  }
-}
-
-function writeSearchHistory(items: RecentSearchEntry[]) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(items));
-}
-
-function pushSearchHistory(items: RecentSearchEntry[], entry: RecentSearchEntry) {
-  const trimmedQuery = entry.query.trim();
-  if (!trimmedQuery) {
-    return items;
-  }
-
-  const nextEntry = { ...entry, query: trimmedQuery };
-  return [nextEntry, ...items.filter((item) => item.workId !== nextEntry.workId)].slice(0, SEARCH_HISTORY_LIMIT);
-}
-
-function readAuthorHistory(): RecentAuthorEntry[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(AUTHOR_HISTORY_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item): item is RecentAuthorEntry =>
-        item && typeof item === "object" && typeof item.name === "string"
-    );
-  } catch {
-    return [];
-  }
-}
-
-function writeAuthorHistory(items: RecentAuthorEntry[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(AUTHOR_HISTORY_KEY, JSON.stringify(items));
-}
-
-function pushAuthorHistory(items: RecentAuthorEntry[], entry: RecentAuthorEntry) {
-  if (!entry.name.trim()) return items;
-  return [entry, ...items.filter((item) => item.name !== entry.name)].slice(0, AUTHOR_HISTORY_LIMIT);
-}
-
-function readMovieHistory(): RecentMovieEntry[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(MOVIE_HISTORY_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item): item is RecentMovieEntry =>
-        item && typeof item === "object" && typeof item.subjectId === "string" && item.movie
-    );
-  } catch {
-    return [];
-  }
-}
-
-function writeMovieHistory(items: RecentMovieEntry[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(MOVIE_HISTORY_KEY, JSON.stringify(items));
-}
-
-function pushMovieHistory(items: RecentMovieEntry[], entry: RecentMovieEntry) {
-  if (!entry.query.trim()) return items;
-  return [entry, ...items.filter((item) => item.subjectId !== entry.subjectId)].slice(0, MOVIE_HISTORY_LIMIT);
-}
+const movieHistoryStore = createHistoryStore<RecentMovieEntry>({
+  key: "book-echo-movie-history",
+  limit: 10,
+  validate: (item): item is RecentMovieEntry =>
+    item != null && typeof item === "object" &&
+    typeof (item as RecentMovieEntry).subjectId === "string" &&
+    Boolean((item as RecentMovieEntry).movie),
+  dedupKey: (item) => item.subjectId
+});
 
 function getSuggestionOptionId(item: SuggestItem, index: number) {
   return `${item.type}::${item.id}::${index}`;
@@ -181,9 +102,9 @@ export function SearchPage() {
   const [query, setQuery] = useState(initialQueryFromUrl);
   const [isOpen, setIsOpen] = useState(Boolean(initialQueryFromUrl));
   const [isComposing, setIsComposing] = useState(false);
-  const [searchHistory, setSearchHistory] = useState(readSearchHistory);
-  const [authorHistory, setAuthorHistory] = useState(readAuthorHistory);
-  const [movieHistory, setMovieHistory] = useState(readMovieHistory);
+  const [searchHistory, setSearchHistory] = useState(bookHistoryStore.read);
+  const [authorHistory, setAuthorHistory] = useState(authorHistoryStore.read);
+  const [movieHistory, setMovieHistory] = useState(movieHistoryStore.read);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 260);
@@ -216,11 +137,11 @@ export function SearchPage() {
       : "";
 
   function saveRecentBook(book: SearchBook, workId: string, searchQuery: string) {
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) return;
     setSearchHistory((current) => {
-      const next = pushSearchHistory(current, { workId, query: searchQuery, book });
-      if (next !== current) {
-        writeSearchHistory(next);
-      }
+      const next = bookHistoryStore.push(current, { workId, query: trimmedQuery, book });
+      bookHistoryStore.write(next);
       return next;
     });
   }
@@ -241,11 +162,11 @@ export function SearchPage() {
   }
 
   function saveRecentMovie(movie: SearchMovie, subjectId: string, searchQuery: string) {
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) return;
     setMovieHistory((current) => {
-      const next = pushMovieHistory(current, { subjectId, query: searchQuery, movie });
-      if (next !== current) {
-        writeMovieHistory(next);
-      }
+      const next = movieHistoryStore.push(current, { subjectId, query: trimmedQuery, movie });
+      movieHistoryStore.write(next);
       return next;
     });
   }
@@ -356,8 +277,8 @@ export function SearchPage() {
         url: option.suggest.url
       };
       setAuthorHistory((current) => {
-        const next = pushAuthorHistory(current, entry);
-        writeAuthorHistory(next);
+        const next = authorHistoryStore.push(current, entry);
+        authorHistoryStore.write(next);
         return next;
       });
       setIsOpen(false);
@@ -512,7 +433,9 @@ export function SearchPage() {
                         {item.kind === "tv" ? "电视剧" : "电影"}{item.year ? ` · ${item.year}` : ""}
                       </span>
                     ) : item.year ? (
-                      <span className="shrink-0 text-xs text-[var(--muted-foreground)]">{item.year}</span>
+                      <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">
+                        书籍 · {item.year}
+                      </span>
                     ) : null}
                   </ComboboxItem>
                 )}
@@ -625,11 +548,11 @@ export function SearchPage() {
                     className="text-xs text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
                     onClick={() => {
                       setSearchHistory([]);
-                      writeSearchHistory([]);
+                      bookHistoryStore.write([]);
                       setAuthorHistory([]);
-                      writeAuthorHistory([]);
+                      authorHistoryStore.write([]);
                       setMovieHistory([]);
-                      writeMovieHistory([]);
+                      movieHistoryStore.write([]);
                     }}
                   >
                     清空
