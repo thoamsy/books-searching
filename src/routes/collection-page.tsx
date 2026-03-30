@@ -14,7 +14,7 @@ function CollectionSkeleton() {
       <div className="space-y-4">
         <div className="h-10 w-64 animate-pulse rounded-2xl bg-[var(--muted)]" />
         <div className="h-6 w-40 animate-pulse rounded-xl bg-[var(--muted)]" />
-        <div className="@container mt-8 grid grid-cols-2 gap-4 @[480px]:grid-cols-3 @[768px]:grid-cols-4 @[1024px]:grid-cols-5">
+        <div className="@container mt-8 grid grid-cols-2 gap-4 @md:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5">
           {Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="h-72 animate-pulse rounded-2xl bg-[var(--muted)]" />
           ))}

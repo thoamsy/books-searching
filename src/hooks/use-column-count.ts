@@ -1,9 +1,9 @@
 import { useEffect, useState, type RefObject } from "react";
 
 const BREAKPOINTS: [number, number][] = [
-  [1024, 5],
-  [768, 4],
-  [480, 3],
+  [1024, 5], // @5xl
+  [768, 4],  // @3xl
+  [448, 3],  // @md
 ];
 const DEFAULT_COLUMNS = 2;
 
