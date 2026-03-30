@@ -475,7 +475,7 @@ export function SearchPage() {
         </div>
 
         {!hasHistory ? null : (
-          <div className="animate-fade-up space-y-10 [animation-delay:160ms]">
+          <div className="@container animate-fade-up space-y-10 [animation-delay:160ms]">
             {authorHistory.length > 0 ? (
               <section>
                 <h2 className="mb-4 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近关注的作者</h2>
@@ -522,37 +522,17 @@ export function SearchPage() {
             {movieHistory.length > 0 ? (
               <section>
                 <h2 className="mb-5 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近观影</h2>
-                <div className="@container grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4">
-                  {movieHistory.map((item) => (
-                    <button
-                      key={item.subjectId}
-                      type="button"
-                      className="group text-left"
-                      onClick={() => openMovieDetail(item.movie, item.query)}
-                    >
-                      <div className="aspect-[2/3] overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]">
-                        {item.movie.coverUrl ? (
-                          <img
-                            src={item.movie.coverUrl}
-                            alt={item.movie.title}
-                            className="h-full w-full rounded-2xl object-cover transition group-hover:scale-[1.02]"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center rounded-2xl bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(231,211,185,0.94))]">
-                            <Film className="size-10 text-[var(--muted-foreground)]" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-3 px-0.5">
-                        <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.movie.title}</p>
-                        <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">
-                          {item.movie.director?.slice(0, 2).join(" / ") || item.movie.year || ""}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                <RecentMediaGrid
+                  items={movieHistory.map((item) => ({
+                    key: item.subjectId,
+                    to: `/movie/${item.subjectId}?q=${encodeURIComponent(item.query)}`,
+                    state: { movie: item.movie },
+                    title: item.movie.title,
+                    subtitle: item.movie.director?.slice(0, 2).join(" / ") || item.movie.year || "",
+                    coverUrl: item.movie.coverUrl,
+                    aspect: "2/3" as const,
+                  }))}
+                />
               </section>
             ) : null}
 
@@ -576,31 +556,17 @@ export function SearchPage() {
                   </button>
                 </div>
 
-                <div className="@container grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4">
-                  {searchHistory.map((item) => (
-                    <button
-                      key={item.workId}
-                      type="button"
-                      className="group text-left"
-                      onClick={() => openBookDetail(item.book, item.query)}
-                    >
-                      <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]">
-                        <BookCover
-                          src={getCoverUrl(item.book.coverUrl)}
-                          title={item.book.title}
-                          className="rounded-2xl transition group-hover:scale-[1.02]"
-                          loading="lazy"
-                        />
-                      </div>
-                      <div className="mt-3 px-0.5">
-                        <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.book.title}</p>
-                        <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">
-                          {item.book.authorName?.slice(0, 2).join(" / ") || ""}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                <RecentMediaGrid
+                  items={searchHistory.map((item) => ({
+                    key: item.workId,
+                    to: `/book/${item.workId}?q=${encodeURIComponent(item.query)}`,
+                    state: { book: item.book },
+                    title: item.book.title,
+                    subtitle: item.book.authorName?.slice(0, 2).join(" / ") || "",
+                    coverUrl: getCoverUrl(item.book.coverUrl),
+                    aspect: "3/4" as const,
+                  }))}
+                />
               </section>
             ) : null}
           </div>
@@ -617,6 +583,62 @@ function buildAuthorUrl(author: RecentAuthorEntry) {
   if (author.url) params.set("url", author.url);
   const qs = params.toString();
   return `/author/${encodeURIComponent(author.name)}${qs ? `?${qs}` : ""}`;
+}
+
+interface RecentMediaItem {
+  key: string;
+  to: string;
+  state?: Record<string, unknown>;
+  title: string;
+  subtitle: string;
+  coverUrl?: string | null;
+  aspect: "2/3" | "3/4";
+}
+
+function RecentMediaGrid({ items }: { items: RecentMediaItem[] }) {
+  return (
+    <div className="grid grid-cols-3 gap-3 @2xl:grid-cols-4">
+      {items.map((item) => (
+        <DepthLink
+          key={item.key}
+          to={item.to}
+          state={item.state}
+          className="group"
+        >
+          <div
+            className="overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]"
+            style={{ aspectRatio: item.aspect }}
+          >
+            {item.coverUrl ? (
+              item.aspect === "3/4" ? (
+                <BookCover
+                  src={item.coverUrl}
+                  title={item.title}
+                  className="rounded-2xl transition group-hover:scale-[1.02]"
+                  loading="lazy"
+                />
+              ) : (
+                <img
+                  src={item.coverUrl}
+                  alt={item.title}
+                  className="h-full w-full rounded-2xl object-cover transition group-hover:scale-[1.02]"
+                  loading="lazy"
+                />
+              )
+            ) : (
+              <div className="flex h-full w-full items-center justify-center rounded-2xl bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(231,211,185,0.94))]">
+                <Film className="size-10 text-[var(--muted-foreground)]" />
+              </div>
+            )}
+          </div>
+          <div className="mt-2 px-0.5">
+            <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.title}</p>
+            <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">{item.subtitle}</p>
+          </div>
+        </DepthLink>
+      ))}
+    </div>
+  );
 }
 
 function AuthorAvatarCard({ author }: { author: RecentAuthorEntry }) {
