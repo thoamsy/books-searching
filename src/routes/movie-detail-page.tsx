@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Component, Suspense } from "react";
-import type { ErrorInfo, ReactNode } from "react";
+import { Suspense } from "react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { BookCover } from "@/components/book-cover";
+import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { movieDetailQueryOptions } from "@/lib/movie-queries";
@@ -23,40 +24,6 @@ import type { MovieDetail, SearchMovie } from "@/types/movies";
 
 interface LocationState {
   movie?: SearchMovie;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Error boundary                                                     */
-/* ------------------------------------------------------------------ */
-
-interface ErrorBoundaryProps {
-  fallback: (props: { error: Error; reset: () => void }) => ReactNode;
-  children: ReactNode;
-}
-
-interface ErrorBoundaryState {
-  error: Error | null;
-}
-
-class QueryErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { error: null };
-
-  static getDerivedStateFromError(error: Error) {
-    return { error };
-  }
-
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("MovieDetailPage error boundary:", error, info);
-  }
-
-  reset = () => this.setState({ error: null });
-
-  render() {
-    if (this.state.error) {
-      return this.props.fallback({ error: this.state.error, reset: this.reset });
-    }
-    return this.props.children;
-  }
 }
 
 /* ------------------------------------------------------------------ */

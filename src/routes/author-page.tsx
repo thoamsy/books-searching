@@ -1,9 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Component, Suspense, useMemo, useState } from "react";
-import type { ErrorInfo, ReactNode } from "react";
+import { Suspense, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { ArrowLeft, CalendarDays, ExternalLink, ListOrdered, Star } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { BookCover } from "@/components/book-cover";
+import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCoverUrl, normalizeWorkId } from "@/lib/books-api";
@@ -39,40 +40,6 @@ function sortBooks(books: SearchBook[], mode: SortMode): SearchBook[] {
     }
     return (b.ratingsAverage ?? 0) - (a.ratingsAverage ?? 0);
   });
-}
-
-/* ------------------------------------------------------------------ */
-/*  Error boundary                                                     */
-/* ------------------------------------------------------------------ */
-
-interface ErrorBoundaryProps {
-  fallback: (props: { error: Error; reset: () => void }) => ReactNode;
-  children: ReactNode;
-}
-
-interface ErrorBoundaryState {
-  error: Error | null;
-}
-
-class QueryErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { error: null };
-
-  static getDerivedStateFromError(error: Error) {
-    return { error };
-  }
-
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("AuthorPage error boundary:", error, info);
-  }
-
-  reset = () => this.setState({ error: null });
-
-  render() {
-    if (this.state.error) {
-      return this.props.fallback({ error: this.state.error, reset: this.reset });
-    }
-    return this.props.children;
-  }
 }
 
 /* ------------------------------------------------------------------ */
