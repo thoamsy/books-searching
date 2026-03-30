@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
@@ -7,10 +7,6 @@ import { MediaCard } from "@/components/media-card";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { useColumnCount } from "@/hooks/use-column-count";
 import { collectionItemsQueryOptions } from "@/lib/collection-queries";
-
-/* ------------------------------------------------------------------ */
-/*  Skeleton fallback                                                  */
-/* ------------------------------------------------------------------ */
 
 function CollectionSkeleton() {
   return (
@@ -28,26 +24,18 @@ function CollectionSkeleton() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Estimated row height                                               */
-/*  cover aspect-[2/3] + gap + text ≈ depends on card width           */
-/*  A rough estimate; the virtualizer will measure actual sizes.       */
-/* ------------------------------------------------------------------ */
-
 const ESTIMATED_ROW_HEIGHT = 340;
-const GAP_Y = 24; // gap-y-6 = 1.5rem = 24px
-
-/* ------------------------------------------------------------------ */
-/*  Content (suspends on initial load only)                            */
-/* ------------------------------------------------------------------ */
+const GAP_Y = 32; // gap-y-8 = 2rem
 
 function CollectionContent({ collectionId }: { collectionId: string }) {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useSuspenseInfiniteQuery(collectionItemsQueryOptions(collectionId));
 
-  const meta = data.pages[0].meta;
-  const total = data.pages[0].total;
-  const items = data.pages.flatMap((page) => page.items);
+  const { meta, total } = data.pages[0];
+  const items = useMemo(
+    () => data.pages.flatMap((page) => page.items),
+    [data.pages],
+  );
 
   const gridRef = useRef<HTMLDivElement>(null);
   const columnCount = useColumnCount(gridRef);
@@ -55,21 +43,22 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
 
   const virtualizer = useWindowVirtualizer({
     count: rowCount,
-    estimateSize: () => ESTIMATED_ROW_HEIGHT + GAP_Y,
+    estimateSize: () => ESTIMATED_ROW_HEIGHT,
     overscan: 3,
+    gap: GAP_Y,
     scrollMargin: gridRef.current?.offsetTop ?? 0,
   });
 
+  const virtualItems = virtualizer.getVirtualItems();
+  const lastVirtualIndex = virtualItems.at(-1)?.index ?? -1;
+
   // Auto-fetch next page when last row is near viewport
   useEffect(() => {
-    const lastRow = virtualizer.getVirtualItems().at(-1);
-    if (!lastRow) return;
-    if (lastRow.index >= rowCount - 1 && hasNextPage && !isFetchingNextPage) {
+    if (lastVirtualIndex >= rowCount - 1 && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [virtualizer.getVirtualItems(), rowCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [lastVirtualIndex, rowCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Re-measure when column count changes (breakpoint)
   useEffect(() => {
     virtualizer.measure();
   }, [columnCount, virtualizer]);
@@ -97,7 +86,7 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
         ref={gridRef}
         style={{ height: virtualizer.getTotalSize(), position: "relative" }}
       >
-        {virtualizer.getVirtualItems().map((virtualRow) => {
+        {virtualItems.map((virtualRow) => {
           const startIndex = virtualRow.index * columnCount;
 
           return (
@@ -114,10 +103,10 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
               }}
             >
               <div
-                className="grid gap-x-4 gap-y-6"
+                className="grid gap-x-4"
                 style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}
               >
-                {Array.from({ length: columnCount }).map((_, colIndex) => {
+                {Array.from({ length: columnCount }, (_, colIndex) => {
                   const itemIndex = startIndex + colIndex;
                   if (itemIndex >= items.length) return null;
                   const item = items[itemIndex];
@@ -147,10 +136,6 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
     </div>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/*  Page shell                                                         */
-/* ------------------------------------------------------------------ */
 
 export function CollectionPage() {
   const { collectionId } = useParams<{ collectionId: string }>();
