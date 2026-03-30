@@ -9,8 +9,8 @@ function RootLayout() {
   return (
     <>
       <Outlet />
-      <footer className="pb-6 pt-12 text-center text-xs text-[var(--muted-foreground)]/50">
-        <a href="https://github.com/thoamsy" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-[var(--muted-foreground)]">
+      <footer className="-mt-10 pb-3 text-center text-[10px] text-[var(--muted-foreground)]/30">
+        <a href="https://github.com/thoamsy" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-[var(--muted-foreground)]/60">
           @thoamsy
         </a>
       </footer>
