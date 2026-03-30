@@ -112,7 +112,7 @@ function BookDetailSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
         <CoverPanelSkeleton title={fallbackBook?.title} coverUrl={fallbackBook?.coverUrl} />
         <div className="space-y-10">
           <HeroPanelSkeleton fallbackBook={fallbackBook} />
-          <div className="grid gap-8 lg:grid-cols-[1.45fr_0.95fr]">
+          <div className="grid items-start gap-8 lg:grid-cols-[1.45fr_0.95fr]">
             <DescriptionPanelSkeleton />
             <SidebarPanelSkeleton />
           </div>
@@ -140,7 +140,7 @@ function BookDetailContent({ workId, fallbackBook }: { workId: string; fallbackB
   return (
     <section className="mx-auto mt-8 w-full max-w-[1240px] px-5 sm:px-8 lg:px-10">
       {/* Mobile: horizontal compact layout */}
-      <div className="animate-fade-up flex gap-5 [animation-delay:80ms] lg:hidden">
+      <div className="flex gap-5 lg:hidden">
         <div className="w-[120px] shrink-0">
           <div className="aspect-[3/4] overflow-hidden rounded-[20px] shadow-[var(--shadow-warm-sm)]">
             <BookCover
@@ -156,11 +156,11 @@ function BookDetailContent({ workId, fallbackBook }: { workId: string; fallbackB
       </div>
 
       {/* Desktop: original two-column layout */}
-      <div className="animate-fade-up hidden [animation-delay:80ms] lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
+      <div className="hidden lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
         <DetailCoverPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
         <div className="space-y-10">
           <DetailHeroPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
-          <div className="grid gap-8 lg:grid-cols-[1.45fr_0.95fr]">
+          <div className="grid items-start gap-8 lg:grid-cols-[1.45fr_0.95fr]">
             <DetailDescriptionPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
             <DetailSidebarPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
           </div>
@@ -168,7 +168,7 @@ function BookDetailContent({ workId, fallbackBook }: { workId: string; fallbackB
       </div>
 
       {/* Mobile: content panels below the hero */}
-      <div className="animate-fade-up mt-10 space-y-8 [animation-delay:160ms] lg:hidden">
+      <div className="mt-10 space-y-8 lg:hidden">
         <div className="grid gap-8">
           <DetailDescriptionPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
           <DetailSidebarPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />

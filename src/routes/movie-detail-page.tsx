@@ -142,7 +142,7 @@ function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; f
   return (
     <section className="mx-auto mt-8 w-full max-w-[1240px] px-5 sm:px-8 lg:px-10">
       {/* Mobile: horizontal compact layout */}
-      <div className="animate-fade-up flex gap-5 [animation-delay:80ms] lg:hidden">
+      <div className="flex gap-5 lg:hidden">
         <div className="w-[120px] shrink-0">
           <div className="aspect-[2/3] overflow-hidden rounded-[20px] shadow-[var(--shadow-warm-sm)]">
             <BookCover
@@ -158,7 +158,7 @@ function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; f
       </div>
 
       {/* Desktop: original two-column layout */}
-      <div className="animate-fade-up hidden [animation-delay:80ms] lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
+      <div className="hidden lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
         <DetailCoverPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
         <div className="space-y-10">
           <DetailHeroPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
@@ -170,7 +170,7 @@ function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; f
       </div>
 
       {/* Mobile: content panels below the hero */}
-      <div className="animate-fade-up mt-10 space-y-8 [animation-delay:160ms] lg:hidden">
+      <div className="mt-10 space-y-8 lg:hidden">
         <div className="grid gap-8">
           <DetailDescriptionPanel movieDetail={movieDetail} />
           <DetailSidebarPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
