@@ -62,13 +62,12 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
 
   // Auto-fetch next page when last row is near viewport
   useEffect(() => {
-    const virtualItems = virtualizer.getVirtualItems();
-    const lastRow = virtualItems[virtualItems.length - 1];
+    const lastRow = virtualizer.getVirtualItems().at(-1);
     if (!lastRow) return;
     if (lastRow.index >= rowCount - 1 && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [virtualizer.getVirtualItems(), rowCount, hasNextPage, isFetchingNextPage, fetchNextPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [virtualizer.getVirtualItems(), rowCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Re-measure when column count changes (breakpoint)
   useEffect(() => {
