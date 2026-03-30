@@ -24,11 +24,11 @@ export function MediaCard({
 }: MediaCardProps) {
   return (
     <DepthLink to={to} state={state} className="group flex flex-col gap-2.5">
-      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl bg-[var(--muted)] shadow-[var(--shadow-warm-sm)] transition-shadow group-hover:shadow-[var(--shadow-warm-md)]">
+      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-[var(--muted)] shadow-[var(--shadow-warm-sm)] transition-shadow group-hover:shadow-[var(--shadow-warm-md)]">
         <BookCover
           src={coverUrl}
           title={title}
-          className="rounded-2xl transition-transform group-hover:scale-105"
+          className="rounded-lg transition-transform group-hover:scale-105"
           loading="lazy"
         />
         {rank != null ? (

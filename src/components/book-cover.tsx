@@ -22,7 +22,7 @@ export function BookCover({ src, title, className, loading = "eager" }: BookCove
         src={src}
         alt=""
         loading={loading}
-        className={cn("h-full w-full rounded-[24px] object-cover", className)}
+        className={cn("h-full w-full rounded-lg object-cover", className)}
         onError={() => setImageFailed(true)}
       />
     );
@@ -31,7 +31,7 @@ export function BookCover({ src, title, className, loading = "eager" }: BookCove
   return (
     <div
       className={cn(
-        "flex h-full w-full items-center justify-center rounded-[24px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(231,211,185,0.94))] text-[var(--muted-foreground)]",
+        "flex h-full w-full items-center justify-center rounded-lg border border-[var(--border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(231,211,185,0.94))] text-[var(--muted-foreground)]",
         className
       )}
     >
