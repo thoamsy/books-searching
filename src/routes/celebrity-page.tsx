@@ -4,6 +4,7 @@ import { CalendarDays, ExternalLink, ListOrdered, Star } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { MediaCard } from "@/components/media-card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { celebrityDetailQueryOptions, celebrityWorksQueryOptions } from "@/lib/celebrity-queries";
 import type { CelebrityWork } from "@/types/movies";
@@ -94,11 +95,11 @@ function WorksGridSkeleton() {
       </div>
       <div className="mt-6 grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-5 @5xl:grid-cols-5 @5xl:gap-6">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="animate-pulse">
-            <div className="aspect-[2/3] rounded-lg bg-white/50" />
+          <div key={i}>
+            <Skeleton className="aspect-[2/3] rounded-lg bg-white/50" />
             <div className="mt-3 px-0.5">
-              <div className="h-4 w-3/4 rounded-full bg-white/50" />
-              <div className="mt-2 h-3 w-1/2 rounded-full bg-white/50" />
+              <Skeleton className="h-4 w-3/4 rounded-full bg-white/50" />
+              <Skeleton className="mt-2 h-3 w-1/2 rounded-full bg-white/50" />
             </div>
           </div>
         ))}
@@ -178,11 +179,11 @@ function CelebrityHero({ celebrityId }: { celebrityId: string }) {
 function HeroSkeleton() {
   return (
     <div className="flex items-start gap-6 sm:items-center sm:gap-8">
-      <div className="size-20 shrink-0 animate-pulse rounded-full bg-white/50 sm:size-28" />
+      <Skeleton className="size-20 shrink-0 rounded-full bg-white/50 sm:size-28" />
       <div className="min-w-0 flex flex-col gap-3">
-        <div className="h-4 w-16 animate-pulse rounded-full bg-white/50" />
-        <div className="h-10 w-48 animate-pulse rounded-full bg-white/50" />
-        <div className="h-4 w-32 animate-pulse rounded-full bg-white/50" />
+        <Skeleton className="h-4 w-16 rounded-full bg-white/50" />
+        <Skeleton className="h-10 w-48 rounded-full bg-white/50" />
+        <Skeleton className="h-4 w-32 rounded-full bg-white/50" />
       </div>
     </div>
   );

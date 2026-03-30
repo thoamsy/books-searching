@@ -5,6 +5,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { MediaCard } from "@/components/media-card";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCoverUrl, normalizeWorkId } from "@/lib/books-api";
 import { searchBooksQueryOptions } from "@/lib/book-queries";
 import type { SearchBook } from "@/types/books";
@@ -54,11 +55,11 @@ function BooksGridSkeleton() {
       </div>
       <div className="mt-6 grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-5 @5xl:grid-cols-5 @5xl:gap-6">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="animate-pulse">
-            <div className="aspect-[3/4] rounded-lg bg-white/50" />
+          <div key={i}>
+            <Skeleton className="aspect-[3/4] rounded-lg bg-white/50" />
             <div className="mt-3 px-0.5">
-              <div className="h-4 w-3/4 rounded-full bg-white/50" />
-              <div className="mt-2 h-3 w-1/2 rounded-full bg-white/50" />
+              <Skeleton className="h-4 w-3/4 rounded-full bg-white/50" />
+              <Skeleton className="mt-2 h-3 w-1/2 rounded-full bg-white/50" />
             </div>
           </div>
         ))}

@@ -5,6 +5,7 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { DetailErrorFallback } from "@/components/detail-error-fallback";
 import { MediaCard } from "@/components/media-card";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useColumnCount } from "@/hooks/use-column-count";
 import { collectionItemsQueryOptions } from "@/lib/collection-queries";
 
@@ -12,11 +13,11 @@ function CollectionSkeleton() {
   return (
     <div className="@container animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-4 sm:px-8 lg:px-10">
       <div className="flex flex-col gap-4">
-        <div className="h-10 w-64 animate-pulse rounded-2xl bg-[var(--muted)]" />
-        <div className="h-6 w-40 animate-pulse rounded-xl bg-[var(--muted)]" />
+        <Skeleton className="h-10 w-64 rounded-2xl" />
+        <Skeleton className="h-6 w-40 rounded-xl" />
         <div className="mt-8 grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5">
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="h-72 animate-pulse rounded-lg bg-[var(--muted)]" />
+            <Skeleton key={i} className="h-72 rounded-lg" />
           ))}
         </div>
       </div>
