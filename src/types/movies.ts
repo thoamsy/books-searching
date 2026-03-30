@@ -27,7 +27,7 @@ export interface MovieSearchResponse {
 }
 
 export interface MovieSuggestItem {
-  type: "movie" | "tv";
+  type: "movie" | "tv" | "celebrity";
   id: string;
   title: string;
   url: string;
@@ -61,4 +61,28 @@ export interface MovieDetail {
   infoLink?: string;
   honorInfos?: HonorInfo[];
   coverLargeUrl?: string;
+}
+
+export interface CelebrityDetail {
+  id: string;
+  name: string;
+  latinName?: string;
+  coverUrl?: string;
+  roles?: string;
+  gender?: string;
+  birthDate?: string;
+  birthPlace?: string;
+  imdbId?: string;
+  doubanUrl?: string;
+}
+
+export interface CelebrityWork {
+  id: string;
+  title: string;
+  coverUrl?: string;
+  year?: string;
+  type: "movie" | "tv";
+  ratingsAverage?: number;
+  roles: string[];
+  genres?: string[];
 }
