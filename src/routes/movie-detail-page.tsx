@@ -250,13 +250,16 @@ function DetailHeroPanel({
         <div className="mt-5 flex flex-wrap items-center gap-2.5">
           <span className="text-sm text-[var(--muted-foreground)]">导演</span>
           {directors.map((director) => (
-            <span
+            <Link
               key={director}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-3 py-1 text-sm font-medium text-[var(--primary)]"
+              to={`/?q=${encodeURIComponent(director)}`}
+              className="group/person inline-flex items-center gap-1.5 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-3 py-1 text-sm font-medium text-[var(--primary)] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/[0.1] hover:shadow-[0_4px_12px_color-mix(in_oklch,var(--primary)_12%,transparent)]"
             >
               <Clapperboard className="size-3.5" />
-              {director}
-            </span>
+              <span className="bg-[linear-gradient(var(--primary),var(--primary))] bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1.5px]">
+                {director}
+              </span>
+            </Link>
           ))}
         </div>
       )}
@@ -265,13 +268,16 @@ function DetailHeroPanel({
         <div className="mt-3 flex flex-wrap items-center gap-2.5">
           <span className="text-sm text-[var(--muted-foreground)]">主演</span>
           {cast.slice(0, 5).map((actor) => (
-            <span
+            <Link
               key={actor}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/40 px-3 py-1 text-sm text-[var(--foreground)]"
+              to={`/?q=${encodeURIComponent(actor)}`}
+              className="group/person inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/40 px-3 py-1 text-sm text-[var(--foreground)] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-white/80 hover:bg-white/60 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
             >
               <Users className="size-3.5" />
-              {actor}
-            </span>
+              <span className="bg-[linear-gradient(var(--foreground),var(--foreground))] bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1.5px]">
+                {actor}
+              </span>
+            </Link>
           ))}
         </div>
       )}
@@ -461,7 +467,14 @@ function MobileHeroPanel({
       <h1 className="font-display text-3xl leading-tight sm:text-4xl">{title}</h1>
       {directors.length > 0 && (
         <p className="mt-1.5 text-sm text-[var(--muted-foreground)]">
-          导演: {directors.slice(0, 2).join(" / ")}
+          导演: {directors.slice(0, 2).map((director, i) => (
+            <span key={director}>
+              {i > 0 && " / "}
+              <Link to={`/?q=${encodeURIComponent(director)}`} className="underline decoration-[var(--border)] underline-offset-4 transition hover:decoration-[var(--foreground)] hover:text-[var(--foreground)]">
+                {director}
+              </Link>
+            </span>
+          ))}
         </p>
       )}
 
