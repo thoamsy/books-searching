@@ -1,21 +1,19 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
-import type { ReactNode } from "react";
-import { useState } from "react";
 import {
-  ArrowLeft,
   CalendarDays,
   Clapperboard,
   Clock,
   ExternalLink,
   Film,
-  RotateCw,
   Star,
   Tv,
   Users
 } from "lucide-react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { BookCover } from "@/components/book-cover";
+import { DetailErrorFallback } from "@/components/detail-error-fallback";
+import { ExpandableDescription, InfoBlock } from "@/components/expandable-description";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,33 +22,6 @@ import type { CreditPerson, MovieDetail, SearchMovie } from "@/types/movies";
 
 interface LocationState {
   movie?: SearchMovie;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Error fallback                                                     */
-/* ------------------------------------------------------------------ */
-
-function DetailErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
-  const message = error.message.includes("rate-limited")
-    ? "豆瓣详情页当前触发了风控或频率限制，请稍后重试。"
-    : "影片详情获取失败，请稍后重试。";
-
-  return (
-    <div className="mx-auto mt-10 w-full max-w-[1240px] px-5 text-center sm:px-8 lg:px-10">
-      <div className="rounded-[32px] border border-white/70 bg-[var(--surface)] px-8 py-12">
-        <p className="text-lg text-[var(--destructive)]">{message}</p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Button variant="outline" onClick={reset}>
-            <RotateCw className="size-4" />
-            重试
-          </Button>
-          <Link to="/">
-            <Button variant="ghost">返回搜索</Button>
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -89,8 +60,8 @@ function MovieDetailSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie })
       </div>
 
       {/* Mobile content skeleton */}
-      <div className="animate-fade-up mt-10 space-y-8 [animation-delay:160ms] lg:hidden">
-        <div className="grid gap-8">
+      <div className="animate-fade-up mt-6 space-y-6 [animation-delay:160ms] lg:hidden">
+        <div className="grid gap-6">
           <DescriptionPanelSkeleton />
           <SidebarPanelSkeleton />
         </div>
@@ -137,8 +108,8 @@ function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; f
       </div>
 
       {/* Mobile: content panels below the hero */}
-      <div className="mt-10 space-y-8 lg:hidden">
-        <div className="grid gap-8">
+      <div className="mt-6 space-y-6 lg:hidden">
+        <div className="grid gap-6">
           <DetailDescriptionPanel movieDetail={movieDetail} />
           <DetailSidebarPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
         </div>
@@ -153,14 +124,11 @@ function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; f
 
 export function MovieDetailPage() {
   const { subjectId } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const state = (location.state ?? {}) as LocationState;
-  const fallbackMovie = state.movie;
+  const fallbackMovie = (useLocation().state as LocationState | null)?.movie;
 
   if (!subjectId) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--background)] px-6 text-center">
+      <div className="flex flex-1 items-center justify-center px-6 text-center">
         <div>
           <p className="text-lg text-[var(--foreground)]">未找到该影片，可能链接已失效。</p>
           <Link to="/">
@@ -169,33 +137,20 @@ export function MovieDetailPage() {
             </Button>
           </Link>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)] pb-16 text-[var(--foreground)]">
-      <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-6 sm:px-8 lg:px-10">
-        <button
-          type="button"
-          onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")}
-          className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/65 px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
-        >
-          <ArrowLeft className="size-4" />
-          返回
-        </button>
-      </div>
-
-      <QueryErrorBoundary
-        fallback={({ error, reset }) => (
-          <DetailErrorFallback error={error} reset={reset} />
-        )}
-      >
-        <Suspense fallback={<MovieDetailSkeleton fallbackMovie={fallbackMovie} />}>
-          <MovieDetailContent subjectId={subjectId} fallbackMovie={fallbackMovie} />
-        </Suspense>
-      </QueryErrorBoundary>
-    </main>
+    <QueryErrorBoundary
+      fallback={({ error, reset }) => (
+        <DetailErrorFallback error={error} reset={reset} entityLabel="影片详情" />
+      )}
+    >
+      <Suspense fallback={<MovieDetailSkeleton fallbackMovie={fallbackMovie} />}>
+        <MovieDetailContent subjectId={subjectId} fallbackMovie={fallbackMovie} />
+      </Suspense>
+    </QueryErrorBoundary>
   );
 }
 
@@ -414,43 +369,6 @@ function DetailSidebarPanel({
 /*  Shared helpers                                                     */
 /* ------------------------------------------------------------------ */
 
-function ExpandableDescription({ text }: { text: string }) {
-  const shouldCollapse = text.length > 420;
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div className="mt-4">
-      <div className={`relative ${!expanded && shouldCollapse ? "max-h-[28rem] overflow-hidden" : ""}`}>
-        <p className="whitespace-pre-line text-[15px] leading-7 text-[var(--muted-foreground)]">{text}</p>
-        {!expanded && shouldCollapse ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.1)_28%,rgba(255,255,255,0.45)_72%,rgba(255,255,255,0.6))]">
-            <div className="absolute inset-x-0 bottom-0 h-10 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.55))]" />
-          </div>
-        ) : null}
-      </div>
-
-      {shouldCollapse ? (
-        <button
-          type="button"
-          className="mt-5 inline-flex rounded-full border border-[var(--border)] bg-white/75 px-4 py-2 text-sm font-medium text-[var(--foreground)] transition hover:border-[var(--primary)]/35 hover:bg-white"
-          onClick={() => setExpanded((current) => !current)}
-        >
-          {expanded ? "收起" : "展开全文"}
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function InfoBlock({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div>
-      <p className="text-base font-semibold">{label}</p>
-      <p className="mt-1 text-sm leading-7 text-[var(--muted-foreground)]">{value}</p>
-    </div>
-  );
-}
-
 function MobileHeroPanel({
   movieDetail,
   fallbackMovie
@@ -462,22 +380,49 @@ function MobileHeroPanel({
   const directors = movieDetail.director?.length
     ? movieDetail.director
     : (fallbackMovie?.director?.map((name): CreditPerson => ({ name })) ?? []);
+  const cast = movieDetail.cast?.length
+    ? movieDetail.cast
+    : (fallbackMovie?.cast?.map((name): CreditPerson => ({ name })) ?? []);
   const isTV = movieDetail.type === "tv";
 
   return (
     <div>
       <h1 className="font-display text-3xl leading-tight sm:text-4xl">{title}</h1>
+
       {directors.length > 0 && (
-        <p className="mt-1.5 text-sm text-[var(--muted-foreground)]">
-          导演: {directors.slice(0, 2).map((person, i) => (
-            <span key={person.name}>
-              {i > 0 && " / "}
-              <Link to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`} className="underline decoration-[var(--border)] underline-offset-4 transition hover:decoration-[var(--foreground)] hover:text-[var(--foreground)]">
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-[var(--muted-foreground)]">导演</span>
+          {directors.slice(0, 2).map((person) => (
+            <Link
+              key={person.name}
+              to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
+              className="group/person inline-flex items-center gap-1 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-2.5 py-0.5 text-xs font-medium text-[var(--primary)] transition-all hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/[0.1]"
+            >
+              <Clapperboard className="size-3" />
+              <span className="bg-[linear-gradient(var(--primary),var(--primary))] bg-[length:0%_1px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1px]">
                 {person.name}
-              </Link>
-            </span>
+              </span>
+            </Link>
           ))}
-        </p>
+        </div>
+      )}
+
+      {cast.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-[var(--muted-foreground)]">主演</span>
+          {cast.slice(0, 3).map((person) => (
+            <Link
+              key={person.name}
+              to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
+              className="group/person inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/40 px-2.5 py-0.5 text-xs text-[var(--foreground)] transition-all hover:border-white/80 hover:bg-white/60"
+            >
+              <Users className="size-3" />
+              <span className="bg-[linear-gradient(var(--foreground),var(--foreground))] bg-[length:0%_1px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1px]">
+                {person.name}
+              </span>
+            </Link>
+          ))}
+        </div>
       )}
 
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -528,9 +473,14 @@ function MobileHeroSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) 
         </div>
       )}
       {fallbackMovie?.director?.length ? (
-        <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-          导演: {fallbackMovie.director.join(" / ")}
-        </p>
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-[var(--muted-foreground)]">导演</span>
+          {fallbackMovie.director.slice(0, 2).map((name) => (
+            <span key={name} className="inline-flex items-center gap-1 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-2.5 py-0.5 text-xs font-medium text-[var(--primary)]">
+              {name}
+            </span>
+          ))}
+        </div>
       ) : (
         <div className="mt-3 h-5 w-32 animate-pulse rounded-full bg-white/70" />
       )}

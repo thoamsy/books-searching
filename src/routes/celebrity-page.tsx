@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useMemo, useState } from "react";
-import { ArrowLeft, CalendarDays, ExternalLink, ListOrdered, Star } from "lucide-react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { CalendarDays, ExternalLink, ListOrdered, Star } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
 import { BookCover } from "@/components/book-cover";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -210,35 +210,22 @@ function HeroSkeleton() {
 
 export function CelebrityPage() {
   const { celebrityId } = useParams();
-  const location = useLocation();
-  const navigate = useNavigate();
 
   if (!celebrityId) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--background)] px-6 text-center">
+      <div className="flex flex-1 items-center justify-center px-6 text-center">
         <div>
           <p className="text-lg text-[var(--foreground)]">未找到该影人。</p>
           <Link to="/">
             <Button variant="outline" className="mt-6">返回搜索</Button>
           </Link>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)] pb-20 text-[var(--foreground)]">
-      <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-6 sm:px-8 lg:px-10">
-        <button
-          type="button"
-          onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")}
-          className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/65 px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
-        >
-          <ArrowLeft className="size-4" />
-          返回
-        </button>
-      </div>
-
+    <>
       <section className="animate-fade-up mx-auto mt-8 w-full max-w-[1240px] px-5 [animation-delay:80ms] sm:px-8 lg:px-10">
         <QueryErrorBoundary fallback={({ error, reset }) => (
           <ErrorFallback error={error} reset={reset} />
@@ -258,6 +245,6 @@ export function CelebrityPage() {
           </Suspense>
         </QueryErrorBoundary>
       </section>
-    </main>
+    </>
   );
 }

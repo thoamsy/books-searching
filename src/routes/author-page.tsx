@@ -1,8 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useMemo, useState } from "react";
-import type { ReactNode } from "react";
-import { ArrowLeft, CalendarDays, ExternalLink, ListOrdered, Star } from "lucide-react";
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { CalendarDays, ExternalLink, ListOrdered, Star } from "lucide-react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { BookCover } from "@/components/book-cover";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +12,7 @@ import type { SearchBook } from "@/types/books";
 
 type SortMode = "default" | "year" | "rating";
 
-const SORT_KEY = "book-echo-author-sort";
+const SORT_KEY = "opus-author-sort";
 const SORT_LABELS: Record<SortMode, string> = {
   default: "默认",
   year: "出版时间",
@@ -179,8 +178,6 @@ function AuthorBooksContent({ authorName }: { authorName: string }) {
 /* ------------------------------------------------------------------ */
 
 export function AuthorPage() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const { authorName } = useParams();
   const [searchParams] = useSearchParams();
   const photoUrl = searchParams.get("photo") ?? undefined;
@@ -189,18 +186,7 @@ export function AuthorPage() {
   const decodedName = decodeURIComponent(authorName ?? "");
 
   return (
-    <main className="min-h-screen bg-[var(--background)] pb-20 text-[var(--foreground)]">
-      <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-6 sm:px-8 lg:px-10">
-        <button
-          type="button"
-          onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")}
-          className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/65 px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
-        >
-          <ArrowLeft className="size-4" />
-          返回
-        </button>
-      </div>
-
+    <>
       {/* Author hero */}
       <section className="animate-fade-up mx-auto mt-8 w-full max-w-[1240px] px-5 [animation-delay:80ms] sm:px-8 lg:px-10">
         <div className="flex items-start gap-6 sm:items-center sm:gap-8">
@@ -258,6 +244,6 @@ export function AuthorPage() {
           </Suspense>
         </QueryErrorBoundary>
       </section>
-    </main>
+    </>
   );
 }
