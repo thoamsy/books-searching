@@ -3,7 +3,7 @@ import { useEffect, useState, type RefObject } from "react";
 const BREAKPOINTS: [number, number][] = [
   [1024, 5], // @5xl
   [768, 4],  // @3xl
-  [512, 3],  // @lg
+  [576, 3],  // @xl
 ];
 const DEFAULT_COLUMNS = 2;
 

@@ -522,7 +522,7 @@ export function SearchPage() {
             {movieHistory.length > 0 ? (
               <section>
                 <h2 className="mb-5 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近观影</h2>
-                <div className="@container grid grid-cols-2 gap-4 @lg:grid-cols-3 @3xl:grid-cols-4">
+                <div className="@container grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4">
                   {movieHistory.map((item) => (
                     <button
                       key={item.subjectId}
@@ -576,7 +576,7 @@ export function SearchPage() {
                   </button>
                 </div>
 
-                <div className="@container grid grid-cols-2 gap-4 @lg:grid-cols-3 @3xl:grid-cols-4">
+                <div className="@container grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4">
                   {searchHistory.map((item) => (
                     <button
                       key={item.workId}
