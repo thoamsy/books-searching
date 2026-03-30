@@ -156,7 +156,7 @@ export function SearchPage() {
     setIsOpen(false);
     setIsComposing(false);
     navigate(`/book/${workId}?q=${encodeURIComponent(searchQuery)}`, {
-      state: { book }
+      state: { book, navDepth: 1 }
     });
     return true;
   }
@@ -181,7 +181,7 @@ export function SearchPage() {
     setIsOpen(false);
     setIsComposing(false);
     navigate(`/movie/${subjectId}?q=${encodeURIComponent(searchQuery)}`, {
-      state: { movie }
+      state: { movie, navDepth: 1 }
     });
     return true;
   }
@@ -285,14 +285,14 @@ export function SearchPage() {
       });
       setIsOpen(false);
       setIsComposing(false);
-      navigate(buildAuthorUrl(entry));
+      navigate(buildAuthorUrl(entry), { state: { navDepth: 1 } });
       return;
     }
 
     if (option.kind === "celebrity" && option.movieSuggest) {
       setIsOpen(false);
       setIsComposing(false);
-      navigate(`/celebrity/${option.movieSuggest.id}`);
+      navigate(`/celebrity/${option.movieSuggest.id}`, { state: { navDepth: 1 } });
       return;
     }
 
