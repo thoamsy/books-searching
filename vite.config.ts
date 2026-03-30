@@ -244,6 +244,76 @@ export default defineConfig({
         });
       }
     },
+    {
+      name: "douban-collection-proxy",
+      configureServer(server) {
+        const REXXAR_HEADERS = {
+          "User-Agent":
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+          Referer: "https://m.douban.com/"
+        };
+
+        // Items endpoint (must come before metadata catch-all)
+        server.middlewares.use(async (req, res, next) => {
+          const match = req.url?.match(
+            /^\/api\/douban\/collection\/([A-Za-z0-9_]+)\/items\/?(\?.*)?$/
+          );
+          if (!match) return next();
+
+          const collectionId = match[1];
+          const search = match[2] ?? "";
+          const params = new URLSearchParams(search);
+          const start = params.get("start") ?? "0";
+          const count = params.get("count") ?? "20";
+
+          try {
+            const upstream = await fetch(
+              `https://m.douban.com/rexxar/api/v2/subject_collection/${collectionId}/items?start=${start}&count=${count}`,
+              { headers: REXXAR_HEADERS }
+            );
+            const body = await upstream.text();
+            res.statusCode = upstream.status;
+            res.setHeader(
+              "Content-Type",
+              upstream.headers.get("content-type") ?? "application/json"
+            );
+            res.setHeader("Cache-Control", "public, max-age=300");
+            res.end(body);
+          } catch {
+            res.statusCode = 502;
+            res.end(JSON.stringify({ error: "proxy error" }));
+          }
+        });
+
+        // Metadata endpoint
+        server.middlewares.use(async (req, res, next) => {
+          const match = req.url?.match(
+            /^\/api\/douban\/collection\/([A-Za-z0-9_]+)\/?$/
+          );
+          if (!match) return next();
+
+          const collectionId = match[1];
+
+          try {
+            const upstream = await fetch(
+              `https://m.douban.com/rexxar/api/v2/subject_collection/${collectionId}`,
+              { headers: REXXAR_HEADERS }
+            );
+            const body = await upstream.text();
+            res.statusCode = upstream.status;
+            res.setHeader(
+              "Content-Type",
+              upstream.headers.get("content-type") ?? "application/json"
+            );
+            res.setHeader("Cache-Control", "public, max-age=300");
+            res.end(body);
+          } catch {
+            res.statusCode = 502;
+            res.end(JSON.stringify({ error: "proxy error" }));
+          }
+        });
+      }
+    },
     react(),
     tailwindcss(),
     VitePWA({
