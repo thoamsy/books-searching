@@ -1,9 +1,4 @@
 import { createBrowserRouter, Outlet, ScrollRestoration } from "react-router-dom";
-import { AuthorPage } from "@/routes/author-page";
-import { BookDetailPage } from "@/routes/book-detail-page";
-import { CelebrityPage } from "@/routes/celebrity-page";
-import { MovieDetailPage } from "@/routes/movie-detail-page";
-import { SearchPage } from "@/routes/search-page";
 import { bookDetailQueryOptions, searchBooksQueryOptions } from "@/lib/book-queries";
 import { celebrityDetailQueryOptions, celebrityWorksQueryOptions } from "@/lib/celebrity-queries";
 import { movieDetailQueryOptions } from "@/lib/movie-queries";
@@ -24,7 +19,8 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <SearchPage />
+        lazy: () =>
+          import("@/routes/search-page").then((m) => ({ Component: m.SearchPage }))
       },
       {
         path: "/book/:workId",
@@ -34,7 +30,8 @@ export const router = createBrowserRouter([
           }
           return null;
         },
-        element: <BookDetailPage />
+        lazy: () =>
+          import("@/routes/book-detail-page").then((m) => ({ Component: m.BookDetailPage }))
       },
       {
         path: "/movie/:subjectId",
@@ -44,7 +41,8 @@ export const router = createBrowserRouter([
           }
           return null;
         },
-        element: <MovieDetailPage />
+        lazy: () =>
+          import("@/routes/movie-detail-page").then((m) => ({ Component: m.MovieDetailPage }))
       },
       {
         path: "/author/:authorName",
@@ -56,7 +54,8 @@ export const router = createBrowserRouter([
           }
           return null;
         },
-        element: <AuthorPage />
+        lazy: () =>
+          import("@/routes/author-page").then((m) => ({ Component: m.AuthorPage }))
       },
       {
         path: "/celebrity/:celebrityId",
@@ -67,7 +66,8 @@ export const router = createBrowserRouter([
           }
           return null;
         },
-        element: <CelebrityPage />
+        lazy: () =>
+          import("@/routes/celebrity-page").then((m) => ({ Component: m.CelebrityPage }))
       }
     ]
   }
