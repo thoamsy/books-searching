@@ -11,8 +11,8 @@
   --color-destructive: var(--destructive);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
-  --font-display: "Noto Serif SC", "Cormorant Garamond", serif;
-  --font-sans: "Manrope", "Noto Serif SC", sans-serif;
+  --font-display: "Georgia", "Songti SC", "SimSun", serif;
+  --font-sans: "Manrope", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
 
 :root {

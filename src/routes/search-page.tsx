@@ -56,7 +56,7 @@ interface RecentAuthorEntry {
 }
 
 const bookHistoryStore = createHistoryStore<RecentSearchEntry>({
-  key: "book-echo-search-history",
+  key: "opus-search-history",
   limit: 10,
   validate: (item): item is RecentSearchEntry =>
     item != null && typeof item === "object" &&
@@ -67,7 +67,7 @@ const bookHistoryStore = createHistoryStore<RecentSearchEntry>({
 });
 
 const authorHistoryStore = createHistoryStore<RecentAuthorEntry>({
-  key: "book-echo-author-history",
+  key: "opus-author-history",
   limit: 8,
   validate: (item): item is RecentAuthorEntry =>
     item != null && typeof item === "object" &&
@@ -76,7 +76,7 @@ const authorHistoryStore = createHistoryStore<RecentAuthorEntry>({
 });
 
 const movieHistoryStore = createHistoryStore<RecentMovieEntry>({
-  key: "book-echo-movie-history",
+  key: "opus-movie-history",
   limit: 10,
   validate: (item): item is RecentMovieEntry =>
     item != null && typeof item === "object" &&
@@ -320,9 +320,12 @@ export function SearchPage() {
         hasBookHistory ? "pt-16 sm:pt-24" : "my-auto"
       )}>
         <header className={cn("animate-fade-up", hasBookHistory ? "mb-10" : "mb-8 text-center")}>
-          <p className="text-xs uppercase tracking-[0.4em] text-[var(--primary)]/70">Book Echo</p>
+          <p className={cn("flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-[var(--primary)]/70", !hasBookHistory && "justify-center")}>
+            <img src="/favicon.svg" alt="" className="h-5 w-5" />
+            <span className="font-display">Opus</span>
+          </p>
           <h1 className="mt-3 font-display text-4xl font-medium leading-tight sm:text-5xl">
-            找到你的<span className="text-[var(--primary)]">下一本书或电影</span>
+            找到你的<span className="text-[var(--primary)]">下一部作品</span>
           </h1>
         </header>
 
@@ -397,7 +400,9 @@ export function SearchPage() {
                 ) : null}
               </ComboboxGroup>
 
-              <ComboboxEmpty className="px-5 py-3 text-sm">没有找到相关结果</ComboboxEmpty>
+              {!isSuggesting && (
+                <ComboboxEmpty className="px-5 py-3 text-sm">没有找到相关结果</ComboboxEmpty>
+              )}
 
               <ComboboxList>
                 {(item: SearchOption) => (

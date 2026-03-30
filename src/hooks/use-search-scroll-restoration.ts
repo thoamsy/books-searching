@@ -1,7 +1,7 @@
 import { useLayoutEffect } from "react";
 import { useNavigationType } from "react-router-dom";
 
-const SEARCH_SCROLL_STORAGE_KEY = "book-echo-search-scroll";
+const SEARCH_SCROLL_STORAGE_KEY = "opus-search-scroll";
 
 function getScrollStorageKey(key: string) {
   return `${SEARCH_SCROLL_STORAGE_KEY}:${key || "root"}`;

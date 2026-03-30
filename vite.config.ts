@@ -248,16 +248,26 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg"],
+      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
-        name: "Book Echo",
-        short_name: "Book Echo",
-        description: "Search books, authors, and editions in a clean PWA.",
+        name: "Opus",
+        short_name: "Opus",
+        description: "一个安静的书影搜索 PWA。",
         theme_color: "#f6efe5",
         background_color: "#f6efe5",
         display: "standalone",
         start_url: "/",
         icons: [
+          {
+            src: "pwa-192x192.png",
+            sizes: "192x192",
+            type: "image/png"
+          },
+          {
+            src: "pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png"
+          },
           {
             src: "favicon.svg",
             sizes: "any",
