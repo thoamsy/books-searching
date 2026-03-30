@@ -130,6 +130,30 @@ export default defineConfig({
           Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html"
         };
 
+        // Credits endpoint (must come before the detail catch-all)
+        server.middlewares.use(async (req, res, next) => {
+          const creditsMatch = req.url?.match(/^\/api\/douban\/movie\/(\d+)\/credits\/?$/);
+          if (!creditsMatch) return next();
+
+          const subjectId = creditsMatch[1];
+          const apikey = "0ac44ae016490db2204ce0a042db2916";
+
+          try {
+            const upstream = await fetch(
+              `https://frodo.douban.com/api/v2/movie/${subjectId}/credits?apikey=${apikey}&count=50`,
+              { headers: FRODO_HEADERS }
+            );
+            const body = await upstream.text();
+            res.statusCode = upstream.status;
+            res.setHeader("Content-Type", upstream.headers.get("content-type") ?? "application/json");
+            res.setHeader("Cache-Control", "public, max-age=300");
+            res.end(body);
+          } catch {
+            res.statusCode = 502;
+            res.end(JSON.stringify({ error: "proxy error" }));
+          }
+        });
+
         server.middlewares.use(async (req, res, next) => {
           const match = req.url?.match(/^\/api\/douban\/movie\/(\d+)\/?$/);
           if (!match) return next();

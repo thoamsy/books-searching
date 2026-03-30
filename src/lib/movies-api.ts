@@ -1,4 +1,4 @@
-import type { CelebrityDetail, CelebrityWork, MovieDetail, MovieSearchResponse, MovieSuggestItem, SearchMovie } from "@/types/movies";
+import type { CelebrityDetail, CelebrityWork, CreditPerson, MovieDetail, MovieSearchResponse, MovieSuggestItem, SearchMovie } from "@/types/movies";
 
 const API_BASE = (import.meta.env.VITE_DOUBAN_PROXY_BASE ?? "").replace(/\/$/, "");
 
@@ -200,8 +200,46 @@ interface FrodoMovieResponse {
   cover?: { image?: { large?: { url: string } } };
 }
 
+interface FrodoCreditsResponse {
+  items: {
+    category: string;
+    name: string;
+    url?: string;
+    simple_character?: string;
+  }[];
+}
+
+function extractCelebrityId(url?: string) {
+  return url?.match(/celebrity\/(\d+)/)?.[1];
+}
+
+async function fetchCredits(subjectId: string): Promise<Map<string, CreditPerson>> {
+  try {
+    const response = await fetchProxy(`/api/douban/movie/${subjectId}/credits`, "application/json");
+    if (!response.ok) return new Map();
+    const data: FrodoCreditsResponse = await response.json();
+    const map = new Map<string, CreditPerson>();
+    for (const item of data.items) {
+      if (!map.has(item.name)) {
+        map.set(item.name, {
+          name: item.name,
+          id: extractCelebrityId(item.url),
+          character: item.simple_character
+        });
+      }
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
 export async function getMovieDetail(subjectId: string): Promise<MovieDetail> {
-  const response = await fetchProxy(`/api/douban/movie/${subjectId}/`, "application/json");
+  const [response, creditsMap] = await Promise.all([
+    fetchProxy(`/api/douban/movie/${subjectId}/`, "application/json"),
+    fetchCredits(subjectId)
+  ]);
+
   if (!response.ok) {
     throw new Error("Failed to fetch movie details.");
   }
@@ -210,14 +248,17 @@ export async function getMovieDetail(subjectId: string): Promise<MovieDetail> {
 
   const isTV = data.subtype === "tv" || (data.episodes_count ?? 0) > 0;
 
+  const toPerson = (name: string): CreditPerson =>
+    creditsMap.get(name) ?? { name };
+
   return {
     key: subjectId,
     title: data.title || "未知影片",
     originalTitle: data.original_title || data.aka?.[0],
     description: data.intro,
-    director: data.directors?.map((d) => d.name) ?? [],
-    screenwriter: data.writers?.map((w) => w.name) ?? [],
-    cast: data.actors?.map((a) => a.name) ?? [],
+    director: data.directors?.map((d) => toPerson(d.name)) ?? [],
+    screenwriter: data.writers?.map((w) => toPerson(w.name)) ?? [],
+    cast: data.actors?.map((a) => toPerson(a.name)) ?? [],
     genre: data.genres ?? [],
     country: data.countries ?? [],
     language: data.languages ?? [],

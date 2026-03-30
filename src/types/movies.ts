@@ -37,6 +37,12 @@ export interface MovieSuggestItem {
   episode?: string;
 }
 
+export interface CreditPerson {
+  name: string;
+  id?: string;
+  character?: string;
+}
+
 export interface MovieDetail {
   key: string;
   title: string;
@@ -44,9 +50,9 @@ export interface MovieDetail {
   coverUrl?: string;
   year?: string;
   description?: string;
-  director?: string[];
-  screenwriter?: string[];
-  cast?: string[];
+  director?: CreditPerson[];
+  screenwriter?: CreditPerson[];
+  cast?: CreditPerson[];
   genre?: string[];
   country?: string[];
   language?: string[];

@@ -20,7 +20,7 @@ import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { movieDetailQueryOptions } from "@/lib/movie-queries";
-import type { MovieDetail, SearchMovie } from "@/types/movies";
+import type { CreditPerson, MovieDetail, SearchMovie } from "@/types/movies";
 
 interface LocationState {
   movie?: SearchMovie;
@@ -229,8 +229,10 @@ function DetailHeroPanel({
 }) {
   const directors = movieDetail.director?.length
     ? movieDetail.director
-    : fallbackMovie?.director ?? [];
-  const cast = movieDetail.cast ?? fallbackMovie?.cast ?? [];
+    : (fallbackMovie?.director?.map((name): CreditPerson => ({ name })) ?? []);
+  const cast = movieDetail.cast?.length
+    ? movieDetail.cast
+    : (fallbackMovie?.cast?.map((name): CreditPerson => ({ name })) ?? []);
   const isTV = movieDetail.type === "tv";
 
   return (
@@ -249,15 +251,15 @@ function DetailHeroPanel({
       {directors.length > 0 && (
         <div className="mt-5 flex flex-wrap items-center gap-2.5">
           <span className="text-sm text-[var(--muted-foreground)]">导演</span>
-          {directors.map((director) => (
+          {directors.map((person) => (
             <Link
-              key={director}
-              to={`/?q=${encodeURIComponent(director)}`}
+              key={person.name}
+              to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
               className="group/person inline-flex items-center gap-1.5 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-3 py-1 text-sm font-medium text-[var(--primary)] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/[0.1] hover:shadow-[0_4px_12px_color-mix(in_oklch,var(--primary)_12%,transparent)]"
             >
               <Clapperboard className="size-3.5" />
               <span className="bg-[linear-gradient(var(--primary),var(--primary))] bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1.5px]">
-                {director}
+                {person.name}
               </span>
             </Link>
           ))}
@@ -267,15 +269,15 @@ function DetailHeroPanel({
       {cast.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2.5">
           <span className="text-sm text-[var(--muted-foreground)]">主演</span>
-          {cast.slice(0, 5).map((actor) => (
+          {cast.slice(0, 5).map((person) => (
             <Link
-              key={actor}
-              to={`/?q=${encodeURIComponent(actor)}`}
+              key={person.name}
+              to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
               className="group/person inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/40 px-3 py-1 text-sm text-[var(--foreground)] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-white/80 hover:bg-white/60 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
             >
               <Users className="size-3.5" />
               <span className="bg-[linear-gradient(var(--foreground),var(--foreground))] bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1.5px]">
-                {actor}
+                {person.name}
               </span>
             </Link>
           ))}
@@ -386,7 +388,7 @@ function DetailSidebarPanel({
             <InfoBlock label="片长" value={movieDetail.runtime} />
           ) : null}
           {movieDetail.screenwriter?.length ? (
-            <InfoBlock label="编剧" value={movieDetail.screenwriter.join(" / ")} />
+            <InfoBlock label="编剧" value={movieDetail.screenwriter.map((p) => p.name).join(" / ")} />
           ) : null}
           {movieDetail.imdbId ? (
             <InfoBlock label="IMDb" value={movieDetail.imdbId} />
@@ -459,7 +461,7 @@ function MobileHeroPanel({
   const title = movieDetail?.title ?? fallbackMovie?.title ?? "未知影片";
   const directors = movieDetail.director?.length
     ? movieDetail.director
-    : fallbackMovie?.director ?? [];
+    : (fallbackMovie?.director?.map((name): CreditPerson => ({ name })) ?? []);
   const isTV = movieDetail.type === "tv";
 
   return (
@@ -467,11 +469,11 @@ function MobileHeroPanel({
       <h1 className="font-display text-3xl leading-tight sm:text-4xl">{title}</h1>
       {directors.length > 0 && (
         <p className="mt-1.5 text-sm text-[var(--muted-foreground)]">
-          导演: {directors.slice(0, 2).map((director, i) => (
-            <span key={director}>
+          导演: {directors.slice(0, 2).map((person, i) => (
+            <span key={person.name}>
               {i > 0 && " / "}
-              <Link to={`/?q=${encodeURIComponent(director)}`} className="underline decoration-[var(--border)] underline-offset-4 transition hover:decoration-[var(--foreground)] hover:text-[var(--foreground)]">
-                {director}
+              <Link to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`} className="underline decoration-[var(--border)] underline-offset-4 transition hover:decoration-[var(--foreground)] hover:text-[var(--foreground)]">
+                {person.name}
               </Link>
             </span>
           ))}
