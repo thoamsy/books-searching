@@ -29,7 +29,7 @@ type SearchOption = {
   label: string;
   meta?: string;
   year?: string;
-  kind: "book" | "author" | "movie" | "tv";
+  kind: "book" | "author" | "movie" | "tv" | "celebrity";
   book?: SearchBook;
   movie?: SearchMovie;
   suggest?: SuggestItem;
@@ -249,10 +249,12 @@ export function SearchPage() {
     (item, index) => ({
       id: getMovieSuggestionOptionId(item, index),
       label: item.title,
-      meta: item.subTitle || (item.type === "tv" ? "电视剧" : "电影"),
+      meta: item.type === "celebrity"
+        ? (item.subTitle || "影人")
+        : (item.subTitle || (item.type === "tv" ? "电视剧" : "电影")),
       year: item.year ?? "",
-      kind: item.episode ? "tv" as const : "movie" as const,
-      movie: suggestItemToSearchMovie(item),
+      kind: item.type === "celebrity" ? "celebrity" as const : item.episode ? "tv" as const : "movie" as const,
+      movie: item.type !== "celebrity" ? suggestItemToSearchMovie(item) : undefined,
       movieSuggest: item
     })
   );
@@ -284,6 +286,13 @@ export function SearchPage() {
       setIsOpen(false);
       setIsComposing(false);
       navigate(buildAuthorUrl(entry));
+      return;
+    }
+
+    if (option.kind === "celebrity" && option.movieSuggest) {
+      setIsOpen(false);
+      setIsComposing(false);
+      navigate(`/celebrity/${option.movieSuggest.id}`);
       return;
     }
 
@@ -398,10 +407,10 @@ export function SearchPage() {
                     className="mx-0 flex items-center justify-between gap-4 rounded-lg px-5 py-2.5 data-highlighted:bg-[var(--accent)]/60"
                   >
                     <div className="flex min-w-0 items-center gap-3.5">
-                      {item.kind === "author" ? (
+                      {item.kind === "author" || item.kind === "celebrity" ? (
                         <div className="flex h-14 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/60 bg-white/50">
-                          {item.suggest?.coverUrl ? (
-                            <img src={item.suggest.coverUrl} alt={item.label} className="h-full w-full rounded-lg object-cover" loading="lazy" />
+                          {(item.suggest?.coverUrl ?? item.movieSuggest?.coverUrl) ? (
+                            <img src={(item.suggest?.coverUrl ?? item.movieSuggest?.coverUrl)!} alt={item.label} className="h-full w-full rounded-lg object-cover" loading="lazy" />
                           ) : (
                             <User className="size-5 text-[var(--muted-foreground)]" />
                           )}
@@ -428,6 +437,8 @@ export function SearchPage() {
                     </div>
                     {item.kind === "author" ? (
                       <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">作者</span>
+                    ) : item.kind === "celebrity" ? (
+                      <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">影人</span>
                     ) : (item.kind === "movie" || item.kind === "tv") ? (
                       <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">
                         {item.kind === "tv" ? "电视剧" : "电影"}{item.year ? ` · ${item.year}` : ""}
