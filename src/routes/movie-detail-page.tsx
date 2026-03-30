@@ -51,7 +51,7 @@ function MovieDetailSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie })
       {/* Desktop skeleton */}
       <div className="animate-fade-up hidden [animation-delay:80ms] lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
         <CoverPanelSkeleton title={fallbackMovie?.title} coverUrl={fallbackMovie?.coverUrl} />
-        <div className="space-y-10">
+        <div className="flex flex-col gap-10">
           <HeroPanelSkeleton fallbackMovie={fallbackMovie} />
           <div className="grid gap-8 lg:grid-cols-[1.45fr_0.95fr]">
             <DescriptionPanelSkeleton />
@@ -61,7 +61,7 @@ function MovieDetailSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie })
       </div>
 
       {/* Mobile content skeleton */}
-      <div className="animate-fade-up mt-6 space-y-6 [animation-delay:160ms] lg:hidden">
+      <div className="animate-fade-up mt-6 flex flex-col gap-6 [animation-delay:160ms] lg:hidden">
         <div className="grid gap-6">
           <DescriptionPanelSkeleton />
           <SidebarPanelSkeleton />
@@ -99,7 +99,7 @@ function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; f
       {/* Desktop: original two-column layout */}
       <div className="hidden lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
         <DetailCoverPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
-        <div className="space-y-10">
+        <div className="flex flex-col gap-10">
           <DetailHeroPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
           <div className="grid gap-8 lg:grid-cols-[1.45fr_0.95fr]">
             <DetailDescriptionPanel movieDetail={movieDetail} />
@@ -109,7 +109,7 @@ function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; f
       </div>
 
       {/* Mobile: content panels below the hero */}
-      <div className="mt-6 space-y-6 lg:hidden">
+      <div className="mt-6 flex flex-col gap-6 lg:hidden">
         <div className="grid gap-6">
           <DetailDescriptionPanel movieDetail={movieDetail} />
           <DetailSidebarPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
@@ -317,7 +317,7 @@ function DetailSidebarPanel({
   const genres = movieDetail.genre ?? fallbackMovie?.genre ?? [];
 
   return (
-    <aside className="space-y-6">
+    <aside className="flex flex-col gap-6">
       {genres.length > 0 && (
         <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
           <h3 className="font-display text-xl font-medium sm:text-2xl">类型</h3>
@@ -338,7 +338,7 @@ function DetailSidebarPanel({
 
       <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">影片信息</h3>
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 flex flex-col gap-4">
           {movieDetail.country?.length ? (
             <InfoBlock label="制片国家/地区" value={movieDetail.country.join(" / ")} />
           ) : null}
@@ -499,7 +499,7 @@ function MobileHeroSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) 
       {fallbackMovie?.title ? (
         <h1 className="font-display text-3xl leading-tight sm:text-4xl">{fallbackMovie.title}</h1>
       ) : (
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           <div className="h-9 w-full max-w-[16rem] animate-pulse rounded-full bg-white/70" />
           <div className="h-9 w-full max-w-[10rem] animate-pulse rounded-full bg-white/70" />
         </div>
@@ -549,7 +549,7 @@ function HeroPanelSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) {
       {fallbackMovie?.title ? (
         <h1 className="mt-3 max-w-4xl font-display text-4xl font-medium leading-none sm:text-5xl lg:text-6xl">{fallbackMovie.title}</h1>
       ) : (
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 flex flex-col gap-3">
           <div className="h-14 w-full max-w-[34rem] animate-pulse rounded-full bg-white/70" />
           <div className="h-14 w-full max-w-[22rem] animate-pulse rounded-full bg-white/70" />
         </div>
@@ -571,7 +571,7 @@ function DescriptionPanelSkeleton() {
   return (
     <article className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-7 shadow-[var(--shadow-warm-md)]">
       <h2 className="font-display text-2xl font-medium sm:text-3xl">剧情简介</h2>
-      <div className="mt-6 space-y-4">
+      <div className="mt-6 flex flex-col gap-4">
         {Array.from({ length: 8 }).map((_, index) => (
           <div
             key={index}
@@ -587,7 +587,7 @@ function DescriptionPanelSkeleton() {
 
 function SidebarPanelSkeleton() {
   return (
-    <aside className="space-y-6">
+    <aside className="flex flex-col gap-6">
       <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">类型</h3>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -599,9 +599,9 @@ function SidebarPanelSkeleton() {
 
       <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">影片信息</h3>
-        <div className="mt-4 space-y-5">
+        <div className="mt-4 flex flex-col gap-5">
           {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="space-y-2">
+            <div key={index} className="flex flex-col gap-2">
               <div className="h-5 w-24 animate-pulse rounded-full bg-white/70" />
               <div className="h-5 w-full animate-pulse rounded-full bg-white/70" />
             </div>
