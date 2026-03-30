@@ -339,8 +339,7 @@ export function SearchPage() {
   const suggestionOptions = [...bookSuggestionOptions, ...movieSuggestionOptions];
   const comboOpen = isOpen && query.trim().length > 0 && (suggestionOptions.length > 0 || isSuggesting);
 
-  function handleInputValueChange(nextValue: string, details: { reason: string }) {
-    if (details.reason !== "input") return;
+  function handleInputValueChange(nextValue: string) {
     setQuery(nextValue);
   }
 
