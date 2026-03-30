@@ -1,11 +1,10 @@
 import { Suspense } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
-import { Star } from "lucide-react";
 import { DetailErrorFallback } from "@/components/detail-error-fallback";
+import { MediaCard } from "@/components/media-card";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { collectionItemsQueryOptions } from "@/lib/collection-queries";
-import type { CollectionItem } from "@/types/collection";
 
 /* ------------------------------------------------------------------ */
 /*  Skeleton fallback                                                  */
@@ -58,9 +57,17 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
         </div>
       </header>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {items.map((item) => (
-          <CollectionItemCard key={item.id} item={item} />
+          <MediaCard
+            key={item.id}
+            to={item.type === "book" ? `/book/${item.id}` : `/movie/${item.id}`}
+            coverUrl={item.coverUrl ?? null}
+            title={item.title}
+            subtitle={item.cardSubtitle}
+            rating={item.rating?.value}
+            rank={item.rank}
+          />
         ))}
       </div>
 
@@ -102,48 +109,3 @@ export function CollectionPage() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Item card                                                          */
-/* ------------------------------------------------------------------ */
-
-function CollectionItemCard({ item }: { item: CollectionItem }) {
-  // Movie proxy handles TV fallback, so both movie and tv route to /movie/
-  const linkPath =
-    item.type === "book" ? `/book/${item.id}` : `/movie/${item.id}`;
-
-  return (
-    <Link to={linkPath} className="group flex flex-col gap-2.5">
-      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl bg-[var(--muted)] shadow-[var(--shadow-warm-sm)] transition-shadow group-hover:shadow-[var(--shadow-warm-md)]">
-        {item.coverUrl ? (
-          <img
-            src={item.coverUrl}
-            alt={item.title}
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : null}
-        {item.rank != null ? (
-          <span className="absolute left-2.5 top-2.5 flex size-7 items-center justify-center rounded-full bg-black/60 text-xs font-bold text-white backdrop-blur-sm">
-            {item.rank}
-          </span>
-        ) : null}
-      </div>
-      <div className="flex flex-col gap-0.5 px-0.5">
-        <h3 className="line-clamp-1 text-sm font-medium leading-snug">
-          {item.title}
-        </h3>
-        {item.cardSubtitle ? (
-          <p className="line-clamp-1 text-xs text-[var(--muted-foreground)]">
-            {item.cardSubtitle}
-          </p>
-        ) : null}
-        {item.rating ? (
-          <div className="flex items-center gap-1 pt-0.5">
-            <Star className="size-3 fill-current text-amber-500" />
-            <span className="text-xs font-medium">{item.rating.value.toFixed(1)}</span>
-          </div>
-        ) : null}
-      </div>
-    </Link>
-  );
-}

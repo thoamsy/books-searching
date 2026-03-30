@@ -2,8 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useMemo, useState } from "react";
 import { CalendarDays, ExternalLink, ListOrdered, Star } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { BookCover } from "@/components/book-cover";
-import { Badge } from "@/components/ui/badge";
+import { MediaCard } from "@/components/media-card";
 import { Button } from "@/components/ui/button";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { celebrityDetailQueryOptions, celebrityWorksQueryOptions } from "@/lib/celebrity-queries";
@@ -59,39 +58,24 @@ function CelebrityWorksContent({ celebrityId }: { celebrityId: string }) {
           <p className="text-sm text-[var(--muted-foreground)]">未找到相关作品</p>
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6">
-          {sorted.map((work) => (
-            <Link
-              key={work.id}
-              to={`/movie/${work.id}`}
-              className="group text-left"
-            >
-              <div className="aspect-[2/3] overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]">
-                <BookCover
-                  src={work.coverUrl ?? null}
-                  title={work.title}
-                  className="rounded-2xl transition group-hover:scale-[1.02]"
-                  loading="lazy"
-                />
-              </div>
-              <div className="mt-3 px-0.5">
-                <p className="truncate text-sm font-medium text-[var(--foreground)]">{work.title}</p>
-                <div className="mt-1 flex items-center gap-2">
-                  {work.year ? (
-                    <span className="text-xs text-[var(--muted-foreground)]">{work.year}</span>
-                  ) : null}
-                  {work.ratingsAverage ? (
-                    <Badge variant="accent" className="gap-1 px-1.5 py-0 text-[10px]">
-                      ★ {work.ratingsAverage.toFixed(1)}
-                    </Badge>
-                  ) : null}
-                  {work.roles.length > 0 ? (
-                    <span className="text-xs text-[var(--muted-foreground)]">{work.roles.join(" / ")}</span>
-                  ) : null}
-                </div>
-              </div>
-            </Link>
-          ))}
+        <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-5 xl:grid-cols-5 xl:gap-x-6">
+          {sorted.map((work) => {
+            const subtitle = [
+              work.year,
+              work.roles.length > 0 ? work.roles.join(" / ") : undefined
+            ].filter(Boolean).join(" · ") || undefined;
+
+            return (
+              <MediaCard
+                key={work.id}
+                to={`/movie/${work.id}`}
+                coverUrl={work.coverUrl ?? null}
+                title={work.title}
+                subtitle={subtitle}
+                rating={work.ratingsAverage}
+              />
+            );
+          })}
         </div>
       )}
     </>

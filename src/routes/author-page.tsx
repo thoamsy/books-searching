@@ -2,9 +2,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useMemo, useState } from "react";
 import { CalendarDays, ExternalLink, ListOrdered, Star } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { BookCover } from "@/components/book-cover";
+import { MediaCard } from "@/components/media-card";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCoverUrl, normalizeWorkId } from "@/lib/books-api";
 import { searchBooksQueryOptions } from "@/lib/book-queries";
@@ -127,44 +126,26 @@ function AuthorBooksContent({ authorName }: { authorName: string }) {
           <p className="text-sm text-[var(--muted-foreground)]">未找到相关作品</p>
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6">
+        <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-5 xl:grid-cols-5 xl:gap-x-6">
           {books.map((book) => {
             const workId = normalizeWorkId(book.key);
             if (!workId) return null;
 
+            const subtitle = [
+              book.firstPublishYear,
+              book.publisher
+            ].filter(Boolean).join(" / ") || undefined;
+
             return (
-              <Link
+              <MediaCard
                 key={workId}
                 to={`/book/${workId}?q=${encodeURIComponent(authorName)}`}
                 state={{ book }}
-                className="group text-left"
-              >
-                <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]">
-                  <BookCover
-                    src={getCoverUrl(book.coverUrl)}
-                    title={book.title}
-                    className="rounded-2xl transition group-hover:scale-[1.02]"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="mt-3 px-0.5">
-                  <p className="truncate text-sm font-medium text-[var(--foreground)]">
-                    {book.title}
-                  </p>
-                  <div className="mt-1 flex items-center gap-2">
-                    {book.firstPublishYear ? (
-                      <span className="text-xs text-[var(--muted-foreground)]">
-                        {book.firstPublishYear}
-                      </span>
-                    ) : null}
-                    {book.ratingsAverage ? (
-                      <Badge variant="accent" className="gap-1 px-1.5 py-0 text-[10px]">
-                        ★ {book.ratingsAverage.toFixed(1)}
-                      </Badge>
-                    ) : null}
-                  </div>
-                </div>
-              </Link>
+                coverUrl={getCoverUrl(book.coverUrl)}
+                title={book.title}
+                subtitle={subtitle}
+                rating={book.ratingsAverage}
+              />
             );
           })}
         </div>
