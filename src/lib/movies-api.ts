@@ -1,4 +1,4 @@
-import type { MovieDetail, MovieSearchResponse, MovieSuggestItem, SearchMovie } from "@/types/movies";
+import type { CelebrityDetail, CelebrityWork, MovieDetail, MovieSearchResponse, MovieSuggestItem, SearchMovie } from "@/types/movies";
 
 const API_BASE = (import.meta.env.VITE_DOUBAN_PROXY_BASE ?? "").replace(/\/$/, "");
 
@@ -147,7 +147,7 @@ export async function getMovieSuggestions(query: string): Promise<MovieSuggestIt
   const data: DoubanMovieSuggestEntry[] = await response.json();
 
   return data.map((entry) => ({
-    type: entry.episode ? "tv" : "movie",
+    type: entry.type === "celebrity" ? "celebrity" : entry.episode ? "tv" : "movie",
     id: entry.id,
     title: entry.title,
     url: entry.url,
@@ -243,7 +243,7 @@ export function suggestItemToSearchMovie(item: MovieSuggestItem): SearchMovie {
     originalTitle: item.subTitle,
     coverUrl: item.coverUrl,
     year: item.year,
-    type: item.type,
+    type: item.type === "celebrity" ? "movie" : item.type,
     episode: item.episode,
     externalUrl: item.url
   };
@@ -251,4 +251,79 @@ export function suggestItemToSearchMovie(item: MovieSuggestItem): SearchMovie {
 
 export function getMovieCoverUrl(coverUrl?: string) {
   return coverUrl ?? null;
+}
+
+interface FrodoCelebrityResponse {
+  id: string;
+  title: string;
+  latin_title?: string;
+  cover_img?: { url?: string };
+  cover?: { large?: { url?: string }; normal?: { url?: string } };
+  extra?: {
+    short_info?: string;
+    info?: [string, string][];
+  };
+  url?: string;
+}
+
+interface FrodoCelebrityWorksResponse {
+  total: number;
+  works: {
+    work: {
+      id: string;
+      title: string;
+      year?: string;
+      type?: string;
+      subtype?: string;
+      pic?: { large?: string; normal?: string };
+      cover_url?: string;
+      rating?: { value?: number };
+      genres?: string[];
+    };
+    roles: string[];
+  }[];
+}
+
+export async function getCelebrityDetail(celebrityId: string): Promise<CelebrityDetail> {
+  const response = await fetchProxy(`/api/douban/celebrity/${celebrityId}/`, "application/json");
+  if (!response.ok) {
+    throw new Error("Failed to fetch celebrity details.");
+  }
+
+  const data: FrodoCelebrityResponse = await response.json();
+  const info = data.extra?.info ?? [];
+  const findInfo = (key: string) => info.find(([k]) => k === key)?.[1];
+
+  return {
+    id: celebrityId,
+    name: data.title || "未知影人",
+    latinName: data.latin_title,
+    coverUrl: proxifyImageUrl(data.cover?.large?.url ?? data.cover_img?.url),
+    roles: data.extra?.short_info,
+    gender: findInfo("性别"),
+    birthDate: findInfo("出生日期"),
+    birthPlace: findInfo("出生地"),
+    imdbId: findInfo("IMDb编号"),
+    doubanUrl: data.url
+  };
+}
+
+export async function getCelebrityWorks(celebrityId: string): Promise<CelebrityWork[]> {
+  const response = await fetchProxy(`/api/douban/celebrity/${celebrityId}/works`, "application/json");
+  if (!response.ok) {
+    throw new Error("Failed to fetch celebrity works.");
+  }
+
+  const data: FrodoCelebrityWorksResponse = await response.json();
+
+  return data.works.map((entry) => ({
+    id: entry.work.id,
+    title: entry.work.title,
+    coverUrl: proxifyImageUrl(entry.work.pic?.large ?? entry.work.cover_url),
+    year: entry.work.year,
+    type: entry.work.subtype === "tv" ? "tv" : "movie",
+    ratingsAverage: entry.work.rating?.value,
+    roles: entry.roles,
+    genres: entry.work.genres
+  }));
 }
