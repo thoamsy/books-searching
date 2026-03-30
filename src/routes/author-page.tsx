@@ -52,7 +52,7 @@ function BooksGridSkeleton() {
           相关作品
         </h2>
       </div>
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6">
+      <div className="@container mt-6 grid grid-cols-2 gap-4 @[480px]:grid-cols-3 @[768px]:grid-cols-4 @[768px]:gap-5 @[1024px]:grid-cols-5 @[1024px]:gap-6">
         {Array.from({ length: 10 }).map((_, i) => (
           <div key={i} className="animate-pulse">
             <div className="aspect-[3/4] rounded-2xl bg-white/50" />
@@ -126,7 +126,7 @@ function AuthorBooksContent({ authorName }: { authorName: string }) {
           <p className="text-sm text-[var(--muted-foreground)]">未找到相关作品</p>
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-5 xl:grid-cols-5 xl:gap-x-6">
+        <div className="@container mt-6 grid grid-cols-2 gap-x-4 gap-y-6 @[480px]:grid-cols-3 @[768px]:grid-cols-4 @[768px]:gap-x-5 @[1024px]:grid-cols-5 @[1024px]:gap-x-6">
           {books.map((book) => {
             const workId = normalizeWorkId(book.key);
             if (!workId) return null;
