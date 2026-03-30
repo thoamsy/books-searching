@@ -167,6 +167,34 @@ export default {
       return movieRes;
     }
 
+    const collectionItemsMatch = url.pathname.match(/^\/api\/douban\/collection\/([A-Za-z0-9_]+)\/items\/?$/);
+    if (collectionItemsMatch) {
+      const collectionId = collectionItemsMatch[1];
+      const start = url.searchParams.get("start") ?? "0";
+      const count = url.searchParams.get("count") ?? "20";
+      const rexxarHeaders = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+        Referer: "https://m.douban.com/"
+      };
+      return proxyRequest(
+        `https://m.douban.com/rexxar/api/v2/subject_collection/${collectionId}/items?start=${start}&count=${count}`,
+        request, { cacheTtl: 300, extraHeaders: rexxarHeaders }
+      );
+    }
+
+    const collectionMetaMatch = url.pathname.match(/^\/api\/douban\/collection\/([A-Za-z0-9_]+)\/?$/);
+    if (collectionMetaMatch) {
+      const collectionId = collectionMetaMatch[1];
+      const rexxarHeaders = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+        Referer: "https://m.douban.com/"
+      };
+      return proxyRequest(
+        `https://m.douban.com/rexxar/api/v2/subject_collection/${collectionId}`,
+        request, { cacheTtl: 300, extraHeaders: rexxarHeaders }
+      );
+    }
+
     if (url.pathname === "/api/douban/image") {
       const source = url.searchParams.get("url");
       if (!source) {
