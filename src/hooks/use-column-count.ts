@@ -7,18 +7,19 @@ const BREAKPOINTS: [number, number][] = [
 ];
 const DEFAULT_COLUMNS = 2;
 
+function getColumns(width: number): number {
+  return BREAKPOINTS.find(([bp]) => width >= bp)?.[1] ?? DEFAULT_COLUMNS;
+}
+
 export function useColumnCount(ref: RefObject<HTMLElement | null>): number {
-  const [columns, setColumns] = useState(DEFAULT_COLUMNS);
+  const [columns, setColumns] = useState(() => getColumns(window.innerWidth));
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
     const observer = new ResizeObserver(([entry]) => {
-      const width = entry.contentRect.width;
-      const cols =
-        BREAKPOINTS.find(([bp]) => width >= bp)?.[1] ?? DEFAULT_COLUMNS;
-      setColumns(cols);
+      setColumns(getColumns(entry.contentRect.width));
     });
 
     observer.observe(el);

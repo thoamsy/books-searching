@@ -25,7 +25,7 @@ function CollectionSkeleton() {
 }
 
 const ESTIMATED_ROW_HEIGHT = 340;
-const GAP_Y = 32; // gap-y-8 = 2rem
+const GAP_Y = 24; // gap-y-6 = 1.5rem
 
 function CollectionContent({ collectionId }: { collectionId: string }) {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
