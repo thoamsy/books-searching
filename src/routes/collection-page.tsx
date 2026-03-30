@@ -1,46 +1,43 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
+import { DetailErrorFallback } from "@/components/detail-error-fallback";
+import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { collectionItemsQueryOptions } from "@/lib/collection-queries";
 import type { CollectionItem } from "@/types/collection";
 
-export function CollectionPage() {
-  const { collectionId } = useParams<{ collectionId: string }>();
+/* ------------------------------------------------------------------ */
+/*  Skeleton fallback                                                  */
+/* ------------------------------------------------------------------ */
+
+function CollectionSkeleton() {
+  return (
+    <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-4 sm:px-8 lg:px-10">
+      <div className="space-y-4">
+        <div className="h-10 w-64 animate-pulse rounded-2xl bg-[var(--muted)]" />
+        <div className="h-6 w-40 animate-pulse rounded-xl bg-[var(--muted)]" />
+        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="h-72 animate-pulse rounded-2xl bg-[var(--muted)]" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Content (suspends while loading)                                   */
+/* ------------------------------------------------------------------ */
+
+function CollectionContent({ collectionId }: { collectionId: string }) {
   const [loadedPages, setLoadedPages] = useState(1);
   const pageSize = 20;
 
-  const { data, isLoading, error } = useQuery(
-    collectionItemsQueryOptions(collectionId ?? "", 0, pageSize * loadedPages)
+  const { data } = useSuspenseQuery(
+    collectionItemsQueryOptions(collectionId, 0, pageSize * loadedPages)
   );
-
-  if (!collectionId) return null;
-
-  if (isLoading) {
-    return (
-      <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-12 sm:px-8 lg:px-10">
-        <div className="space-y-4">
-          <div className="h-10 w-64 animate-pulse rounded-2xl bg-[var(--muted)]" />
-          <div className="h-6 w-40 animate-pulse rounded-xl bg-[var(--muted)]" />
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="h-72 animate-pulse rounded-2xl bg-[var(--muted)]" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-12 sm:px-8 lg:px-10">
-        <p className="text-[var(--muted-foreground)]">
-          无法加载榜单内容，请稍后重试。
-        </p>
-      </div>
-    );
-  }
 
   const { meta, items, total } = data;
   const hasMore = items.length < total;
@@ -85,7 +82,34 @@ export function CollectionPage() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Page shell                                                         */
+/* ------------------------------------------------------------------ */
+
+export function CollectionPage() {
+  const { collectionId } = useParams<{ collectionId: string }>();
+
+  if (!collectionId) return null;
+
+  return (
+    <QueryErrorBoundary
+      fallback={({ error, reset }) => (
+        <DetailErrorFallback error={error} reset={reset} entityLabel="榜单" />
+      )}
+    >
+      <Suspense fallback={<CollectionSkeleton />}>
+        <CollectionContent collectionId={collectionId} />
+      </Suspense>
+    </QueryErrorBoundary>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Item card                                                          */
+/* ------------------------------------------------------------------ */
+
 function CollectionItemCard({ item }: { item: CollectionItem }) {
+  // Movie proxy handles TV fallback, so both movie and tv route to /movie/
   const linkPath =
     item.type === "book" ? `/book/${item.id}` : `/movie/${item.id}`;
 

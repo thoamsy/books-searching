@@ -14,7 +14,7 @@ function normalizeUrl(url?: string | null) {
   return url.replace("http://", "https://");
 }
 
-function proxifyImageUrl(url?: string) {
+export function proxifyImageUrl(url?: string) {
   const normalized = normalizeUrl(url);
   if (!normalized) {
     return undefined;

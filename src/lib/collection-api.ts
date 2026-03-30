@@ -3,11 +3,7 @@ import type {
   CollectionItemsResponse,
   CollectionMeta
 } from "@/types/collection";
-
-function proxifyImageUrl(url?: string): string | undefined {
-  if (!url) return undefined;
-  return `/api/douban/image?url=${encodeURIComponent(url)}`;
-}
+import { proxifyImageUrl } from "@/lib/books-api";
 
 interface RexxarCollectionMeta {
   id: string;
