@@ -595,49 +595,66 @@ interface RecentMediaItem {
   aspect: "2/3" | "3/4";
 }
 
+function RecentMediaCard({ item }: { item: RecentMediaItem }) {
+  return (
+    <DepthLink
+      to={item.to}
+      state={item.state}
+      className="group"
+    >
+      <div
+        className="overflow-hidden rounded-lg border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]"
+        style={{ aspectRatio: item.aspect }}
+      >
+        {item.coverUrl ? (
+          item.aspect === "3/4" ? (
+            <BookCover
+              src={item.coverUrl}
+              title={item.title}
+              className="rounded-lg transition group-hover:scale-[1.02]"
+              loading="lazy"
+            />
+          ) : (
+            <img
+              src={item.coverUrl}
+              alt={item.title}
+              className="h-full w-full rounded-lg object-cover transition group-hover:scale-[1.02]"
+              loading="lazy"
+            />
+          )
+        ) : (
+          <div className="flex h-full w-full items-center justify-center rounded-lg bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(231,211,185,0.94))]">
+            <Film className="size-10 text-[var(--muted-foreground)]" />
+          </div>
+        )}
+      </div>
+      <div className="mt-2 px-0.5">
+        <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.title}</p>
+        <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">{item.subtitle}</p>
+      </div>
+    </DepthLink>
+  );
+}
+
 function RecentMediaGrid({ items }: { items: RecentMediaItem[] }) {
   return (
-    <div className="grid grid-cols-3 gap-3 @2xl:grid-cols-4">
-      {items.map((item) => (
-        <DepthLink
-          key={item.key}
-          to={item.to}
-          state={item.state}
-          className="group"
-        >
-          <div
-            className="overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]"
-            style={{ aspectRatio: item.aspect }}
-          >
-            {item.coverUrl ? (
-              item.aspect === "3/4" ? (
-                <BookCover
-                  src={item.coverUrl}
-                  title={item.title}
-                  className="rounded-2xl transition group-hover:scale-[1.02]"
-                  loading="lazy"
-                />
-              ) : (
-                <img
-                  src={item.coverUrl}
-                  alt={item.title}
-                  className="h-full w-full rounded-2xl object-cover transition group-hover:scale-[1.02]"
-                  loading="lazy"
-                />
-              )
-            ) : (
-              <div className="flex h-full w-full items-center justify-center rounded-2xl bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(231,211,185,0.94))]">
-                <Film className="size-10 text-[var(--muted-foreground)]" />
-              </div>
-            )}
+    <>
+      {/* Mobile: horizontal scroll with snap */}
+      <div className="-mr-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pr-5 sm:hidden">
+        {items.map((item) => (
+          <div key={item.key} className="w-[calc((100%-0.75rem*2)/3.4)] shrink-0 snap-start">
+            <RecentMediaCard item={item} />
           </div>
-          <div className="mt-2 px-0.5">
-            <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.title}</p>
-            <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">{item.subtitle}</p>
-          </div>
-        </DepthLink>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      {/* Desktop: grid */}
+      <div className="hidden grid-cols-3 gap-3 @2xl:grid-cols-4 sm:grid">
+        {items.map((item) => (
+          <RecentMediaCard key={item.key} item={item} />
+        ))}
+      </div>
+    </>
   );
 }
 
