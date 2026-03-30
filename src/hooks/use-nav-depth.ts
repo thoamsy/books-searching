@@ -5,7 +5,7 @@ import type { NavigateOptions, To } from "react-router-dom";
 export function useNavDepth(): number {
   const location = useLocation();
   const state = location.state as { navDepth?: number } | null;
-  return state?.navDepth ?? 1;
+  return state?.navDepth ?? 0;
 }
 
 export function useNavigateWithDepth() {

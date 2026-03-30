@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
+import { LazyMotion, MotionConfig, domMax, m, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Home } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useNavDepth } from "@/hooks/use-nav-depth";
@@ -25,7 +25,8 @@ export function BackButton() {
   }, [navigate]);
 
   return (
-    <LazyMotion features={domAnimation} strict>
+    <MotionConfig reducedMotion="user">
+    <LazyMotion features={domMax} strict>
       <m.div
         className="inline-flex items-center overflow-hidden rounded-full border border-white/70 bg-white/65"
         layout
@@ -66,18 +67,20 @@ export function BackButton() {
               <m.button
                 type="button"
                 onClick={handleHome}
+                aria-label="返回首页"
                 className="inline-flex items-center px-3 py-2 text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
                 initial={{ opacity: 0, scale: 0.6, x: -8, rotate: -10 }}
                 animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
                 exit={{ opacity: 0, scale: 0.6, x: -8, rotate: -10 }}
                 transition={springConfig}
               >
-                <Home className="size-4 transition-transform hover:-translate-y-px" />
+                <Home aria-hidden className="size-4 transition-transform hover:-translate-y-px" />
               </m.button>
             </m.div>
           )}
         </AnimatePresence>
       </m.div>
     </LazyMotion>
+    </MotionConfig>
   );
 }

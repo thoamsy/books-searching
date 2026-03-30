@@ -20,6 +20,7 @@ import { movieSuggestionsQueryOptions } from "@/lib/movie-queries";
 import { suggestItemToSearchMovie } from "@/lib/movies-api";
 import { createHistoryStore } from "@/lib/history-utils";
 import { cn } from "@/lib/utils";
+import { DepthLink } from "@/components/depth-link";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { SearchBook, SuggestItem } from "@/types/books";
 import type { MovieSuggestItem, SearchMovie } from "@/types/movies";
@@ -493,7 +494,7 @@ export function SearchPage() {
                       {authorHistory.map((author, index) => (
                         <Tooltip key={author.name}>
                           <TooltipTrigger asChild>
-                            <Link
+                            <DepthLink
                               to={buildAuthorUrl(author)}
                               className="relative block shrink-0 transition-[margin] duration-300 ease-out group-hover/stack:mr-2"
                               style={{ marginLeft: index === 0 ? 0 : "-0.75rem", zIndex: authorHistory.length - index }}
@@ -507,7 +508,7 @@ export function SearchPage() {
                                   </div>
                                 )}
                               </div>
-                            </Link>
+                            </DepthLink>
                           </TooltipTrigger>
                           <TooltipContent>{author.name}</TooltipContent>
                         </Tooltip>
@@ -620,7 +621,7 @@ function buildAuthorUrl(author: RecentAuthorEntry) {
 
 function AuthorAvatarCard({ author }: { author: RecentAuthorEntry }) {
   return (
-    <Link
+    <DepthLink
       to={buildAuthorUrl(author)}
       className="flex shrink-0 items-center gap-2.5 rounded-full border border-white/60 bg-white/50 py-1.5 pr-4 pl-1.5 transition hover:bg-white/70"
     >
@@ -634,6 +635,6 @@ function AuthorAvatarCard({ author }: { author: RecentAuthorEntry }) {
         )}
       </div>
       <span className="whitespace-nowrap text-sm text-[var(--foreground)]">{author.name}</span>
-    </Link>
+    </DepthLink>
   );
 }
