@@ -112,11 +112,8 @@ function CollectionItemCard({ item }: { item: CollectionItem }) {
     item.type === "book" ? `/book/${item.id}` : `/movie/${item.id}`;
 
   return (
-    <Link
-      to={linkPath}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-white/70 bg-[var(--surface)] shadow-[var(--shadow-warm-sm)] transition-shadow hover:shadow-[var(--shadow-warm-md)]"
-    >
-      <div className="relative aspect-[2/3] w-full overflow-hidden bg-[var(--muted)]">
+    <Link to={linkPath} className="group flex flex-col gap-2.5">
+      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl bg-[var(--muted)] shadow-[var(--shadow-warm-sm)] transition-shadow group-hover:shadow-[var(--shadow-warm-md)]">
         {item.coverUrl ? (
           <img
             src={item.coverUrl}
@@ -126,13 +123,13 @@ function CollectionItemCard({ item }: { item: CollectionItem }) {
           />
         ) : null}
         {item.rank != null ? (
-          <span className="absolute left-2 top-2 flex size-7 items-center justify-center rounded-full bg-black/60 text-xs font-bold text-white">
+          <span className="absolute left-2.5 top-2.5 flex size-7 items-center justify-center rounded-full bg-black/60 text-xs font-bold text-white backdrop-blur-sm">
             {item.rank}
           </span>
         ) : null}
       </div>
-      <div className="flex flex-1 flex-col gap-1 p-3">
-        <h3 className="line-clamp-2 text-sm font-medium leading-snug">
+      <div className="flex flex-col gap-0.5 px-0.5">
+        <h3 className="line-clamp-1 text-sm font-medium leading-snug">
           {item.title}
         </h3>
         {item.cardSubtitle ? (
@@ -141,7 +138,7 @@ function CollectionItemCard({ item }: { item: CollectionItem }) {
           </p>
         ) : null}
         {item.rating ? (
-          <div className="mt-auto flex items-center gap-1 pt-1">
+          <div className="flex items-center gap-1 pt-0.5">
             <Star className="size-3 fill-current text-amber-500" />
             <span className="text-xs font-medium">{item.rating.value.toFixed(1)}</span>
           </div>
