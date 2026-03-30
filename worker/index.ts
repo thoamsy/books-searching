@@ -105,6 +105,34 @@ export default {
       return proxyRequest(target.toString(), request, { cacheTtl: 1800 });
     }
 
+    const celebrityWorksMatch = url.pathname.match(/^\/api\/douban\/celebrity\/(\d+)\/works\/?$/);
+    if (celebrityWorksMatch) {
+      const celebrityId = celebrityWorksMatch[1];
+      const frodoHeaders = {
+        "User-Agent": "MicroMessenger/7.0.0 (iPhone; iOS 14.0; Scale/2.00)",
+        Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html"
+      };
+      const start = url.searchParams.get("start") ?? "0";
+      const count = url.searchParams.get("count") ?? "50";
+      return proxyRequest(
+        `https://frodo.douban.com/api/v2/celebrity/${celebrityId}/works?apikey=0ac44ae016490db2204ce0a042db2916&start=${start}&count=${count}`,
+        request, { cacheTtl: 86400, extraHeaders: frodoHeaders }
+      );
+    }
+
+    const celebrityMatch = url.pathname.match(/^\/api\/douban\/celebrity\/(\d+)\/?$/);
+    if (celebrityMatch) {
+      const celebrityId = celebrityMatch[1];
+      const frodoHeaders = {
+        "User-Agent": "MicroMessenger/7.0.0 (iPhone; iOS 14.0; Scale/2.00)",
+        Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html"
+      };
+      return proxyRequest(
+        `https://frodo.douban.com/api/v2/celebrity/${celebrityId}?apikey=0ac44ae016490db2204ce0a042db2916`,
+        request, { cacheTtl: 86400, extraHeaders: frodoHeaders }
+      );
+    }
+
     const movieMatch = url.pathname.match(/^\/api\/douban\/movie\/(\d+)\/?$/);
     if (movieMatch) {
       const subjectId = movieMatch[1];
