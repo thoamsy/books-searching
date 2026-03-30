@@ -475,7 +475,7 @@ export function SearchPage() {
         </div>
 
         {!hasHistory ? null : (
-          <div className="@container animate-fade-up space-y-10 [animation-delay:160ms]">
+          <div className="@container animate-fade-up flex flex-col gap-10 [animation-delay:160ms]">
             {authorHistory.length > 0 ? (
               <section>
                 <h2 className="mb-4 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近关注的作者</h2>

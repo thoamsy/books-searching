@@ -179,7 +179,7 @@ function HeroSkeleton() {
   return (
     <div className="flex items-start gap-6 sm:items-center sm:gap-8">
       <div className="size-20 shrink-0 animate-pulse rounded-full bg-white/50 sm:size-28" />
-      <div className="min-w-0 space-y-3">
+      <div className="min-w-0 flex flex-col gap-3">
         <div className="h-4 w-16 animate-pulse rounded-full bg-white/50" />
         <div className="h-10 w-48 animate-pulse rounded-full bg-white/50" />
         <div className="h-4 w-32 animate-pulse rounded-full bg-white/50" />
