@@ -1,14 +1,18 @@
-import { queryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions } from "@tanstack/react-query";
 import { getCollectionItems } from "@/lib/collection-api";
 
-export function collectionItemsQueryOptions(
-  collectionId: string,
-  start = 0,
-  count = 20
-) {
-  return queryOptions({
-    queryKey: ["collection", "items", collectionId, start, count],
-    queryFn: () => getCollectionItems(collectionId, start, count),
+const PAGE_SIZE = 20;
+
+export function collectionItemsQueryOptions(collectionId: string) {
+  return infiniteQueryOptions({
+    queryKey: ["collection", "items", collectionId],
+    queryFn: ({ pageParam }) =>
+      getCollectionItems(collectionId, pageParam, PAGE_SIZE),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      const next = lastPage.start + lastPage.count;
+      return next < lastPage.total ? next : undefined;
+    },
     enabled: Boolean(collectionId),
     staleTime: 5 * 60_000
   });

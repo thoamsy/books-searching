@@ -1,6 +1,6 @@
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { DetailErrorFallback } from "@/components/detail-error-fallback";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
@@ -28,19 +28,16 @@ function CollectionSkeleton() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Content (suspends while loading)                                   */
+/*  Content (suspends on initial load only)                            */
 /* ------------------------------------------------------------------ */
 
 function CollectionContent({ collectionId }: { collectionId: string }) {
-  const [loadedPages, setLoadedPages] = useState(1);
-  const pageSize = 20;
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useSuspenseInfiniteQuery(collectionItemsQueryOptions(collectionId));
 
-  const { data } = useSuspenseQuery(
-    collectionItemsQueryOptions(collectionId, 0, pageSize * loadedPages)
-  );
-
-  const { meta, items, total } = data;
-  const hasMore = items.length < total;
+  const meta = data.pages[0].meta;
+  const total = data.pages[0].total;
+  const items = data.pages.flatMap((page) => page.items);
 
   return (
     <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-4 sm:px-8 lg:px-10">
@@ -67,14 +64,15 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
         ))}
       </div>
 
-      {hasMore ? (
+      {hasNextPage ? (
         <div className="mt-8 flex justify-center pb-8">
           <button
             type="button"
-            className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-6 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--muted)]"
-            onClick={() => setLoadedPages((p) => p + 1)}
+            className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-6 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--muted)] disabled:opacity-50"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
           >
-            加载更多
+            {isFetchingNextPage ? "加载中…" : "加载更多"}
           </button>
         </div>
       ) : null}

@@ -94,7 +94,7 @@ export const router = createBrowserRouter([
             path: "/collection/:collectionId",
             loader({ params }) {
               if (params.collectionId) {
-                void queryClient.ensureQueryData(
+                void queryClient.ensureInfiniteQueryData(
                   collectionItemsQueryOptions(params.collectionId)
                 );
               }
