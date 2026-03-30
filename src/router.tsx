@@ -1,9 +1,11 @@
 import { createBrowserRouter, Outlet, ScrollRestoration } from "react-router-dom";
 import { AuthorPage } from "@/routes/author-page";
 import { BookDetailPage } from "@/routes/book-detail-page";
+import { CelebrityPage } from "@/routes/celebrity-page";
 import { MovieDetailPage } from "@/routes/movie-detail-page";
 import { SearchPage } from "@/routes/search-page";
 import { bookDetailQueryOptions, searchBooksQueryOptions } from "@/lib/book-queries";
+import { celebrityDetailQueryOptions, celebrityWorksQueryOptions } from "@/lib/celebrity-queries";
 import { movieDetailQueryOptions } from "@/lib/movie-queries";
 import { queryClient } from "@/lib/query-client";
 
@@ -55,6 +57,17 @@ export const router = createBrowserRouter([
           return null;
         },
         element: <AuthorPage />
+      },
+      {
+        path: "/celebrity/:celebrityId",
+        loader({ params }) {
+          if (params.celebrityId) {
+            void queryClient.ensureQueryData(celebrityDetailQueryOptions(params.celebrityId));
+            void queryClient.ensureQueryData(celebrityWorksQueryOptions(params.celebrityId));
+          }
+          return null;
+        },
+        element: <CelebrityPage />
       }
     ]
   }
