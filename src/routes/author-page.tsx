@@ -48,7 +48,7 @@ function sortBooks(books: SearchBook[], mode: SortMode): SearchBook[] {
 function BooksGridSkeleton() {
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex min-h-7 items-center justify-between">
         <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
           相关作品
         </h2>

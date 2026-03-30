@@ -105,7 +105,7 @@ function CelebrityWorksContent({ celebrityId }: { celebrityId: string }) {
 function WorksGridSkeleton() {
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex min-h-7 items-center justify-between">
         <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">参与作品</h2>
       </div>
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6">
