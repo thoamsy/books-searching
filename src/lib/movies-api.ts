@@ -1,4 +1,5 @@
 import type { CelebrityDetail, CelebrityWork, CreditPerson, MovieDetail, MovieSearchResponse, MovieSuggestItem, SearchMovie } from "@/types/movies";
+import { extractCollectionId } from "@/lib/books-api";
 
 const API_BASE = (import.meta.env.VITE_DOUBAN_PROXY_BASE ?? "").replace(/\/$/, "");
 
@@ -196,7 +197,8 @@ interface FrodoMovieResponse {
   subtype?: string;
   tags?: { name: string }[];
   aka?: string[];
-  honor_infos?: { title: string; rank: number; kind: string }[];
+  honor_infos?: { title: string; rank: number; kind: string; uri?: string }[];
+  subject_collections?: { id: string; title: string; uri?: string }[];
   cover?: { image?: { large?: { url: string } } };
 }
 
@@ -272,7 +274,13 @@ export async function getMovieDetail(subjectId: string): Promise<MovieDetail> {
     subjects: data.tags?.map((t) => t.name) ?? [],
     coverUrl: proxifyImageUrl(data.cover?.image?.large?.url ?? data.pic?.large ?? data.cover_url),
     coverLargeUrl: proxifyImageUrl(data.cover?.image?.large?.url),
-    honorInfos: data.honor_infos?.map((h) => ({ title: h.title, rank: h.rank, kind: h.kind })),
+    honorInfos: data.honor_infos?.map((h) => ({
+      title: h.title,
+      rank: h.rank,
+      kind: h.kind,
+      collectionId: extractCollectionId(h.uri)
+    })),
+    subjectCollections: data.subject_collections?.map((c) => ({ id: c.id, title: c.title })),
     infoLink: `https://movie.douban.com/subject/${subjectId}/`
   };
 }

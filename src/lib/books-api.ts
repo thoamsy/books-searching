@@ -27,6 +27,13 @@ export function proxifyImageUrl(url?: string) {
   return `${API_BASE}/api/douban/image?url=${encodeURIComponent(normalized)}`;
 }
 
+/** Extract collection ID from douban URI like "douban://douban.com/subject_collection/ECZZABULI?..." */
+export function extractCollectionId(uri?: string): string | undefined {
+  if (!uri) return undefined;
+  const match = uri.match(/subject_collection\/([^?/]+)/);
+  return match?.[1];
+}
+
 function fetchProxy(path: string, accept = "text/html,application/xhtml+xml") {
   return fetch(`${API_BASE}${path}`, {
     headers: { Accept: accept }
@@ -189,8 +196,8 @@ interface FrodoBookResponse {
   cover_url?: string;
   rating?: { value?: number; count?: number };
   catalog?: string;
-  honor_infos?: { title: string; rank: number; kind: string }[];
-  subject_collections?: { id: string; title: string }[];
+  honor_infos?: { title: string; rank: number; kind: string; uri?: string }[];
+  subject_collections?: { id: string; title: string; uri?: string }[];
   tags?: { name: string }[];
 }
 
@@ -218,7 +225,12 @@ export async function getBookDetail(workId: string): Promise<BookDetail> {
     subjects: data.tags?.map((t) => t.name) ?? [],
     coverUrl: proxifyImageUrl(data.pic?.large ?? data.cover_url),
     catalog: data.catalog,
-    honorInfos: data.honor_infos?.map((h) => ({ title: h.title, rank: h.rank, kind: h.kind })),
+    honorInfos: data.honor_infos?.map((h) => ({
+      title: h.title,
+      rank: h.rank,
+      kind: h.kind,
+      collectionId: extractCollectionId(h.uri)
+    })),
     subjectCollections: data.subject_collections?.map((c) => ({ id: c.id, title: c.title })),
     infoLink: `https://book.douban.com/subject/${workId}/`
   };

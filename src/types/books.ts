@@ -23,6 +23,7 @@ export interface HonorInfo {
   title: string;
   rank: number;
   kind: string;
+  collectionId?: string;
 }
 
 export interface SubjectCollection {

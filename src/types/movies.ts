@@ -2,6 +2,12 @@ export interface HonorInfo {
   title: string;
   rank: number;
   kind: string;
+  collectionId?: string;
+}
+
+export interface SubjectCollection {
+  id: string;
+  title: string;
 }
 
 export interface SearchMovie {
@@ -66,6 +72,7 @@ export interface MovieDetail {
   subjects?: string[];
   infoLink?: string;
   honorInfos?: HonorInfo[];
+  subjectCollections?: SubjectCollection[];
   coverLargeUrl?: string;
 }
 

@@ -237,11 +237,19 @@ function DetailHeroPanel({
 
       {bookDetail.honorInfos?.length ? (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {bookDetail.honorInfos.map((honor) => (
-            <Badge key={honor.title} variant="accent" className="gap-1.5">
-              #{honor.rank} {honor.title}
-            </Badge>
-          ))}
+          {bookDetail.honorInfos.map((honor) =>
+            honor.collectionId ? (
+              <Link key={honor.title} to={`/collection/${honor.collectionId}`}>
+                <Badge variant="accent" className="gap-1.5 cursor-pointer transition-colors hover:bg-[var(--accent)]">
+                  #{honor.rank} {honor.title}
+                </Badge>
+              </Link>
+            ) : (
+              <Badge key={honor.title} variant="accent" className="gap-1.5">
+                #{honor.rank} {honor.title}
+              </Badge>
+            )
+          )}
         </div>
       ) : null}
     </div>
@@ -404,11 +412,19 @@ function MobileHeroPanel({
 
       {bookDetail.honorInfos?.length ? (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {bookDetail.honorInfos.map((honor) => (
-            <Badge key={honor.title} variant="accent" className="gap-1 text-xs">
-              #{honor.rank} {honor.title}
-            </Badge>
-          ))}
+          {bookDetail.honorInfos.map((honor) =>
+            honor.collectionId ? (
+              <Link key={honor.title} to={`/collection/${honor.collectionId}`}>
+                <Badge variant="accent" className="gap-1 text-xs cursor-pointer transition-colors hover:bg-[var(--accent)]">
+                  #{honor.rank} {honor.title}
+                </Badge>
+              </Link>
+            ) : (
+              <Badge key={honor.title} variant="accent" className="gap-1 text-xs">
+                #{honor.rank} {honor.title}
+              </Badge>
+            )
+          )}
         </div>
       ) : null}
     </div>
