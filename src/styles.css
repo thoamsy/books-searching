@@ -11,6 +11,7 @@
   --color-destructive: var(--destructive);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
+  --color-star: oklch(0.795 0.184 86.047);
   --font-display: "Georgia", "Songti SC", "SimSun", serif;
   --font-sans: "Manrope", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }

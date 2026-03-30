@@ -21,7 +21,7 @@ export function DetailErrorFallback({
         <p className="text-lg text-[var(--destructive)]">{message}</p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Button variant="outline" onClick={reset}>
-            <RotateCw className="size-4" />
+            <RotateCw data-icon="inline-start" />
             重试
           </Button>
           <Link to="/">

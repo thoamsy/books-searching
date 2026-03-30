@@ -322,7 +322,7 @@ export function SearchPage() {
       )}>
         <header className={cn("animate-fade-up", hasBookHistory ? "mb-10" : "mb-8 text-center")}>
           <p className={cn("flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-[var(--primary)]/70", !hasBookHistory && "justify-center")}>
-            <img src="/favicon.svg" alt="" className="h-5 w-5" />
+            <img src="/favicon.svg" alt="" className="size-5" />
             <span className="font-display">Opus</span>
           </p>
           <h1 className="mt-3 font-display text-4xl font-medium leading-tight sm:text-5xl">

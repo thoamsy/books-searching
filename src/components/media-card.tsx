@@ -48,7 +48,7 @@ export function MediaCard({
         ) : null}
         {rating ? (
           <div className="flex items-center gap-1 pt-0.5">
-            <Star className="size-3 fill-current text-amber-500" />
+            <Star className="size-3 fill-current text-star" />
             <span className="text-xs font-medium">{rating.toFixed(1)}</span>
           </div>
         ) : null}

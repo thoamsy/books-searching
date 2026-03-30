@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 export function ExpandableDescription({ text }: { text: string }) {
   const shouldCollapse = text.length > 420;
@@ -7,7 +8,7 @@ export function ExpandableDescription({ text }: { text: string }) {
 
   return (
     <div className="mt-4">
-      <div className={`relative ${!expanded && shouldCollapse ? "max-h-[28rem] overflow-hidden" : ""}`}>
+      <div className={cn("relative", !expanded && shouldCollapse && "max-h-[28rem] overflow-hidden")}>
         <p className="whitespace-pre-line text-[15px] leading-7 text-[var(--muted-foreground)]">{text}</p>
         {!expanded && shouldCollapse ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.1)_28%,rgba(255,255,255,0.45)_72%,rgba(255,255,255,0.6))]">
