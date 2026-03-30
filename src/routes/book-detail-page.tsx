@@ -8,6 +8,7 @@ import {
   UserRound
 } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import { DepthLink } from "@/components/depth-link";
 import { BookCover } from "@/components/book-cover";
 import { DetailErrorFallback } from "@/components/detail-error-fallback";
 import { ExpandableDescription, InfoBlock } from "@/components/expandable-description";
@@ -194,7 +195,7 @@ function DetailHeroPanel({
       {authors.length > 0 && (
         <div className="mt-5 flex flex-wrap items-center gap-2.5">
           {authors.map((author) => (
-            <Link
+            <DepthLink
               key={author}
               to={`/author/${encodeURIComponent(author)}`}
               className="group/author inline-flex items-center gap-1.5 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-3 py-1 text-sm font-medium text-[var(--primary)] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/[0.1] hover:shadow-[0_4px_12px_color-mix(in_oklch,var(--primary)_12%,transparent)]"
@@ -203,7 +204,7 @@ function DetailHeroPanel({
               <span className="bg-[linear-gradient(var(--primary),var(--primary))] bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/author:bg-[length:100%_1.5px]">
                 {author}
               </span>
-            </Link>
+            </DepthLink>
           ))}
         </div>
       )}
@@ -239,11 +240,11 @@ function DetailHeroPanel({
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {bookDetail.honorInfos.map((honor) =>
             honor.collectionId ? (
-              <Link key={honor.title} to={`/collection/${honor.collectionId}`}>
+              <DepthLink key={honor.title} to={`/collection/${honor.collectionId}`}>
                 <Badge variant="accent" className="gap-1.5 cursor-pointer transition-colors hover:bg-[var(--accent)]">
                   #{honor.rank} {honor.title}
                 </Badge>
-              </Link>
+              </DepthLink>
             ) : (
               <Badge key={honor.title} variant="accent" className="gap-1.5">
                 #{honor.rank} {honor.title}
@@ -302,11 +303,11 @@ function DetailSidebarPanel({
           <h3 className="font-display text-xl font-medium sm:text-2xl">上榜</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {bookDetail.subjectCollections.map((c) => (
-              <Link key={c.id} to={`/collection/${c.id}`}>
+              <DepthLink key={c.id} to={`/collection/${c.id}`}>
                 <Badge className="cursor-pointer transition-colors hover:bg-[var(--accent)]">
                   {c.title}
                 </Badge>
-              </Link>
+              </DepthLink>
             ))}
           </div>
         </section>
@@ -369,7 +370,7 @@ function MobileHeroPanel({
       {authors.length > 0 && (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           {authors.slice(0, 3).map((author) => (
-            <Link
+            <DepthLink
               key={author}
               to={`/author/${encodeURIComponent(author)}`}
               className="group/author inline-flex items-center gap-1 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-2.5 py-0.5 text-xs font-medium text-[var(--primary)] transition-all hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/[0.1]"
@@ -378,7 +379,7 @@ function MobileHeroPanel({
               <span className="bg-[linear-gradient(var(--primary),var(--primary))] bg-[length:0%_1px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/author:bg-[length:100%_1px]">
                 {author}
               </span>
-            </Link>
+            </DepthLink>
           ))}
         </div>
       )}
@@ -414,11 +415,11 @@ function MobileHeroPanel({
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {bookDetail.honorInfos.map((honor) =>
             honor.collectionId ? (
-              <Link key={honor.title} to={`/collection/${honor.collectionId}`}>
+              <DepthLink key={honor.title} to={`/collection/${honor.collectionId}`}>
                 <Badge variant="accent" className="gap-1 text-xs cursor-pointer transition-colors hover:bg-[var(--accent)]">
                   #{honor.rank} {honor.title}
                 </Badge>
-              </Link>
+              </DepthLink>
             ) : (
               <Badge key={honor.title} variant="accent" className="gap-1 text-xs">
                 #{honor.rank} {honor.title}
