@@ -52,10 +52,10 @@ function BooksGridSkeleton() {
           相关作品
         </h2>
       </div>
-      <div className="@container mt-6 grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-5 @5xl:grid-cols-5 @5xl:gap-6">
+      <div className="mt-6 grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-5 @5xl:grid-cols-5 @5xl:gap-6">
         {Array.from({ length: 10 }).map((_, i) => (
           <div key={i} className="animate-pulse">
-            <div className="aspect-[3/4] rounded-2xl bg-white/50" />
+            <div className="aspect-[3/4] rounded-lg bg-white/50" />
             <div className="mt-3 px-0.5">
               <div className="h-4 w-3/4 rounded-full bg-white/50" />
               <div className="mt-2 h-3 w-1/2 rounded-full bg-white/50" />
@@ -126,7 +126,7 @@ function AuthorBooksContent({ authorName }: { authorName: string }) {
           <p className="text-sm text-[var(--muted-foreground)]">未找到相关作品</p>
         </div>
       ) : (
-        <div className="@container mt-6 grid grid-cols-2 gap-x-4 gap-y-6 @xl:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-x-5 @5xl:grid-cols-5 @5xl:gap-x-6">
+        <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 @xl:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-x-5 @5xl:grid-cols-5 @5xl:gap-x-6">
           {books.map((book) => {
             const workId = normalizeWorkId(book.key);
             if (!workId) return null;
@@ -214,7 +214,7 @@ export function AuthorPage() {
       </section>
 
       {/* Books section */}
-      <section className="animate-fade-up mx-auto mt-12 w-full max-w-[1240px] px-5 [animation-delay:160ms] sm:px-8 lg:px-10">
+      <section className="@container animate-fade-up mx-auto mt-12 w-full max-w-[1240px] px-5 [animation-delay:160ms] sm:px-8 lg:px-10">
         <QueryErrorBoundary
           fallback={({ error, reset }) => (
             <BooksErrorFallback error={error} reset={reset} />

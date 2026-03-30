@@ -10,13 +10,13 @@ import { collectionItemsQueryOptions } from "@/lib/collection-queries";
 
 function CollectionSkeleton() {
   return (
-    <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-4 sm:px-8 lg:px-10">
+    <div className="@container animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-4 sm:px-8 lg:px-10">
       <div className="space-y-4">
         <div className="h-10 w-64 animate-pulse rounded-2xl bg-[var(--muted)]" />
         <div className="h-6 w-40 animate-pulse rounded-xl bg-[var(--muted)]" />
-        <div className="@container mt-8 grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5">
+        <div className="mt-8 grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5">
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="h-72 animate-pulse rounded-2xl bg-[var(--muted)]" />
+            <div key={i} className="h-72 animate-pulse rounded-lg bg-[var(--muted)]" />
           ))}
         </div>
       </div>
