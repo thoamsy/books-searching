@@ -294,7 +294,11 @@ function DetailSidebarPanel({
           <h3 className="font-display text-xl font-medium sm:text-2xl">上榜</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {bookDetail.subjectCollections.map((c) => (
-              <Badge key={c.id}>{c.title}</Badge>
+              <Link key={c.id} to={`/collection/${c.id}`}>
+                <Badge className="cursor-pointer transition-colors hover:bg-[var(--accent)]">
+                  {c.title}
+                </Badge>
+              </Link>
             ))}
           </div>
         </section>

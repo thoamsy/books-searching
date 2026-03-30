@@ -1,6 +1,7 @@
 import { createBrowserRouter, Outlet, ScrollRestoration } from "react-router-dom";
 import { bookDetailQueryOptions, searchBooksQueryOptions } from "@/lib/book-queries";
 import { celebrityDetailQueryOptions, celebrityWorksQueryOptions } from "@/lib/celebrity-queries";
+import { collectionItemsQueryOptions } from "@/lib/collection-queries";
 import { movieDetailQueryOptions } from "@/lib/movie-queries";
 import { queryClient } from "@/lib/query-client";
 import { BackButton } from "@/components/back-button";
@@ -88,6 +89,21 @@ export const router = createBrowserRouter([
             },
             lazy: () =>
               import("@/routes/celebrity-page").then((m) => ({ Component: m.CelebrityPage }))
+          },
+          {
+            path: "/collection/:collectionId",
+            loader({ params }) {
+              if (params.collectionId) {
+                void queryClient.ensureQueryData(
+                  collectionItemsQueryOptions(params.collectionId)
+                );
+              }
+              return null;
+            },
+            lazy: () =>
+              import("@/routes/collection-page").then((m) => ({
+                Component: m.CollectionPage
+              }))
           }
         ]
       }
