@@ -37,11 +37,11 @@ function MovieDetailSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie })
       {/* Mobile skeleton */}
       <div className="animate-fade-up flex gap-5 [animation-delay:80ms] lg:hidden">
         <div className="w-[120px] shrink-0">
-          <div className="aspect-[2/3] overflow-hidden rounded-[20px]">
+          <div className="aspect-[2/3] overflow-hidden rounded-lg">
             {fallbackMovie?.coverUrl ? (
-              <BookCover src={fallbackMovie.coverUrl} title={fallbackMovie?.title ?? "海报"} className="rounded-[20px] opacity-70 saturate-75" />
+              <BookCover src={fallbackMovie.coverUrl} title={fallbackMovie?.title ?? "海报"} className="rounded-lg opacity-70 saturate-75" />
             ) : (
-              <Skeleton className="h-full w-full rounded-[20px] bg-white/70" />
+              <Skeleton className="h-full w-full rounded-lg bg-white/70" />
             )}
           </div>
         </div>
@@ -85,11 +85,11 @@ function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; f
       {/* Mobile: horizontal compact layout */}
       <div className="flex gap-5 lg:hidden">
         <div className="w-[120px] shrink-0">
-          <div className="aspect-[2/3] overflow-hidden rounded-[20px] shadow-[var(--shadow-warm-sm)]">
+          <div className="aspect-[2/3] overflow-hidden rounded-lg shadow-warm-sm">
             <BookCover
               src={movieDetail.coverUrl ?? fallbackMovie?.coverUrl ?? null}
               title={movieDetail.title ?? fallbackMovie?.title ?? "未知影片"}
-              className="rounded-[20px]"
+              className="rounded-lg"
             />
           </div>
         </div>
@@ -133,7 +133,7 @@ export function MovieDetailPage() {
     return (
       <div className="flex flex-1 items-center justify-center px-6 text-center">
         <div>
-          <p className="text-lg text-[var(--foreground)]">未找到该影片，可能链接已失效。</p>
+          <p className="text-lg text-foreground">未找到该影片，可能链接已失效。</p>
           <Link to="/">
             <Button variant="outline" className="mt-6">
               返回搜索
@@ -172,8 +172,8 @@ function DetailCoverPanel({
   const cover = movieDetail?.coverUrl ?? fallbackMovie?.coverUrl ?? null;
 
   return (
-    <div className="mx-auto aspect-[2/3] w-full max-w-[320px] overflow-hidden rounded-[28px] shadow-[var(--shadow-warm-lg)]">
-      <BookCover src={cover} title={title} className="rounded-[28px]" />
+    <div className="mx-auto aspect-[2/3] w-full max-w-[320px] overflow-hidden rounded-lg shadow-warm-lg">
+      <BookCover src={cover} title={title} className="rounded-lg" />
     </div>
   );
 }
@@ -195,7 +195,7 @@ function DetailHeroPanel({
 
   return (
     <div>
-      <p className="text-sm uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
+      <p className="text-sm uppercase tracking-[0.28em] text-muted-foreground">
         {isTV ? "电视剧详情" : "电影详情"}
       </p>
       <h1 className="mt-3 max-w-4xl font-display text-4xl font-medium leading-none sm:text-5xl lg:text-6xl">
@@ -203,17 +203,17 @@ function DetailHeroPanel({
       </h1>
 
       {movieDetail.originalTitle ? (
-        <p className="mt-2 text-lg text-[var(--muted-foreground)]">{movieDetail.originalTitle}</p>
+        <p className="mt-2 text-lg text-muted-foreground">{movieDetail.originalTitle}</p>
       ) : null}
 
       {directors.length > 0 && (
         <div className="mt-5 flex flex-wrap items-center gap-2.5">
-          <span className="text-sm text-[var(--muted-foreground)]">导演</span>
+          <span className="text-sm text-muted-foreground">导演</span>
           {directors.map((person) => (
             <DepthLink
               key={person.name}
               to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
-              className="group/person inline-flex items-center gap-1.5 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-3 py-1 text-sm font-medium text-[var(--primary)] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/[0.1] hover:shadow-[0_4px_12px_color-mix(in_oklch,var(--primary)_12%,transparent)]"
+              className="group/person inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/[0.06] px-3 py-1 text-sm font-medium text-primary shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-primary/40 hover:bg-primary/[0.1] hover:shadow-[0_4px_12px_color-mix(in_oklch,var(--primary)_12%,transparent)]"
             >
               <Clapperboard className="size-3.5" />
               <span className="bg-[linear-gradient(var(--primary),var(--primary))] bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1.5px]">
@@ -226,12 +226,12 @@ function DetailHeroPanel({
 
       {cast.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2.5">
-          <span className="text-sm text-[var(--muted-foreground)]">主演</span>
+          <span className="text-sm text-muted-foreground">主演</span>
           {cast.slice(0, 5).map((person) => (
             <DepthLink
               key={person.name}
               to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
-              className="group/person inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/40 px-3 py-1 text-sm text-[var(--foreground)] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-white/80 hover:bg-white/60 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
+              className="group/person inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/40 px-3 py-1 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-white/80 hover:bg-white/60 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
             >
               <Users className="size-3.5" />
               <span className="bg-[linear-gradient(var(--foreground),var(--foreground))] bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1.5px]">
@@ -279,7 +279,7 @@ function DetailHeroPanel({
           {movieDetail.honorInfos.map((honor) =>
             honor.collectionId ? (
               <DepthLink key={honor.title} to={`/collection/${honor.collectionId}`}>
-                <Badge variant="accent" className="gap-1.5 cursor-pointer transition-colors hover:bg-[var(--accent)]">
+                <Badge variant="accent" className="gap-1.5 cursor-pointer transition-colors hover:bg-accent">
                   #{honor.rank} {honor.title}
                 </Badge>
               </DepthLink>
@@ -299,7 +299,7 @@ function DetailDescriptionPanel({ movieDetail }: { movieDetail: MovieDetail }) {
   const description = movieDetail.description || "";
 
   return (
-    <article className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-7 shadow-[var(--shadow-warm-md)]">
+    <article className="rounded-lg border border-white/70 bg-surface p-7 shadow-warm-md">
       <h2 className="font-display text-2xl font-medium sm:text-3xl">剧情简介</h2>
       <ExpandableDescription
         text={description || "当前来源没有提供简介信息。你可以在豆瓣查看更多详情。"}
@@ -321,7 +321,7 @@ function DetailSidebarPanel({
   return (
     <aside className="flex flex-col gap-6">
       {genres.length > 0 && (
-        <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
+        <section className="rounded-lg border border-white/70 bg-surface p-6">
           <h3 className="font-display text-xl font-medium sm:text-2xl">类型</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {genres.map((genre) => <Badge key={genre}>{genre}</Badge>)}
@@ -330,7 +330,7 @@ function DetailSidebarPanel({
       )}
 
       {subjects.length > 0 && (
-        <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
+        <section className="rounded-lg border border-white/70 bg-surface p-6">
           <h3 className="font-display text-xl font-medium sm:text-2xl">标签</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {subjects.map((subject) => <Badge key={subject}>{subject}</Badge>)}
@@ -338,7 +338,7 @@ function DetailSidebarPanel({
         </section>
       )}
 
-      <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
+      <section className="rounded-lg border border-white/70 bg-surface p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">影片信息</h3>
         <div className="mt-4 flex flex-col gap-4">
           {movieDetail.country?.length ? (
@@ -364,7 +364,7 @@ function DetailSidebarPanel({
               href={movieDetail.infoLink}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-[var(--primary)]"
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary"
             >
               查看豆瓣详情
               <ExternalLink className="size-4" />
@@ -374,12 +374,12 @@ function DetailSidebarPanel({
       </section>
 
       {movieDetail.subjectCollections?.length ? (
-        <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
+        <section className="rounded-lg border border-white/70 bg-surface p-6">
           <h3 className="font-display text-xl font-medium sm:text-2xl">上榜</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {movieDetail.subjectCollections.map((c) => (
               <DepthLink key={c.id} to={`/collection/${c.id}`}>
-                <Badge className="cursor-pointer transition-colors hover:bg-[var(--accent)]">
+                <Badge className="cursor-pointer transition-colors hover:bg-accent">
                   {c.title}
                 </Badge>
               </DepthLink>
@@ -417,12 +417,12 @@ function MobileHeroPanel({
 
       {directors.length > 0 && (
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-[var(--muted-foreground)]">导演</span>
+          <span className="text-xs text-muted-foreground">导演</span>
           {directors.slice(0, 2).map((person) => (
             <DepthLink
               key={person.name}
               to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
-              className="group/person inline-flex items-center gap-1 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-2.5 py-0.5 text-xs font-medium text-[var(--primary)] transition-all hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/[0.1]"
+              className="group/person inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/[0.06] px-2.5 py-0.5 text-xs font-medium text-primary transition-all hover:border-primary/40 hover:bg-primary/[0.1]"
             >
               <Clapperboard className="size-3" />
               <span className="bg-[linear-gradient(var(--primary),var(--primary))] bg-[length:0%_1px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1px]">
@@ -435,12 +435,12 @@ function MobileHeroPanel({
 
       {cast.length > 0 && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-[var(--muted-foreground)]">主演</span>
+          <span className="text-xs text-muted-foreground">主演</span>
           {cast.slice(0, 3).map((person) => (
             <DepthLink
               key={person.name}
               to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
-              className="group/person inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/40 px-2.5 py-0.5 text-xs text-[var(--foreground)] transition-all hover:border-white/80 hover:bg-white/60"
+              className="group/person inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/40 px-2.5 py-0.5 text-xs text-foreground transition-all hover:border-white/80 hover:bg-white/60"
             >
               <Users className="size-3" />
               <span className="bg-[linear-gradient(var(--foreground),var(--foreground))] bg-[length:0%_1px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1px]">
@@ -475,7 +475,7 @@ function MobileHeroPanel({
           {movieDetail.honorInfos.map((honor) =>
             honor.collectionId ? (
               <DepthLink key={honor.title} to={`/collection/${honor.collectionId}`}>
-                <Badge variant="accent" className="gap-1 text-xs cursor-pointer transition-colors hover:bg-[var(--accent)]">
+                <Badge variant="accent" className="gap-1 text-xs cursor-pointer transition-colors hover:bg-accent">
                   #{honor.rank} {honor.title}
                 </Badge>
               </DepthLink>
@@ -508,9 +508,9 @@ function MobileHeroSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) 
       )}
       {fallbackMovie?.director?.length ? (
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-[var(--muted-foreground)]">导演</span>
+          <span className="text-xs text-muted-foreground">导演</span>
           {fallbackMovie.director.slice(0, 2).map((name) => (
-            <span key={name} className="inline-flex items-center gap-1 rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/[0.06] px-2.5 py-0.5 text-xs font-medium text-[var(--primary)]">
+            <span key={name} className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/[0.06] px-2.5 py-0.5 text-xs font-medium text-primary">
               {name}
             </span>
           ))}
@@ -534,11 +534,11 @@ function CoverPanelSkeleton({
   coverUrl?: string;
 }) {
   return (
-    <div className="mx-auto aspect-[2/3] w-full max-w-[320px] overflow-hidden rounded-[28px] shadow-[var(--shadow-warm-lg)]">
+    <div className="mx-auto aspect-[2/3] w-full max-w-[320px] overflow-hidden rounded-lg shadow-warm-lg">
       {coverUrl ? (
-        <BookCover src={coverUrl} title={title ?? "海报"} className="rounded-[28px] opacity-70 saturate-75" />
+        <BookCover src={coverUrl} title={title ?? "海报"} className="rounded-lg opacity-70 saturate-75" />
       ) : (
-        <Skeleton className="h-full w-full rounded-[28px] bg-white/70" />
+        <Skeleton className="h-full w-full rounded-lg bg-white/70" />
       )}
     </div>
   );
@@ -547,7 +547,7 @@ function CoverPanelSkeleton({
 function HeroPanelSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) {
   return (
     <div>
-      <p className="text-sm uppercase tracking-[0.28em] text-[var(--muted-foreground)]">影片详情</p>
+      <p className="text-sm uppercase tracking-[0.28em] text-muted-foreground">影片详情</p>
       {fallbackMovie?.title ? (
         <h1 className="mt-3 max-w-4xl font-display text-4xl font-medium leading-none sm:text-5xl lg:text-6xl">{fallbackMovie.title}</h1>
       ) : (
@@ -557,8 +557,8 @@ function HeroPanelSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) {
         </div>
       )}
       <div className="mt-5 flex flex-wrap gap-2.5">
-        <Skeleton className="h-8 w-32 rounded-full bg-[var(--primary)]/[0.06]" />
-        <Skeleton className="h-8 w-24 rounded-full bg-[var(--primary)]/[0.06]" />
+        <Skeleton className="h-8 w-32 rounded-full bg-primary/[0.06]" />
+        <Skeleton className="h-8 w-24 rounded-full bg-primary/[0.06]" />
       </div>
       <div className="mt-3 flex flex-wrap gap-2.5">
         <Skeleton className="h-7 w-20 rounded-full bg-white/70" />
@@ -571,7 +571,7 @@ function HeroPanelSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) {
 
 function DescriptionPanelSkeleton() {
   return (
-    <article className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-7 shadow-[var(--shadow-warm-md)]">
+    <article className="rounded-lg border border-white/70 bg-surface p-7 shadow-warm-md">
       <h2 className="font-display text-2xl font-medium sm:text-3xl">剧情简介</h2>
       <div className="mt-6 flex flex-col gap-4">
         {Array.from({ length: 8 }).map((_, index) => (
@@ -588,7 +588,7 @@ function DescriptionPanelSkeleton() {
 function SidebarPanelSkeleton() {
   return (
     <aside className="flex flex-col gap-6">
-      <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
+      <section className="rounded-lg border border-white/70 bg-surface p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">类型</h3>
         <div className="mt-4 flex flex-wrap gap-2">
           {Array.from({ length: 3 }).map((_, index) => (
@@ -597,7 +597,7 @@ function SidebarPanelSkeleton() {
         </div>
       </section>
 
-      <section className="rounded-[32px] border border-white/70 bg-[var(--surface)] p-6">
+      <section className="rounded-lg border border-white/70 bg-surface p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">影片信息</h3>
         <div className="mt-4 flex flex-col gap-5">
           {Array.from({ length: 4 }).map((_, index) => (

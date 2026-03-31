@@ -17,8 +17,8 @@ export function DetailErrorFallback({
 
   return (
     <div className="mx-auto mt-10 w-full max-w-[1240px] px-5 text-center sm:px-8 lg:px-10">
-      <div className="rounded-[32px] border border-white/70 bg-[var(--surface)] px-8 py-12">
-        <p className="text-lg text-[var(--destructive)]">{message}</p>
+      <div className="rounded-lg border border-white/70 bg-surface px-8 py-12">
+        <p className="text-lg text-destructive">{message}</p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Button variant="outline" onClick={reset}>
             <RotateCw data-icon="inline-start" />

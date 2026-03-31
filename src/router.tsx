@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet, ScrollRestoration } from "react-router-dom";
+import { createBrowserRouter, Outlet, ScrollRestoration, useLocation } from "react-router-dom";
 import { bookDetailQueryOptions, searchBooksQueryOptions } from "@/lib/book-queries";
 import { celebrityDetailQueryOptions, celebrityWorksQueryOptions } from "@/lib/celebrity-queries";
 import { collectionItemsQueryOptions } from "@/lib/collection-queries";
@@ -8,11 +8,15 @@ import { BackButton } from "@/components/back-button";
 import { UserMenu } from "@/components/user-menu";
 
 function RootLayout() {
+  const { pathname } = useLocation();
+
   return (
     <>
-      <div className="fixed top-4 right-5 z-10 sm:right-8">
-        <UserMenu />
-      </div>
+      {pathname !== "/login" && (
+        <div className="fixed top-4 right-5 z-10 sm:right-8">
+          <UserMenu />
+        </div>
+      )}
       <Outlet />
       <footer className="-mt-10 pb-3 text-center text-[10px] text-[var(--muted-foreground)]/30">
         <a href="https://github.com/thoamsy" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-[var(--muted-foreground)]/60">

@@ -39,7 +39,7 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="size-8 overflow-hidden rounded-full ring-offset-[var(--background)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 hover:opacity-80"
+          className="size-8 overflow-hidden rounded-full ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:opacity-80"
         >
           {avatarUrl ? (
             <img
@@ -49,7 +49,7 @@ export function UserMenu() {
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="flex size-full items-center justify-center rounded-full bg-gradient-to-b from-[var(--primary)]/20 to-[var(--primary)]/40 text-xs font-medium text-[var(--primary)]">
+            <div className="flex size-full items-center justify-center rounded-full bg-gradient-to-b from-primary/20 to-primary/40 text-xs font-medium text-primary">
               {initials}
             </div>
           )}
@@ -60,7 +60,7 @@ export function UserMenu() {
           <div className="px-2 py-1.5">
             <p className="truncate text-sm font-medium">{displayName}</p>
             {user.email && (
-              <p className="truncate text-xs text-[var(--muted-foreground)]">{user.email}</p>
+              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
             )}
           </div>
         </DropdownMenuGroup>

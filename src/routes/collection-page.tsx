@@ -13,8 +13,8 @@ function CollectionSkeleton() {
   return (
     <div className="@container animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-4 sm:px-8 lg:px-10">
       <div className="flex flex-col gap-4">
-        <Skeleton className="h-10 w-64 rounded-2xl" />
-        <Skeleton className="h-6 w-40 rounded-xl" />
+        <Skeleton className="h-10 w-64 rounded-lg" />
+        <Skeleton className="h-6 w-40 rounded-lg" />
         <div className="mt-8 grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5">
           {Array.from({ length: 10 }).map((_, i) => (
             <Skeleton key={i} className="h-72 rounded-lg" />
@@ -71,11 +71,11 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
           {meta.title}
         </h1>
         {meta.subtitle ? (
-          <p className="mt-2 text-lg text-[var(--muted-foreground)]">
+          <p className="mt-2 text-lg text-muted-foreground">
             {meta.subtitle}
           </p>
         ) : null}
-        <div className="mt-3 flex items-center gap-4 text-sm text-[var(--muted-foreground)]">
+        <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
           <span>{total} 部作品</span>
           {meta.followersCount ? (
             <span>{meta.followersCount.toLocaleString()} 人关注</span>
@@ -131,7 +131,7 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
 
       {isFetchingNextPage ? (
         <div className="flex justify-center py-8">
-          <span className="text-sm text-[var(--muted-foreground)]">加载中…</span>
+          <span className="text-sm text-muted-foreground">加载中…</span>
         </div>
       ) : null}
     </div>

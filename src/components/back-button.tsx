@@ -31,7 +31,7 @@ export function BackButton() {
           <m.button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
             layout
             transition={{ layout: springConfig }}
           >
@@ -60,7 +60,7 @@ export function BackButton() {
                   type="button"
                   onClick={() => navigate("/")}
                   aria-label="返回首页"
-                  className="inline-flex items-center px-3 py-2 text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
+                  className="inline-flex items-center px-3 py-2 text-muted-foreground transition-colors hover:text-foreground"
                   initial={{ opacity: 0, scale: 0.6, x: -8, rotate: -10 }}
                   animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
                   exit={{ opacity: 0, scale: 0.6, x: -8, rotate: -10 }}

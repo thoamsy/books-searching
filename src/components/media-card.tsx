@@ -24,7 +24,7 @@ export function MediaCard({
 }: MediaCardProps) {
   return (
     <DepthLink to={to} state={state} className="group flex flex-col gap-2.5">
-      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-[var(--muted)] shadow-[var(--shadow-warm-sm)] transition-shadow group-hover:shadow-[var(--shadow-warm-md)]">
+      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-muted shadow-warm-sm transition-shadow group-hover:shadow-warm-md">
         <BookCover
           src={coverUrl}
           title={title}
@@ -42,7 +42,7 @@ export function MediaCard({
           {title}
         </h3>
         {subtitle ? (
-          <p className="line-clamp-1 text-xs text-[var(--muted-foreground)]">
+          <p className="line-clamp-1 text-xs text-muted-foreground">
             {subtitle}
           </p>
         ) : null}

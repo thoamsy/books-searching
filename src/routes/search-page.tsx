@@ -444,7 +444,7 @@ export function SearchPage() {
 
   return (
     <main className={cn(
-      "min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)]",
+      "min-h-[100dvh] bg-background text-foreground",
       !hasBookHistory && "flex flex-col"
     )}>
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top,color-mix(in_oklch,var(--primary)_10%,transparent)_0%,transparent_50%),radial-gradient(ellipse_at_bottom_right,color-mix(in_oklch,var(--primary)_6%,transparent)_0%,transparent_40%)]" />
@@ -454,12 +454,12 @@ export function SearchPage() {
         hasBookHistory ? "pt-16 sm:pt-24" : "my-auto"
       )}>
         <header className={cn("animate-fade-up", hasBookHistory ? "mb-10" : "mb-8 text-center")}>
-          <p className={cn("flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-[var(--primary)]/70", !hasBookHistory && "justify-center")}>
+          <p className={cn("flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-primary/70", !hasBookHistory && "justify-center")}>
             <img src="/favicon.svg" alt="" className="size-5" />
             <span className="font-display">Opus</span>
           </p>
           <h1 className="mt-3 font-display text-4xl font-medium leading-tight sm:text-5xl">
-            找到你的<span className="text-[var(--primary)]">下一部作品</span>
+            找到你的<span className="text-primary">下一部作品</span>
           </h1>
         </header>
 
@@ -481,7 +481,7 @@ export function SearchPage() {
               showClear={false}
               aria-label="搜索书籍和影视"
               placeholder="搜索书名、电影、电视剧……"
-              className="h-13 rounded-2xl border-white/60 bg-[var(--surface-elevated)] text-base font-medium shadow-[var(--shadow-warm-sm)] backdrop-blur-xl transition-[box-shadow,border-color] duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] has-[[data-slot=input-group-control]:focus-visible]:border-[var(--primary)]/25 has-[[data-slot=input-group-control]:focus-visible]:shadow-[var(--shadow-warm-md)] has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&_input]:pl-11 placeholder:text-[var(--muted-foreground)]/60"
+              className="h-13 rounded-2xl border-white/60 bg-surface-elevated text-base font-medium shadow-warm-sm backdrop-blur-xl transition-[box-shadow,border-color] duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] has-[[data-slot=input-group-control]:focus-visible]:border-primary/25 has-[[data-slot=input-group-control]:focus-visible]:shadow-warm-md has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&_input]:pl-11 placeholder:text-muted-foreground/60"
               onFocus={() => setIsOpen(true)}
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={(event) => {
@@ -500,7 +500,7 @@ export function SearchPage() {
               {query ? (
                 <button
                   type="button"
-                  className="mr-1 inline-flex size-8 items-center justify-center rounded-full text-[var(--muted-foreground)] transition hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
+                  className="mr-1 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground"
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
                     setQuery("");
@@ -514,20 +514,20 @@ export function SearchPage() {
               ) : null}
             </ComboboxInput>
 
-            <Search className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-[var(--primary)]/60" />
+            <Search className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-primary/60" />
 
             <ComboboxContent
               anchor={searchBarRef}
               side="bottom"
               sideOffset={8}
-              className="w-(--anchor-width) max-w-none min-w-(--anchor-width) rounded-2xl border border-white/70 bg-[var(--surface-elevated)] py-2 shadow-[var(--shadow-warm-dropdown)] backdrop-blur-xl"
+              className="w-(--anchor-width) max-w-none min-w-(--anchor-width) rounded-2xl border border-white/70 bg-surface-elevated py-2 shadow-warm-dropdown backdrop-blur-xl"
             >
               <ComboboxGroup>
-                <ComboboxLabel className="px-5 py-2 text-left text-[11px] uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
+                <ComboboxLabel className="px-5 py-2 text-left text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                   搜索建议
                 </ComboboxLabel>
                 {isSuggesting && suggestItems.length === 0 ? (
-                  <div role="status" aria-live="polite" className="flex items-center gap-2.5 px-5 py-3 text-sm text-[var(--muted-foreground)]">
+                  <div role="status" aria-live="polite" className="flex items-center gap-2.5 px-5 py-3 text-sm text-muted-foreground">
                     <LoaderCircle className="size-4 animate-spin" />
                     正在搜索…
                   </div>
@@ -543,7 +543,7 @@ export function SearchPage() {
                   <ComboboxItem
                     key={item.id}
                     value={item}
-                    className="mx-0 flex items-center justify-between gap-4 rounded-lg px-5 py-2.5 data-highlighted:bg-[var(--accent)]/60"
+                    className="mx-0 flex items-center justify-between gap-4 rounded-lg px-5 py-2.5 data-highlighted:bg-accent/60"
                   >
                     <div className="flex min-w-0 items-center gap-3.5">
                       {item.kind === "author" || item.kind === "celebrity" ? (
@@ -551,7 +551,7 @@ export function SearchPage() {
                           {(item.suggest?.coverUrl ?? item.movieSuggest?.coverUrl) ? (
                             <img src={(item.suggest?.coverUrl ?? item.movieSuggest?.coverUrl)!} alt={item.label} className="h-full w-full rounded-lg object-cover" loading="lazy" />
                           ) : (
-                            <User className="size-5 text-[var(--muted-foreground)]" />
+                            <User className="size-5 text-muted-foreground" />
                           )}
                         </div>
                       ) : (item.kind === "movie" || item.kind === "tv") ? (
@@ -560,7 +560,7 @@ export function SearchPage() {
                             <img src={item.movieSuggest.coverUrl} alt={item.label} className="h-full w-full rounded-lg object-cover" loading="lazy" />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center">
-                              {item.kind === "tv" ? <Tv className="size-5 text-[var(--muted-foreground)]" /> : <Film className="size-5 text-[var(--muted-foreground)]" />}
+                              {item.kind === "tv" ? <Tv className="size-5 text-muted-foreground" /> : <Film className="size-5 text-muted-foreground" />}
                             </div>
                           )}
                         </div>
@@ -570,20 +570,20 @@ export function SearchPage() {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.label}</p>
-                        <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">{item.meta}</p>
+                        <p className="truncate text-sm font-medium text-foreground">{item.label}</p>
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">{item.meta}</p>
                       </div>
                     </div>
                     {item.kind === "author" ? (
-                      <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">作者</span>
+                      <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] text-muted-foreground">作者</span>
                     ) : item.kind === "celebrity" ? (
-                      <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">影人</span>
+                      <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] text-muted-foreground">影人</span>
                     ) : (item.kind === "movie" || item.kind === "tv") ? (
-                      <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">
+                      <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] text-muted-foreground">
                         {item.kind === "tv" ? "电视剧" : "电影"}{item.year ? ` · ${item.year}` : ""}
                       </span>
                     ) : item.year ? (
-                      <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">
+                      <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] text-muted-foreground">
                         书籍 · {item.year}
                       </span>
                     ) : null}
@@ -595,10 +595,10 @@ export function SearchPage() {
 
           {error ? (
             <div role="alert" className="mt-4 flex items-center gap-3">
-              <p className="text-sm text-[var(--destructive)]">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
               <button
                 type="button"
-                className="shrink-0 text-sm font-medium text-[var(--foreground)] underline decoration-[var(--border)] underline-offset-4 transition hover:decoration-[var(--foreground)]"
+                className="shrink-0 text-sm font-medium text-foreground underline decoration-border underline-offset-4 transition hover:decoration-foreground"
                 onClick={() => suggestionsQuery.refetch()}
               >
                 重试
@@ -611,7 +611,7 @@ export function SearchPage() {
           <div className="@container animate-fade-up flex flex-col gap-10 [animation-delay:160ms]">
             {displayPersons.length > 0 ? (
               <section>
-                <h2 className="mb-4 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近关注</h2>
+                <h2 className="mb-4 text-xs uppercase tracking-[0.28em] text-muted-foreground">最近关注</h2>
 
                 {/* Mobile: horizontal scroll */}
                 <div className="flex gap-3 overflow-x-auto pb-2 sm:hidden">
@@ -632,11 +632,11 @@ export function SearchPage() {
                               className="relative block shrink-0 transition-[margin] duration-300 ease-out hover:!z-50 group-hover/stack:mr-2"
                               style={{ marginLeft: index === 0 ? 0 : "-0.75rem", zIndex: displayPersons.length - index }}
                             >
-                              <div className="size-10 overflow-hidden rounded-full border-2 border-[var(--background)] shadow-sm transition-transform duration-200 hover:scale-110">
+                              <div className="size-10 overflow-hidden rounded-full border-2 border-background shadow-sm transition-transform duration-200 hover:scale-110">
                                 {person.photoUrl ? (
                                   <img src={person.photoUrl} alt={person.name} className="h-full w-full object-cover" />
                                 ) : (
-                                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-[var(--accent)] text-xs font-medium text-[var(--muted-foreground)]">
+                                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent text-xs font-medium text-muted-foreground">
                                     {person.name.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
                                   </div>
                                 )}
@@ -654,7 +654,7 @@ export function SearchPage() {
 
             {displayMovies.length > 0 ? (
               <section>
-                <h2 className="mb-5 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近观影</h2>
+                <h2 className="mb-5 text-xs uppercase tracking-[0.28em] text-muted-foreground">最近观影</h2>
                 <RecentMediaGrid
                   items={displayMovies.map((item) => ({
                     key: item.subjectId,
@@ -672,10 +672,10 @@ export function SearchPage() {
             {displayBooks.length > 0 ? (
               <section>
                 <div className="mb-5 flex items-center justify-between">
-                  <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近翻阅</h2>
+                  <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">最近翻阅</h2>
                   <button
                     type="button"
-                    className="text-xs text-[var(--muted-foreground)] transition hover:text-[var(--foreground)]"
+                    className="text-xs text-muted-foreground transition hover:text-foreground"
                     onClick={() => {
                       setSearchHistory([]);
                       bookHistoryStore.write([]);
@@ -744,7 +744,7 @@ function RecentMediaCard({ item }: { item: RecentMediaItem }) {
       className="group"
     >
       <div
-        className="overflow-hidden rounded-lg border border-white/60 bg-white/40 shadow-[var(--shadow-warm-sm)] transition group-hover:shadow-[var(--shadow-warm-md)]"
+        className="overflow-hidden rounded-lg border border-white/60 bg-white/40 shadow-warm-sm transition group-hover:shadow-warm-md"
         style={{ aspectRatio: item.aspect }}
       >
         {item.coverUrl ? (
@@ -765,13 +765,13 @@ function RecentMediaCard({ item }: { item: RecentMediaItem }) {
           )
         ) : (
           <div className="flex h-full w-full items-center justify-center rounded-lg bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(231,211,185,0.94))]">
-            <Film className="size-10 text-[var(--muted-foreground)]" />
+            <Film className="size-10 text-muted-foreground" />
           </div>
         )}
       </div>
       <div className="mt-2 px-0.5">
-        <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.title}</p>
-        <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">{item.subtitle}</p>
+        <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{item.subtitle}</p>
       </div>
     </DepthLink>
   );
@@ -809,12 +809,12 @@ function PersonAvatarCard({ person }: { person: RecentPersonEntry }) {
         {person.photoUrl ? (
           <img src={person.photoUrl} alt={person.name} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-[var(--accent)] text-xs font-medium text-[var(--muted-foreground)]">
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent text-xs font-medium text-muted-foreground">
             {person.name.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
           </div>
         )}
       </div>
-      <span className="whitespace-nowrap text-sm text-[var(--foreground)]">{person.name}</span>
+      <span className="whitespace-nowrap text-sm text-foreground">{person.name}</span>
     </DepthLink>
   );
 }

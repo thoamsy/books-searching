@@ -9,9 +9,21 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-destructive: var(--destructive);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-ring: var(--ring);
+  --color-input: var(--border);
+  --color-muted: var(--accent);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
   --color-star: oklch(0.795 0.184 86.047);
+  --color-popover: var(--surface-elevated);
+  --color-popover-foreground: var(--foreground);
+  --color-skeleton: rgba(255, 255, 255, 0.5);
+  --shadow-warm-sm: var(--shadow-warm-sm);
+  --shadow-warm-md: var(--shadow-warm-md);
+  --shadow-warm-lg: var(--shadow-warm-lg);
+  --shadow-warm-dropdown: var(--shadow-warm-dropdown);
   --font-display: "Georgia", "Songti SC", "SimSun", serif;
   --font-sans: "Manrope", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
@@ -26,6 +38,7 @@
   --accent: rgba(224, 209, 189, 0.72);
   --ring: #c96f45;
   --destructive: #b5442e;
+  --card: rgba(255, 255, 255, 0.72);
   --surface: rgba(255, 255, 255, 0.6);
   --surface-elevated: rgba(255, 255, 255, 0.92);
   --shadow-warm-sm: 0 10px 24px rgba(95, 66, 43, 0.1);

@@ -33,16 +33,16 @@ function CelebrityWorksContent({ celebrityId }: { celebrityId: string }) {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
+        <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
           参与作品
           {sorted.length > 0 ? (
-            <span className="ml-2 text-[var(--muted-foreground)]/60">{sorted.length}</span>
+            <span className="ml-2 text-muted-foreground/60">{sorted.length}</span>
           ) : null}
         </h2>
         {sorted.length > 1 ? (
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/50 px-3 py-1.5 text-xs text-[var(--muted-foreground)] transition hover:bg-white/70 hover:text-[var(--foreground)]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/50 px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-white/70 hover:text-foreground"
             onClick={() => {
               const nextIndex = (SORT_ORDER.indexOf(sortMode) + 1) % SORT_ORDER.length;
               setSortMode(SORT_ORDER[nextIndex]);
@@ -55,8 +55,8 @@ function CelebrityWorksContent({ celebrityId }: { celebrityId: string }) {
       </div>
 
       {sorted.length === 0 ? (
-        <div className="mt-8 rounded-[28px] border border-white/70 bg-[var(--surface)] px-8 py-12 text-center">
-          <p className="text-sm text-[var(--muted-foreground)]">未找到相关作品</p>
+        <div className="mt-8 rounded-lg border border-white/70 bg-surface px-8 py-12 text-center">
+          <p className="text-sm text-muted-foreground">未找到相关作品</p>
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 @xl:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-x-5 @5xl:grid-cols-5 @5xl:gap-x-6">
@@ -91,7 +91,7 @@ function WorksGridSkeleton() {
   return (
     <>
       <div className="flex min-h-7 items-center justify-between">
-        <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">参与作品</h2>
+        <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">参与作品</h2>
       </div>
       <div className="mt-6 grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-5 @5xl:grid-cols-5 @5xl:gap-6">
         {Array.from({ length: 10 }).map((_, i) => (
@@ -118,8 +118,8 @@ function ErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
     : "获取影人信息失败，请稍后重试。";
 
   return (
-    <div className="mt-8 rounded-[28px] border border-white/70 bg-[var(--surface)] px-8 py-12 text-center">
-      <p className="text-sm text-[var(--destructive)]">{message}</p>
+    <div className="mt-8 rounded-lg border border-white/70 bg-surface px-8 py-12 text-center">
+      <p className="text-sm text-destructive">{message}</p>
       <Button variant="outline" className="mt-4" onClick={reset}>
         重试
       </Button>
@@ -136,36 +136,36 @@ function CelebrityHero({ celebrityId }: { celebrityId: string }) {
 
   return (
     <div className="flex items-start gap-6 sm:items-center sm:gap-8">
-      <div className="size-20 shrink-0 overflow-hidden rounded-full border-2 border-white/80 shadow-[var(--shadow-warm-sm)] sm:size-28">
+      <div className="size-20 shrink-0 overflow-hidden rounded-full border-2 border-white/80 shadow-warm-sm sm:size-28">
         {celebrity.coverUrl ? (
           <img src={celebrity.coverUrl} alt={celebrity.name} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-[var(--accent)]">
-            <span className="font-display text-2xl text-[var(--muted-foreground)] sm:text-3xl">
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent">
+            <span className="font-display text-2xl text-muted-foreground sm:text-3xl">
               {celebrity.name.charAt(0) || "?"}
             </span>
           </div>
         )}
       </div>
       <div className="min-w-0">
-        <p className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">影人</p>
+        <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">影人</p>
         <h1 className="mt-1 font-display text-3xl font-medium leading-tight sm:text-4xl lg:text-5xl">
           {celebrity.name}
         </h1>
         {celebrity.latinName ? (
-          <p className="mt-1.5 text-sm tracking-wide text-[var(--muted-foreground)]">
+          <p className="mt-1.5 text-sm tracking-wide text-muted-foreground">
             {celebrity.latinName}
           </p>
         ) : null}
         {celebrity.roles ? (
-          <p className="mt-1 text-xs text-[var(--muted-foreground)]">{celebrity.roles}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{celebrity.roles}</p>
         ) : null}
         {celebrity.doubanUrl ? (
           <a
             href={celebrity.doubanUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--primary)] transition hover:underline"
+            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary transition hover:underline"
           >
             豆瓣主页
             <ExternalLink className="size-3" />
@@ -200,7 +200,7 @@ export function CelebrityPage() {
     return (
       <div className="flex flex-1 items-center justify-center px-6 text-center">
         <div>
-          <p className="text-lg text-[var(--foreground)]">未找到该影人。</p>
+          <p className="text-lg text-foreground">未找到该影人。</p>
           <Link to="/">
             <Button variant="outline" className="mt-6">返回搜索</Button>
           </Link>
