@@ -629,7 +629,7 @@ export function SearchPage() {
                           <TooltipTrigger asChild>
                             <DepthLink
                               to={buildPersonUrl(person)}
-                              className="relative block shrink-0 transition-[margin] duration-300 ease-out group-hover/stack:mr-2"
+                              className="relative block shrink-0 transition-[margin] duration-300 ease-out hover:!z-50 group-hover/stack:mr-2"
                               style={{ marginLeft: index === 0 ? 0 : "-0.75rem", zIndex: displayPersons.length - index }}
                             >
                               <div className="size-10 overflow-hidden rounded-full border-2 border-[var(--background)] shadow-sm transition-transform duration-200 hover:scale-110">
