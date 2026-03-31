@@ -5,10 +5,14 @@ import { collectionItemsQueryOptions } from "@/lib/collection-queries";
 import { movieDetailQueryOptions } from "@/lib/movie-queries";
 import { queryClient } from "@/lib/query-client";
 import { BackButton } from "@/components/back-button";
+import { UserMenu } from "@/components/user-menu";
 
 function RootLayout() {
   return (
     <>
+      <div className="fixed top-4 right-5 z-10 sm:right-8">
+        <UserMenu />
+      </div>
       <Outlet />
       <footer className="-mt-10 pb-3 text-center text-[10px] text-[var(--muted-foreground)]/30">
         <a href="https://github.com/thoamsy" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-[var(--muted-foreground)]/60">
@@ -39,6 +43,11 @@ export const router = createBrowserRouter([
         path: "/",
         lazy: () =>
           import("@/routes/search-page").then((m) => ({ Component: m.SearchPage }))
+      },
+      {
+        path: "/login",
+        lazy: () =>
+          import("@/routes/login-page").then((m) => ({ Component: m.LoginPage }))
       },
       {
         element: <DetailLayout />,
