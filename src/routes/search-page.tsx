@@ -52,11 +52,15 @@ interface RecentMovieEntry {
   movie: SearchMovie;
 }
 
-interface RecentAuthorEntry {
+interface RecentPersonEntry {
+  kind: "author" | "celebrity";
   name: string;
   photoUrl?: string;
+  // author-specific
   enName?: string;
   url?: string;
+  // celebrity-specific
+  celebrityId?: string;
 }
 
 const bookHistoryStore = createHistoryStore<RecentSearchEntry>({
@@ -70,13 +74,14 @@ const bookHistoryStore = createHistoryStore<RecentSearchEntry>({
   dedupKey: (item) => item.workId
 });
 
-const authorHistoryStore = createHistoryStore<RecentAuthorEntry>({
-  key: "opus-author-history",
-  limit: 8,
-  validate: (item): item is RecentAuthorEntry =>
+const personHistoryStore = createHistoryStore<RecentPersonEntry>({
+  key: "opus-person-history",
+  limit: 12,
+  validate: (item): item is RecentPersonEntry =>
     item != null && typeof item === "object" &&
-    typeof (item as RecentAuthorEntry).name === "string",
-  dedupKey: (item) => item.name
+    typeof (item as RecentPersonEntry).name === "string" &&
+    ((item as RecentPersonEntry).kind === "author" || (item as RecentPersonEntry).kind === "celebrity"),
+  dedupKey: (item) => `${item.kind}:${item.name}`
 });
 
 const movieHistoryStore = createHistoryStore<RecentMovieEntry>({
@@ -107,7 +112,7 @@ export function SearchPage() {
   const [isOpen, setIsOpen] = useState(Boolean(initialQueryFromUrl));
   const [isComposing, setIsComposing] = useState(false);
   const [searchHistory, setSearchHistory] = useState(bookHistoryStore.read);
-  const [authorHistory, setAuthorHistory] = useState(authorHistoryStore.read);
+  const [personHistory, setPersonHistory] = useState(personHistoryStore.read);
   const [movieHistory, setMovieHistory] = useState(movieHistoryStore.read);
   const { user } = useAuth();
   const userId = user?.id ?? null;
@@ -142,23 +147,25 @@ export function SearchPage() {
         }))
     : movieHistory;
 
-  const displayAuthors: RecentAuthorEntry[] = cloudRows
+  const displayPersons: RecentPersonEntry[] = cloudRows
     ? cloudRows
-        .filter((r) => r.type === "author")
+        .filter((r) => r.type === "author" || r.type === "celebrity")
         .map((r) => ({
+          kind: r.type as "author" | "celebrity",
           name: r.keyword,
           photoUrl: r.extra?.photoUrl as string | undefined,
           enName: r.extra?.enName as string | undefined,
           url: r.extra?.url as string | undefined,
+          celebrityId: r.extra?.celebrityId as string | undefined,
         }))
-    : authorHistory;
+    : personHistory;
 
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 260);
   const hasBookHistory = displayBooks.length > 0;
   const hasMovieHistory = displayMovies.length > 0;
-  const hasHistory = hasBookHistory || hasMovieHistory || displayAuthors.length > 0;
+  const hasHistory = hasBookHistory || hasMovieHistory || displayPersons.length > 0;
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -172,7 +179,7 @@ export function SearchPage() {
 
     const localBooks = bookHistoryStore.read();
     const localMovies = movieHistoryStore.read();
-    const localAuthors = authorHistoryStore.read();
+    const localPersons = personHistoryStore.read();
 
     const entries = [
       ...localBooks.map((b) => ({
@@ -185,10 +192,10 @@ export function SearchPage() {
         type: "movie" as const,
         extra: { subjectId: m.subjectId, movie: m.movie },
       })),
-      ...localAuthors.map((a) => ({
-        keyword: a.name,
-        type: "author" as const,
-        extra: { photoUrl: a.photoUrl, enName: a.enName, url: a.url },
+      ...localPersons.map((p) => ({
+        keyword: p.name,
+        type: p.kind as "author" | "celebrity",
+        extra: { photoUrl: p.photoUrl, enName: p.enName, url: p.url, celebrityId: p.celebrityId },
       })),
     ];
 
@@ -370,15 +377,16 @@ export function SearchPage() {
     }
 
     if (option.kind === "author" && option.suggest) {
-      const entry: RecentAuthorEntry = {
+      const entry: RecentPersonEntry = {
+        kind: "author",
         name: option.label,
         photoUrl: option.suggest.coverUrl,
         enName: option.suggest.enName,
-        url: option.suggest.url
+        url: option.suggest.url,
       };
-      setAuthorHistory((current) => {
-        const next = authorHistoryStore.push(current, entry);
-        authorHistoryStore.write(next);
+      setPersonHistory((current) => {
+        const next = personHistoryStore.push(current, entry);
+        personHistoryStore.write(next);
         return next;
       });
       if (userId) {
@@ -392,11 +400,30 @@ export function SearchPage() {
       }
       setIsOpen(false);
       setIsComposing(false);
-      navigate(buildAuthorUrl(entry), { state: { navDepth: 1 } });
+      navigate(buildPersonUrl(entry), { state: { navDepth: 1 } });
       return;
     }
 
     if (option.kind === "celebrity" && option.movieSuggest) {
+      const entry: RecentPersonEntry = {
+        kind: "celebrity",
+        name: option.label,
+        photoUrl: option.movieSuggest.coverUrl,
+        celebrityId: option.movieSuggest.id,
+      };
+      setPersonHistory((current) => {
+        const next = personHistoryStore.push(current, entry);
+        personHistoryStore.write(next);
+        return next;
+      });
+      if (userId) {
+        upsertSearchHistory(userId, option.label, "celebrity", {
+          photoUrl: option.movieSuggest.coverUrl,
+          celebrityId: option.movieSuggest.id,
+        })
+          .then(() => queryClient.invalidateQueries({ queryKey: ["search-history", userId] }))
+          .catch(() => {});
+      }
       setIsOpen(false);
       setIsComposing(false);
       navigate(`/celebrity/${option.movieSuggest.id}`, { state: { navDepth: 1 } });
@@ -582,14 +609,14 @@ export function SearchPage() {
 
         {!hasHistory ? null : (
           <div className="@container animate-fade-up flex flex-col gap-10 [animation-delay:160ms]">
-            {displayAuthors.length > 0 ? (
+            {displayPersons.length > 0 ? (
               <section>
-                <h2 className="mb-4 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近关注的作者</h2>
+                <h2 className="mb-4 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近关注</h2>
 
                 {/* Mobile: horizontal scroll */}
                 <div className="flex gap-3 overflow-x-auto pb-2 sm:hidden">
-                  {displayAuthors.map((author) => (
-                    <AuthorAvatarCard key={author.name} author={author} />
+                  {displayPersons.map((person) => (
+                    <PersonAvatarCard key={`${person.kind}:${person.name}`} person={person} />
                   ))}
                 </div>
 
@@ -597,26 +624,26 @@ export function SearchPage() {
                 <TooltipProvider delayDuration={150}>
                   <div className="group/stack hidden items-center sm:flex">
                     <div className="flex items-center">
-                      {displayAuthors.map((author, index) => (
-                        <Tooltip key={author.name}>
+                      {displayPersons.map((person, index) => (
+                        <Tooltip key={`${person.kind}:${person.name}`}>
                           <TooltipTrigger asChild>
                             <DepthLink
-                              to={buildAuthorUrl(author)}
+                              to={buildPersonUrl(person)}
                               className="relative block shrink-0 transition-[margin] duration-300 ease-out group-hover/stack:mr-2"
-                              style={{ marginLeft: index === 0 ? 0 : "-0.75rem", zIndex: displayAuthors.length - index }}
+                              style={{ marginLeft: index === 0 ? 0 : "-0.75rem", zIndex: displayPersons.length - index }}
                             >
                               <div className="size-10 overflow-hidden rounded-full border-2 border-[var(--background)] shadow-sm transition-transform duration-200 hover:scale-110">
-                                {author.photoUrl ? (
-                                  <img src={author.photoUrl} alt={author.name} className="h-full w-full object-cover" />
+                                {person.photoUrl ? (
+                                  <img src={person.photoUrl} alt={person.name} className="h-full w-full object-cover" />
                                 ) : (
                                   <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-[var(--accent)] text-xs font-medium text-[var(--muted-foreground)]">
-                                    {author.name.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
+                                    {person.name.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
                                   </div>
                                 )}
                               </div>
                             </DepthLink>
                           </TooltipTrigger>
-                          <TooltipContent>{author.name}</TooltipContent>
+                          <TooltipContent>{person.name}</TooltipContent>
                         </Tooltip>
                       ))}
                     </div>
@@ -652,8 +679,8 @@ export function SearchPage() {
                     onClick={() => {
                       setSearchHistory([]);
                       bookHistoryStore.write([]);
-                      setAuthorHistory([]);
-                      authorHistoryStore.write([]);
+                      setPersonHistory([]);
+                      personHistoryStore.write([]);
                       setMovieHistory([]);
                       movieHistoryStore.write([]);
                       if (userId) {
@@ -687,13 +714,16 @@ export function SearchPage() {
   );
 }
 
-function buildAuthorUrl(author: RecentAuthorEntry) {
+function buildPersonUrl(person: RecentPersonEntry) {
+  if (person.kind === "celebrity" && person.celebrityId) {
+    return `/celebrity/${person.celebrityId}`;
+  }
   const params = new URLSearchParams();
-  if (author.photoUrl) params.set("photo", author.photoUrl);
-  if (author.enName) params.set("en", author.enName);
-  if (author.url) params.set("url", author.url);
+  if (person.photoUrl) params.set("photo", person.photoUrl);
+  if (person.enName) params.set("en", person.enName);
+  if (person.url) params.set("url", person.url);
   const qs = params.toString();
-  return `/author/${encodeURIComponent(author.name)}${qs ? `?${qs}` : ""}`;
+  return `/author/${encodeURIComponent(person.name)}${qs ? `?${qs}` : ""}`;
 }
 
 interface RecentMediaItem {
@@ -769,22 +799,22 @@ function RecentMediaGrid({ items }: { items: RecentMediaItem[] }) {
   );
 }
 
-function AuthorAvatarCard({ author }: { author: RecentAuthorEntry }) {
+function PersonAvatarCard({ person }: { person: RecentPersonEntry }) {
   return (
     <DepthLink
-      to={buildAuthorUrl(author)}
+      to={buildPersonUrl(person)}
       className="flex shrink-0 items-center gap-2.5 rounded-full border border-white/60 bg-white/50 py-1.5 pr-4 pl-1.5 transition hover:bg-white/70"
     >
       <div className="size-8 overflow-hidden rounded-full">
-        {author.photoUrl ? (
-          <img src={author.photoUrl} alt={author.name} className="h-full w-full object-cover" />
+        {person.photoUrl ? (
+          <img src={person.photoUrl} alt={person.name} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-[var(--accent)] text-xs font-medium text-[var(--muted-foreground)]">
-            {author.name.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
+            {person.name.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
           </div>
         )}
       </div>
-      <span className="whitespace-nowrap text-sm text-[var(--foreground)]">{author.name}</span>
+      <span className="whitespace-nowrap text-sm text-[var(--foreground)]">{person.name}</span>
     </DepthLink>
   );
 }

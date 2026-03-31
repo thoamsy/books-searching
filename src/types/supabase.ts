@@ -11,7 +11,7 @@ export interface SearchHistoryRow {
   id: number;
   user_id: string;
   keyword: string;
-  type: "book" | "movie" | "author";
+  type: "book" | "movie" | "author" | "celebrity";
   extra: Record<string, unknown>;
   searched_at: string;
 }
