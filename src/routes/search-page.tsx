@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Film, LoaderCircle, Search, Tv, User, X } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { batchUpsertSearchHistory, upsertSearchHistory, clearSearchHistory } from "@/lib/supabase-api";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookCover } from "@/components/book-cover";
 import {
@@ -106,6 +108,8 @@ export function SearchPage() {
   const [searchHistory, setSearchHistory] = useState(bookHistoryStore.read);
   const [authorHistory, setAuthorHistory] = useState(authorHistoryStore.read);
   const [movieHistory, setMovieHistory] = useState(movieHistoryStore.read);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 260);
@@ -116,6 +120,43 @@ export function SearchPage() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Migrate localStorage to cloud on first login
+  useEffect(() => {
+    if (!userId) return;
+    const migrationKey = `opus-history-migrated-${userId}`;
+    if (localStorage.getItem(migrationKey)) return;
+
+    const localBooks = bookHistoryStore.read();
+    const localMovies = movieHistoryStore.read();
+    const localAuthors = authorHistoryStore.read();
+
+    const entries = [
+      ...localBooks.map((b) => ({
+        keyword: b.query,
+        type: "book" as const,
+        extra: { workId: b.workId, book: b.book },
+      })),
+      ...localMovies.map((m) => ({
+        keyword: m.query,
+        type: "movie" as const,
+        extra: { subjectId: m.subjectId, movie: m.movie },
+      })),
+      ...localAuthors.map((a) => ({
+        keyword: a.name,
+        type: "author" as const,
+        extra: { photoUrl: a.photoUrl, enName: a.enName, url: a.url },
+      })),
+    ];
+
+    if (entries.length > 0) {
+      batchUpsertSearchHistory(userId, entries)
+        .then(() => localStorage.setItem(migrationKey, "1"))
+        .catch((err) => console.error("[migration] failed to sync history:", err));
+    } else {
+      localStorage.setItem(migrationKey, "1");
+    }
+  }, [userId]);
 
   const suggestionsQuery = useQuery({
     ...suggestionsQueryOptions(debouncedQuery),
@@ -145,6 +186,9 @@ export function SearchPage() {
       bookHistoryStore.write(next);
       return next;
     });
+    if (userId) {
+      upsertSearchHistory(userId, trimmedQuery, "book", { workId, book }).catch(() => {});
+    }
   }
 
   function openBookDetail(book: SearchBook, searchQuery: string) {
@@ -170,6 +214,9 @@ export function SearchPage() {
       movieHistoryStore.write(next);
       return next;
     });
+    if (userId) {
+      upsertSearchHistory(userId, trimmedQuery, "movie", { subjectId, movie }).catch(() => {});
+    }
   }
 
   function openMovieDetail(movie: SearchMovie, searchQuery: string) {
@@ -284,6 +331,13 @@ export function SearchPage() {
         authorHistoryStore.write(next);
         return next;
       });
+      if (userId) {
+        upsertSearchHistory(userId, option.label, "author", {
+          photoUrl: option.suggest.coverUrl,
+          enName: option.suggest.enName,
+          url: option.suggest.url,
+        }).catch(() => {});
+      }
       setIsOpen(false);
       setIsComposing(false);
       navigate(buildAuthorUrl(entry), { state: { navDepth: 1 } });
@@ -550,6 +604,9 @@ export function SearchPage() {
                       authorHistoryStore.write([]);
                       setMovieHistory([]);
                       movieHistoryStore.write([]);
+                      if (userId) {
+                        clearSearchHistory(userId).catch(() => {});
+                      }
                     }}
                   >
                     清空
