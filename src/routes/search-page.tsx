@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Film, LoaderCircle, Search, Tv, User, X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { batchUpsertSearchHistory, upsertSearchHistory, clearSearchHistory } from "@/lib/supabase-api";
+import { searchHistoryQueryOptions } from "@/lib/supabase-queries";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookCover } from "@/components/book-cover";
 import {
@@ -110,12 +111,54 @@ export function SearchPage() {
   const [movieHistory, setMovieHistory] = useState(movieHistoryStore.read);
   const { user } = useAuth();
   const userId = user?.id ?? null;
+  const queryClient = useQueryClient();
+
+  // Fetch cloud history when logged in — cloud is the source of truth
+  const cloudHistoryQuery = useQuery({
+    ...searchHistoryQueryOptions(userId ?? ""),
+    enabled: Boolean(userId),
+  });
+  const cloudRows = cloudHistoryQuery.data;
+
+  // When logged in and cloud data is loaded, derive display from cloud
+  // When not logged in (or cloud still loading), fall back to localStorage
+  const displayBooks: RecentSearchEntry[] = cloudRows
+    ? cloudRows
+        .filter((r) => r.type === "book" && r.extra?.workId && r.extra?.book)
+        .map((r) => ({
+          workId: r.extra.workId as string,
+          query: r.keyword,
+          book: r.extra.book as SearchBook,
+        }))
+    : searchHistory;
+
+  const displayMovies: RecentMovieEntry[] = cloudRows
+    ? cloudRows
+        .filter((r) => r.type === "movie" && r.extra?.subjectId && r.extra?.movie)
+        .map((r) => ({
+          subjectId: r.extra.subjectId as string,
+          query: r.keyword,
+          movie: r.extra.movie as SearchMovie,
+        }))
+    : movieHistory;
+
+  const displayAuthors: RecentAuthorEntry[] = cloudRows
+    ? cloudRows
+        .filter((r) => r.type === "author")
+        .map((r) => ({
+          name: r.keyword,
+          photoUrl: r.extra?.photoUrl as string | undefined,
+          enName: r.extra?.enName as string | undefined,
+          url: r.extra?.url as string | undefined,
+        }))
+    : authorHistory;
+
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 260);
-  const hasBookHistory = searchHistory.length > 0;
-  const hasMovieHistory = movieHistory.length > 0;
-  const hasHistory = hasBookHistory || hasMovieHistory || authorHistory.length > 0;
+  const hasBookHistory = displayBooks.length > 0;
+  const hasMovieHistory = displayMovies.length > 0;
+  const hasHistory = hasBookHistory || hasMovieHistory || displayAuthors.length > 0;
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -151,12 +194,15 @@ export function SearchPage() {
 
     if (entries.length > 0) {
       batchUpsertSearchHistory(userId, entries)
-        .then(() => localStorage.setItem(migrationKey, "1"))
+        .then(() => {
+          localStorage.setItem(migrationKey, "1");
+          queryClient.invalidateQueries({ queryKey: ["search-history", userId] });
+        })
         .catch((err) => console.error("[migration] failed to sync history:", err));
     } else {
       localStorage.setItem(migrationKey, "1");
     }
-  }, [userId]);
+  }, [userId, queryClient]);
 
   const suggestionsQuery = useQuery({
     ...suggestionsQueryOptions(debouncedQuery),
@@ -187,7 +233,9 @@ export function SearchPage() {
       return next;
     });
     if (userId) {
-      upsertSearchHistory(userId, trimmedQuery, "book", { workId, book }).catch(() => {});
+      upsertSearchHistory(userId, trimmedQuery, "book", { workId, book })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["search-history", userId] }))
+        .catch(() => {});
     }
   }
 
@@ -215,7 +263,9 @@ export function SearchPage() {
       return next;
     });
     if (userId) {
-      upsertSearchHistory(userId, trimmedQuery, "movie", { subjectId, movie }).catch(() => {});
+      upsertSearchHistory(userId, trimmedQuery, "movie", { subjectId, movie })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["search-history", userId] }))
+        .catch(() => {});
     }
   }
 
@@ -336,7 +386,9 @@ export function SearchPage() {
           photoUrl: option.suggest.coverUrl,
           enName: option.suggest.enName,
           url: option.suggest.url,
-        }).catch(() => {});
+        })
+          .then(() => queryClient.invalidateQueries({ queryKey: ["search-history", userId] }))
+          .catch(() => {});
       }
       setIsOpen(false);
       setIsComposing(false);
@@ -530,13 +582,13 @@ export function SearchPage() {
 
         {!hasHistory ? null : (
           <div className="@container animate-fade-up flex flex-col gap-10 [animation-delay:160ms]">
-            {authorHistory.length > 0 ? (
+            {displayAuthors.length > 0 ? (
               <section>
                 <h2 className="mb-4 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近关注的作者</h2>
 
                 {/* Mobile: horizontal scroll */}
                 <div className="flex gap-3 overflow-x-auto pb-2 sm:hidden">
-                  {authorHistory.map((author) => (
+                  {displayAuthors.map((author) => (
                     <AuthorAvatarCard key={author.name} author={author} />
                   ))}
                 </div>
@@ -545,13 +597,13 @@ export function SearchPage() {
                 <TooltipProvider delayDuration={150}>
                   <div className="group/stack hidden items-center sm:flex">
                     <div className="flex items-center">
-                      {authorHistory.map((author, index) => (
+                      {displayAuthors.map((author, index) => (
                         <Tooltip key={author.name}>
                           <TooltipTrigger asChild>
                             <DepthLink
                               to={buildAuthorUrl(author)}
                               className="relative block shrink-0 transition-[margin] duration-300 ease-out group-hover/stack:mr-2"
-                              style={{ marginLeft: index === 0 ? 0 : "-0.75rem", zIndex: authorHistory.length - index }}
+                              style={{ marginLeft: index === 0 ? 0 : "-0.75rem", zIndex: displayAuthors.length - index }}
                             >
                               <div className="size-10 overflow-hidden rounded-full border-2 border-[var(--background)] shadow-sm transition-transform duration-200 hover:scale-110">
                                 {author.photoUrl ? (
@@ -573,11 +625,11 @@ export function SearchPage() {
               </section>
             ) : null}
 
-            {movieHistory.length > 0 ? (
+            {displayMovies.length > 0 ? (
               <section>
                 <h2 className="mb-5 text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近观影</h2>
                 <RecentMediaGrid
-                  items={movieHistory.map((item) => ({
+                  items={displayMovies.map((item) => ({
                     key: item.subjectId,
                     to: `/movie/${item.subjectId}?q=${encodeURIComponent(item.query)}`,
                     state: { movie: item.movie },
@@ -590,7 +642,7 @@ export function SearchPage() {
               </section>
             ) : null}
 
-            {searchHistory.length > 0 ? (
+            {displayBooks.length > 0 ? (
               <section>
                 <div className="mb-5 flex items-center justify-between">
                   <h2 className="text-xs uppercase tracking-[0.28em] text-[var(--muted-foreground)]">最近翻阅</h2>
@@ -605,7 +657,9 @@ export function SearchPage() {
                       setMovieHistory([]);
                       movieHistoryStore.write([]);
                       if (userId) {
-                        clearSearchHistory(userId).catch(() => {});
+                        clearSearchHistory(userId)
+                          .then(() => queryClient.setQueryData(["search-history", userId], []))
+                          .catch(() => {});
                       }
                     }}
                   >
@@ -614,7 +668,7 @@ export function SearchPage() {
                 </div>
 
                 <RecentMediaGrid
-                  items={searchHistory.map((item) => ({
+                  items={displayBooks.map((item) => ({
                     key: item.workId,
                     to: `/book/${item.workId}?q=${encodeURIComponent(item.query)}`,
                     state: { book: item.book },
