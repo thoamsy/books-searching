@@ -6,16 +6,24 @@ import { movieDetailQueryOptions } from "@/lib/movie-queries";
 import { queryClient } from "@/lib/query-client";
 import { BackButton } from "@/components/back-button";
 import { UserMenu } from "@/components/user-menu";
+import { BookmarkButton } from "@/components/bookmark-button";
 
 function RootLayout() {
   const { pathname } = useLocation();
   const isHome = pathname === "/";
 
+  const isDetailWithBookmark =
+    /^\/(book|movie)\//.test(pathname) ||
+    /^\/celebrity\//.test(pathname) ||
+    /^\/author\//.test(pathname);
+
   return (
     <>
       <nav className="flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8">
         <div>{!isHome && <BackButton />}</div>
-        <UserMenu />
+        <div>
+          {isHome ? <UserMenu /> : isDetailWithBookmark ? <BookmarkButton /> : null}
+        </div>
       </nav>
       <Outlet />
       <footer className="-mt-10 pb-3 text-center text-[10px] text-muted-foreground/30">
