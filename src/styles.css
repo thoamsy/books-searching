@@ -63,11 +63,7 @@ body {
   min-height: 100dvh;
   min-width: 320px;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  background-color: #f6efe5;
-  background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.82), transparent 36%),
-    linear-gradient(135deg, #f8f2e8 0%, #efe4d4 54%, #e5d6c3 100%);
-  background-attachment: fixed;
+  background-color: var(--background);
   color: var(--foreground);
   font-family: "Manrope", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }

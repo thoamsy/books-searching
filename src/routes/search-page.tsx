@@ -403,11 +403,10 @@ export function SearchPage() {
       "min-h-[100dvh] bg-background text-foreground",
       !hasBookHistory && "flex flex-col"
     )}>
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top,color-mix(in_oklch,var(--primary)_10%,transparent)_0%,transparent_50%),radial-gradient(ellipse_at_bottom_right,color-mix(in_oklch,var(--primary)_6%,transparent)_0%,transparent_40%)]" />
 
       <div className={cn(
         "relative mx-auto w-full max-w-3xl px-5 pb-20 sm:px-8",
-        hasBookHistory ? "pt-16 sm:pt-24" : "my-auto"
+        hasBookHistory ? "pt-6 sm:pt-10" : "my-auto"
       )}>
         <header className={cn("animate-fade-up", hasBookHistory ? "mb-10" : "mb-8 text-center")}>
           <p className={cn("flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-primary/70", !hasBookHistory && "justify-center")}>

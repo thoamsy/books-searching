@@ -13,17 +13,13 @@ function RootLayout() {
 
   return (
     <>
-      {!isHome && (
-        <div className="fixed top-[max(1rem,env(safe-area-inset-top))] left-5 z-10 sm:left-8">
-          <BackButton />
-        </div>
-      )}
-      <div className="fixed top-[max(1rem,env(safe-area-inset-top))] right-5 z-10 sm:right-8">
+      <nav className="flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8">
+        <div>{!isHome && <BackButton />}</div>
         <UserMenu />
-      </div>
+      </nav>
       <Outlet />
-      <footer className="-mt-10 pb-3 text-center text-[10px] text-[var(--muted-foreground)]/30">
-        <a href="https://github.com/thoamsy" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-[var(--muted-foreground)]/60">
+      <footer className="-mt-10 pb-3 text-center text-[10px] text-muted-foreground/30">
+        <a href="https://github.com/thoamsy" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-muted-foreground/60">
           @thoamsy
         </a>
       </footer>
@@ -34,8 +30,7 @@ function RootLayout() {
 
 function DetailLayout() {
   return (
-    <main className="min-h-screen bg-[var(--background)] pb-16 text-[var(--foreground)]">
-      <div className="h-[calc(env(safe-area-inset-top)+3.5rem)]" />
+    <main className="min-h-screen bg-background pb-16 text-foreground">
       <Outlet />
     </main>
   );
