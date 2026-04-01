@@ -76,9 +76,10 @@ export function BookmarkButton() {
 
   const meta = useItemMeta(ctx?.itemId ?? "", ctx?.itemType ?? "book");
 
-  if (!ctx || !meta) return null;
+  if (!ctx || !meta?.title) return null;
 
   const { itemId, itemType } = ctx;
+  const { title, coverUrl } = meta;
   const isBookmarked = bookmarks.some((b) => b.item_id === itemId);
 
   function handleToggle() {
@@ -88,8 +89,8 @@ export function BookmarkButton() {
       addMutation.mutate({
         item_id: itemId,
         item_type: itemType,
-        item_title: meta!.title,
-        item_cover_url: meta!.coverUrl,
+        item_title: title,
+        item_cover_url: coverUrl,
         created_at: new Date().toISOString(),
       });
     }

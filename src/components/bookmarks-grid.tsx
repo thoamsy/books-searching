@@ -2,6 +2,7 @@ import { Film, User } from "lucide-react";
 import { DepthLink } from "@/components/depth-link";
 import { BookCover } from "@/components/book-cover";
 import { TiltCard } from "@/components/tilt-card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { BookmarkItem } from "@/lib/bookmark-queries";
 
 function bookmarkUrl(item: BookmarkItem): string {
@@ -18,25 +19,6 @@ function bookmarkUrl(item: BookmarkItem): string {
 }
 
 function BookmarkCard({ item }: { item: BookmarkItem }) {
-  const isPerson = item.item_type === "author" || item.item_type === "celebrity";
-
-  if (isPerson) {
-    return (
-      <DepthLink to={bookmarkUrl(item)} className="group flex flex-col items-center gap-2.5">
-        <div className="size-20 overflow-hidden rounded-full border-2 border-white/80 shadow-warm-sm transition-shadow group-hover:shadow-warm-md sm:size-24">
-          {item.item_cover_url ? (
-            <img src={item.item_cover_url} alt={item.item_title} className="h-full w-full object-cover" loading="lazy" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent">
-              <User className="size-8 text-muted-foreground" />
-            </div>
-          )}
-        </div>
-        <p className="max-w-full truncate text-center text-sm font-medium">{item.item_title}</p>
-      </DepthLink>
-    );
-  }
-
   const variant = item.item_type === "book" ? "book" : "poster";
   const aspect = item.item_type === "book" ? "3/4" : "2/3";
 
@@ -85,11 +67,54 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
       {persons.length > 0 ? (
         <section>
           <h2 className="mb-5 text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏影人 / 作者</h2>
-          <div className="flex flex-wrap gap-6">
+
+          {/* Mobile: avatar on top, name below */}
+          <div className="flex gap-5 overflow-x-auto pb-2 sm:hidden">
             {persons.map((item) => (
-              <BookmarkCard key={item.item_id} item={item} />
+              <DepthLink key={item.item_id} to={bookmarkUrl(item)} className="group flex shrink-0 flex-col items-center gap-1.5">
+                <div className="size-16 overflow-hidden rounded-full border-2 border-white/80 shadow-warm-sm transition-shadow group-hover:shadow-warm-md">
+                  {item.item_cover_url ? (
+                    <img src={item.item_cover_url} alt={item.item_title} className="h-full w-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent">
+                      <User className="size-6 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                <p className="max-w-[5rem] truncate text-center text-xs text-muted-foreground">{item.item_title}</p>
+              </DepthLink>
             ))}
           </div>
+
+          {/* Desktop: stacked avatars with hover expand */}
+          <TooltipProvider delayDuration={150}>
+            <div className="group/stack hidden items-center sm:flex">
+              <div className="flex items-center">
+                {persons.map((item, index) => (
+                  <Tooltip key={item.item_id}>
+                    <TooltipTrigger asChild>
+                      <DepthLink
+                        to={bookmarkUrl(item)}
+                        className="relative block shrink-0 transition-[margin] duration-300 ease-out hover:!z-50 group-hover/stack:mr-2"
+                        style={{ marginLeft: index === 0 ? 0 : "-0.75rem", zIndex: persons.length - index }}
+                      >
+                        <div className="size-10 overflow-hidden rounded-full border-2 border-background shadow-sm transition-transform duration-200 hover:scale-110">
+                          {item.item_cover_url ? (
+                            <img src={item.item_cover_url} alt={item.item_title} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent text-xs font-medium text-muted-foreground">
+                              {item.item_title.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                      </DepthLink>
+                    </TooltipTrigger>
+                    <TooltipContent>{item.item_title}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+          </TooltipProvider>
         </section>
       ) : null}
 
