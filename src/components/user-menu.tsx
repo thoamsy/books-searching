@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
 import { LogOut, User } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -10,20 +10,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LoginDialog } from "@/components/login-dialog";
 
 export function UserMenu() {
   const { user, loading, signOut } = useAuth();
+  const [loginOpen, setLoginOpen] = useState(false);
 
   if (loading) return null;
 
   if (!user) {
     return (
-      <Link to="/login">
-        <Button variant="ghost" size="sm" className="gap-2">
+      <>
+        <Button variant="ghost" size="sm" className="gap-2" onClick={() => setLoginOpen(true)}>
           <User data-icon="inline-start" />
           登录
         </Button>
-      </Link>
+        <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
+      </>
     );
   }
 

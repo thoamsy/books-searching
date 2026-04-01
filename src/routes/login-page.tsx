@@ -69,7 +69,7 @@ export function LoginPage() {
     <main className="flex min-h-[100dvh] items-center justify-center px-5">
       <Link
         to="/"
-        className="fixed top-4 left-5 flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground sm:left-8"
+        className="fixed top-[max(1rem,env(safe-area-inset-top))] left-5 flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground sm:left-8"
       >
         <ArrowLeft className="size-4" />
         返回

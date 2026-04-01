@@ -9,14 +9,18 @@ import { UserMenu } from "@/components/user-menu";
 
 function RootLayout() {
   const { pathname } = useLocation();
+  const isHome = pathname === "/";
 
   return (
     <>
-      {pathname !== "/login" && (
-        <div className="fixed top-4 right-5 z-10 sm:right-8">
-          <UserMenu />
+      {!isHome && (
+        <div className="fixed top-[max(1rem,env(safe-area-inset-top))] left-5 z-10 sm:left-8">
+          <BackButton />
         </div>
       )}
+      <div className="fixed top-[max(1rem,env(safe-area-inset-top))] right-5 z-10 sm:right-8">
+        <UserMenu />
+      </div>
       <Outlet />
       <footer className="-mt-10 pb-3 text-center text-[10px] text-[var(--muted-foreground)]/30">
         <a href="https://github.com/thoamsy" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-[var(--muted-foreground)]/60">
@@ -31,9 +35,7 @@ function RootLayout() {
 function DetailLayout() {
   return (
     <main className="min-h-screen bg-[var(--background)] pb-16 text-[var(--foreground)]">
-      <div className="animate-fade-up mx-auto w-full max-w-[1240px] px-5 pt-6 sm:px-8 lg:px-10">
-        <BackButton />
-      </div>
+      <div className="h-[calc(env(safe-area-inset-top)+3.5rem)]" />
       <Outlet />
     </main>
   );
@@ -47,11 +49,6 @@ export const router = createBrowserRouter([
         path: "/",
         lazy: () =>
           import("@/routes/search-page").then((m) => ({ Component: m.SearchPage }))
-      },
-      {
-        path: "/login",
-        lazy: () =>
-          import("@/routes/login-page").then((m) => ({ Component: m.LoginPage }))
       },
       {
         element: <DetailLayout />,
@@ -96,7 +93,6 @@ export const router = createBrowserRouter([
             loader({ params }) {
               if (params.celebrityId) {
                 void queryClient.ensureQueryData(celebrityDetailQueryOptions(params.celebrityId));
-                void queryClient.ensureQueryData(celebrityWorksQueryOptions(params.celebrityId));
               }
               return null;
             },
