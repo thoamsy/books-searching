@@ -7,20 +7,11 @@ export interface Profile {
   updated_at: string;
 }
 
-export interface SearchHistoryRow {
-  id: number;
-  user_id: string;
-  keyword: string;
-  type: "book" | "movie" | "author" | "celebrity";
-  extra: Record<string, unknown>;
-  searched_at: string;
-}
-
 export interface BookmarkRow {
   id: number;
   user_id: string;
   item_id: string;
-  item_type: "book" | "movie";
+  item_type: "book" | "movie" | "author" | "celebrity";
   item_title: string;
   item_cover_url: string | null;
   status: "want" | "done";
