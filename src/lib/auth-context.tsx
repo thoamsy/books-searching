@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { User, Session } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { batchUpsertBookmarks } from "@/lib/supabase-api";
+import { readLocalBookmarks, clearLocalBookmarks } from "@/lib/bookmark-store";
 
 interface AuthState {
   user: User | null;
@@ -18,6 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const user = session?.user ?? null;
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -44,6 +48,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
+
+  // Migrate localStorage bookmarks to cloud on login
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+
+    const localBookmarks = readLocalBookmarks();
+    if (localBookmarks.length === 0) return;
+
+    batchUpsertBookmarks(userId, localBookmarks)
+      .then(() => {
+        clearLocalBookmarks();
+        queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
+      })
+      .catch((err) => console.error("[bookmark migration] failed:", err));
+  }, [session?.user?.id, queryClient]);
 
   async function signInWithOAuth(provider: "google" | "github") {
     await supabase.auth.signInWithOAuth({
