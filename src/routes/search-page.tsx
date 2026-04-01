@@ -21,12 +21,20 @@ import { getCoverUrl, normalizeWorkId, suggestItemToSearchBook } from "@/lib/boo
 import { suggestionsQueryOptions } from "@/lib/book-queries";
 import { movieSuggestionsQueryOptions } from "@/lib/movie-queries";
 import { suggestItemToSearchMovie } from "@/lib/movies-api";
-import { createHistoryStore } from "@/lib/history-utils";
+import {
+  bookHistoryStore,
+  movieHistoryStore,
+  personHistoryStore,
+  writeRowsToLocal,
+} from "@/lib/history-utils";
+import type { RecentPersonEntry } from "@/lib/history-utils";
 import { cn } from "@/lib/utils";
 import { DepthLink } from "@/components/depth-link";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { SearchBook, SuggestItem } from "@/types/books";
-import type { MovieSuggestItem, SearchMovie } from "@/types/movies";
+import type { SearchMovie } from "@/types/movies";
+import type { MovieSuggestItem } from "@/types/movies";
+import type { SearchHistoryRow } from "@/types/supabase";
 
 type SearchOption = {
   id: string;
@@ -39,60 +47,6 @@ type SearchOption = {
   suggest?: SuggestItem;
   movieSuggest?: MovieSuggestItem;
 };
-
-interface RecentSearchEntry {
-  workId: string;
-  query: string;
-  book: SearchBook;
-}
-
-interface RecentMovieEntry {
-  subjectId: string;
-  query: string;
-  movie: SearchMovie;
-}
-
-interface RecentPersonEntry {
-  kind: "author" | "celebrity";
-  name: string;
-  photoUrl?: string;
-  // author-specific
-  enName?: string;
-  url?: string;
-  // celebrity-specific
-  celebrityId?: string;
-}
-
-const bookHistoryStore = createHistoryStore<RecentSearchEntry>({
-  key: "opus-search-history",
-  limit: 10,
-  validate: (item): item is RecentSearchEntry =>
-    item != null && typeof item === "object" &&
-    typeof (item as RecentSearchEntry).workId === "string" &&
-    typeof (item as RecentSearchEntry).query === "string" &&
-    Boolean((item as RecentSearchEntry).book?.title),
-  dedupKey: (item) => item.workId
-});
-
-const personHistoryStore = createHistoryStore<RecentPersonEntry>({
-  key: "opus-person-history",
-  limit: 12,
-  validate: (item): item is RecentPersonEntry =>
-    item != null && typeof item === "object" &&
-    typeof (item as RecentPersonEntry).name === "string" &&
-    ((item as RecentPersonEntry).kind === "author" || (item as RecentPersonEntry).kind === "celebrity"),
-  dedupKey: (item) => `${item.kind}:${item.name}`
-});
-
-const movieHistoryStore = createHistoryStore<RecentMovieEntry>({
-  key: "opus-movie-history",
-  limit: 10,
-  validate: (item): item is RecentMovieEntry =>
-    item != null && typeof item === "object" &&
-    typeof (item as RecentMovieEntry).subjectId === "string" &&
-    Boolean((item as RecentMovieEntry).movie),
-  dedupKey: (item) => item.subjectId
-});
 
 function getSuggestionOptionId(item: SuggestItem, index: number) {
   return `${item.type}::${item.id}::${index}`;
@@ -111,54 +65,43 @@ export function SearchPage() {
   const [query, setQuery] = useState(initialQueryFromUrl);
   const [isOpen, setIsOpen] = useState(Boolean(initialQueryFromUrl));
   const [isComposing, setIsComposing] = useState(false);
-  const [searchHistory, setSearchHistory] = useState(bookHistoryStore.read);
-  const [personHistory, setPersonHistory] = useState(personHistoryStore.read);
-  const [movieHistory, setMovieHistory] = useState(movieHistoryStore.read);
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const queryClient = useQueryClient();
 
-  // Fetch cloud history when logged in — cloud is the source of truth
-  const cloudHistoryQuery = useQuery({
-    ...searchHistoryQueryOptions(userId ?? ""),
-    enabled: Boolean(userId),
-  });
-  const cloudRows = cloudHistoryQuery.data;
+  // ---------------------------------------------------------------------------
+  // Unified history query — cloud when logged in, localStorage otherwise.
+  // placeholderData shows localStorage instantly while cloud fetches.
+  // ---------------------------------------------------------------------------
+  const historyQuery = useQuery(searchHistoryQueryOptions(userId));
+  const rows = historyQuery.data ?? [];
 
-  // When logged in and cloud data is loaded, derive display from cloud
-  // When not logged in (or cloud still loading), fall back to localStorage
-  const displayBooks: RecentSearchEntry[] = cloudRows
-    ? cloudRows
-        .filter((r) => r.type === "book" && r.extra?.workId && r.extra?.book)
-        .map((r) => ({
-          workId: r.extra.workId as string,
-          query: r.keyword,
-          book: r.extra.book as SearchBook,
-        }))
-    : searchHistory;
+  const displayBooks = rows
+    .filter((r) => r.type === "book" && r.extra?.workId && r.extra?.book)
+    .map((r) => ({
+      workId: r.extra.workId as string,
+      query: r.keyword,
+      book: r.extra.book as SearchBook,
+    }));
 
-  const displayMovies: RecentMovieEntry[] = cloudRows
-    ? cloudRows
-        .filter((r) => r.type === "movie" && r.extra?.subjectId && r.extra?.movie)
-        .map((r) => ({
-          subjectId: r.extra.subjectId as string,
-          query: r.keyword,
-          movie: r.extra.movie as SearchMovie,
-        }))
-    : movieHistory;
+  const displayMovies = rows
+    .filter((r) => r.type === "movie" && r.extra?.subjectId && r.extra?.movie)
+    .map((r) => ({
+      subjectId: r.extra.subjectId as string,
+      query: r.keyword,
+      movie: r.extra.movie as SearchMovie,
+    }));
 
-  const displayPersons: RecentPersonEntry[] = cloudRows
-    ? cloudRows
-        .filter((r) => r.type === "author" || r.type === "celebrity")
-        .map((r) => ({
-          kind: r.type as "author" | "celebrity",
-          name: r.keyword,
-          photoUrl: r.extra?.photoUrl as string | undefined,
-          enName: r.extra?.enName as string | undefined,
-          url: r.extra?.url as string | undefined,
-          celebrityId: r.extra?.celebrityId as string | undefined,
-        }))
-    : personHistory;
+  const displayPersons: RecentPersonEntry[] = rows
+    .filter((r) => r.type === "author" || r.type === "celebrity")
+    .map((r) => ({
+      kind: r.type as "author" | "celebrity",
+      name: r.keyword,
+      photoUrl: r.extra?.photoUrl as string | undefined,
+      enName: r.extra?.enName as string | undefined,
+      url: r.extra?.url as string | undefined,
+      celebrityId: r.extra?.celebrityId as string | undefined,
+    }));
 
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
@@ -170,6 +113,13 @@ export function SearchPage() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Sync cloud data back to localStorage so next load's placeholderData is fresh
+  useEffect(() => {
+    if (userId && historyQuery.data && !historyQuery.isPlaceholderData) {
+      writeRowsToLocal(historyQuery.data);
+    }
+  }, [userId, historyQuery.data, historyQuery.isPlaceholderData]);
 
   // Migrate localStorage to cloud on first login
   useEffect(() => {
@@ -211,6 +161,39 @@ export function SearchPage() {
     }
   }, [userId, queryClient]);
 
+  // ---------------------------------------------------------------------------
+  // Tri-layer write helper: query cache → localStorage → cloud
+  // ---------------------------------------------------------------------------
+  const historyKey = searchHistoryQueryOptions(userId).queryKey;
+
+  function saveToHistory(
+    type: SearchHistoryRow["type"],
+    keyword: string,
+    extra: Record<string, unknown>,
+    dedupMatch: (r: SearchHistoryRow) => boolean,
+  ) {
+    const newRow: SearchHistoryRow = {
+      id: 0,
+      user_id: userId ?? "local",
+      keyword,
+      type,
+      extra,
+      searched_at: new Date().toISOString(),
+    };
+    const prev = queryClient.getQueryData<SearchHistoryRow[]>(historyKey) ?? [];
+    const updated = [newRow, ...prev.filter((r) => !dedupMatch(r))];
+    queryClient.setQueryData<SearchHistoryRow[]>(historyKey, updated);
+    writeRowsToLocal(updated);
+    if (userId) {
+      upsertSearchHistory(userId, keyword, type, extra)
+        .then(() => queryClient.invalidateQueries({ queryKey: historyKey }))
+        .catch(() => {});
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Suggestion queries
+  // ---------------------------------------------------------------------------
   const suggestionsQuery = useQuery({
     ...suggestionsQueryOptions(debouncedQuery),
     enabled: !isComposing && Boolean(debouncedQuery.trim())
@@ -231,28 +214,18 @@ export function SearchPage() {
         : "搜索服务暂时不可用，请稍后再试。"
       : "";
 
-  function saveRecentBook(book: SearchBook, workId: string, searchQuery: string) {
-    const trimmedQuery = searchQuery.trim();
-    if (!trimmedQuery) return;
-    setSearchHistory((current) => {
-      const next = bookHistoryStore.push(current, { workId, query: trimmedQuery, book });
-      bookHistoryStore.write(next);
-      return next;
-    });
-    if (userId) {
-      upsertSearchHistory(userId, trimmedQuery, "book", { workId, book })
-        .then(() => queryClient.invalidateQueries({ queryKey: ["search-history", userId] }))
-        .catch(() => {});
-    }
-  }
-
+  // ---------------------------------------------------------------------------
+  // Save & navigate helpers
+  // ---------------------------------------------------------------------------
   function openBookDetail(book: SearchBook, searchQuery: string) {
     const workId = normalizeWorkId(book.key);
-    if (!workId) {
-      return false;
-    }
+    if (!workId) return false;
 
-    saveRecentBook(book, workId, searchQuery);
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery) {
+      saveToHistory("book", trimmedQuery, { workId, book },
+        (r) => r.type === "book" && r.extra?.workId === workId);
+    }
     setIsOpen(false);
     setIsComposing(false);
     navigate(`/book/${workId}?q=${encodeURIComponent(searchQuery)}`, {
@@ -261,28 +234,15 @@ export function SearchPage() {
     return true;
   }
 
-  function saveRecentMovie(movie: SearchMovie, subjectId: string, searchQuery: string) {
-    const trimmedQuery = searchQuery.trim();
-    if (!trimmedQuery) return;
-    setMovieHistory((current) => {
-      const next = movieHistoryStore.push(current, { subjectId, query: trimmedQuery, movie });
-      movieHistoryStore.write(next);
-      return next;
-    });
-    if (userId) {
-      upsertSearchHistory(userId, trimmedQuery, "movie", { subjectId, movie })
-        .then(() => queryClient.invalidateQueries({ queryKey: ["search-history", userId] }))
-        .catch(() => {});
-    }
-  }
-
   function openMovieDetail(movie: SearchMovie, searchQuery: string) {
     const subjectId = movie.key;
-    if (!subjectId) {
-      return false;
-    }
+    if (!subjectId) return false;
 
-    saveRecentMovie(movie, subjectId, searchQuery);
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery) {
+      saveToHistory("movie", trimmedQuery, { subjectId, movie },
+        (r) => r.type === "movie" && r.extra?.subjectId === subjectId);
+    }
     setIsOpen(false);
     setIsComposing(false);
     navigate(`/movie/${subjectId}?q=${encodeURIComponent(searchQuery)}`, {
@@ -377,6 +337,16 @@ export function SearchPage() {
     }
 
     if (option.kind === "author" && option.suggest) {
+      const extra = {
+        photoUrl: option.suggest.coverUrl,
+        enName: option.suggest.enName,
+        url: option.suggest.url,
+      };
+      saveToHistory("author", option.label, extra,
+        (r) => r.type === "author" && r.keyword === option.label);
+
+      setIsOpen(false);
+      setIsComposing(false);
       const entry: RecentPersonEntry = {
         kind: "author",
         name: option.label,
@@ -384,46 +354,18 @@ export function SearchPage() {
         enName: option.suggest.enName,
         url: option.suggest.url,
       };
-      setPersonHistory((current) => {
-        const next = personHistoryStore.push(current, entry);
-        personHistoryStore.write(next);
-        return next;
-      });
-      if (userId) {
-        upsertSearchHistory(userId, option.label, "author", {
-          photoUrl: option.suggest.coverUrl,
-          enName: option.suggest.enName,
-          url: option.suggest.url,
-        })
-          .then(() => queryClient.invalidateQueries({ queryKey: ["search-history", userId] }))
-          .catch(() => {});
-      }
-      setIsOpen(false);
-      setIsComposing(false);
       navigate(buildPersonUrl(entry), { state: { navDepth: 1 } });
       return;
     }
 
     if (option.kind === "celebrity" && option.movieSuggest) {
-      const entry: RecentPersonEntry = {
-        kind: "celebrity",
-        name: option.label,
+      const extra = {
         photoUrl: option.movieSuggest.coverUrl,
         celebrityId: option.movieSuggest.id,
       };
-      setPersonHistory((current) => {
-        const next = personHistoryStore.push(current, entry);
-        personHistoryStore.write(next);
-        return next;
-      });
-      if (userId) {
-        upsertSearchHistory(userId, option.label, "celebrity", {
-          photoUrl: option.movieSuggest.coverUrl,
-          celebrityId: option.movieSuggest.id,
-        })
-          .then(() => queryClient.invalidateQueries({ queryKey: ["search-history", userId] }))
-          .catch(() => {});
-      }
+      saveToHistory("celebrity", option.label, extra,
+        (r) => r.type === "celebrity" && r.keyword === option.label);
+
       setIsOpen(false);
       setIsComposing(false);
       navigate(`/celebrity/${option.movieSuggest.id}`, { state: { navDepth: 1 } });
@@ -439,6 +381,19 @@ export function SearchPage() {
     setQuery(option.label);
     if (option.book && !openBookDetail(option.book, option.label)) {
       submitSearch(option.label);
+    }
+  }
+
+  function handleClear() {
+    // Clear query cache
+    queryClient.setQueryData<SearchHistoryRow[]>(historyKey, []);
+    // Clear localStorage
+    bookHistoryStore.write([]);
+    movieHistoryStore.write([]);
+    personHistoryStore.write([]);
+    // Clear cloud
+    if (userId) {
+      clearSearchHistory(userId).catch(() => {});
     }
   }
 
@@ -480,6 +435,11 @@ export function SearchPage() {
               showTrigger={false}
               showClear={false}
               aria-label="搜索书籍和影视"
+              name="search"
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               placeholder="搜索书名、电影、电视剧……"
               className="h-13 rounded-2xl border-white/60 bg-surface-elevated text-base font-medium shadow-warm-sm backdrop-blur-xl transition-[box-shadow,border-color] duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] has-[[data-slot=input-group-control]:focus-visible]:border-primary/25 has-[[data-slot=input-group-control]:focus-visible]:shadow-warm-md has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&_input]:pl-11 placeholder:text-muted-foreground/60"
               onFocus={() => setIsOpen(true)}
@@ -676,19 +636,7 @@ export function SearchPage() {
                   <button
                     type="button"
                     className="text-xs text-muted-foreground transition hover:text-foreground"
-                    onClick={() => {
-                      setSearchHistory([]);
-                      bookHistoryStore.write([]);
-                      setPersonHistory([]);
-                      personHistoryStore.write([]);
-                      setMovieHistory([]);
-                      movieHistoryStore.write([]);
-                      if (userId) {
-                        clearSearchHistory(userId)
-                          .then(() => queryClient.setQueryData(["search-history", userId], []))
-                          .catch(() => {});
-                      }
-                    }}
+                    onClick={handleClear}
                   >
                     清空
                   </button>
