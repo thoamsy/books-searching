@@ -1,6 +1,6 @@
 import { Star } from "lucide-react";
-import { useParams, useLocation } from "react-router-dom";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
+import { useQueryClient, useQuery, type QueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import {
   bookmarksQueryOptions,
@@ -25,9 +25,7 @@ function useBookmarkContext(): { itemId: string; itemType: BookmarkType } | null
   return null;
 }
 
-function useItemMeta(itemId: string, itemType: BookmarkType): { title: string; coverUrl: string | null } {
-  const queryClient = useQueryClient();
-
+function getItemMeta(queryClient: QueryClient, itemId: string, itemType: BookmarkType): { title: string; coverUrl: string | null } {
   if (itemType === "book") {
     const detail = queryClient.getQueryData<BookDetail>(["books", "detail", itemId]);
     if (detail) return { title: detail.title, coverUrl: detail.coverUrl ?? null };
@@ -55,12 +53,10 @@ export function BookmarkButton() {
   const ctx = useBookmarkContext();
   const { user } = useAuth();
   const userId = user?.id ?? null;
+  const queryClient = useQueryClient();
   const { data: bookmarks = [] } = useQuery(bookmarksQueryOptions(userId));
   const addMutation = useAddBookmark();
   const removeMutation = useRemoveBookmark();
-
-  // Must be called unconditionally at top level
-  const meta = useItemMeta(ctx?.itemId ?? "", ctx?.itemType ?? "book");
 
   if (!ctx) return null;
 
@@ -71,6 +67,7 @@ export function BookmarkButton() {
     if (isBookmarked) {
       removeMutation.mutate(itemId);
     } else {
+      const meta = getItemMeta(queryClient, itemId, itemType);
       addMutation.mutate({
         item_id: itemId,
         item_type: itemType,
