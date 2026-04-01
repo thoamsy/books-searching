@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { DepthLink } from "@/components/depth-link";
 import { BookCover } from "@/components/book-cover";
+import { TiltCard } from "@/components/tilt-card";
 
 interface MediaCardProps {
   to: string;
@@ -24,11 +25,14 @@ export function MediaCard({
 }: MediaCardProps) {
   return (
     <DepthLink to={to} state={state} className="group flex flex-col gap-2.5">
-      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-muted shadow-warm-sm transition-shadow group-hover:shadow-warm-md">
+      <TiltCard
+        variant="poster"
+        className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-muted shadow-warm-sm transition-shadow group-hover:shadow-warm-md"
+      >
         <BookCover
           src={coverUrl}
           title={title}
-          className="rounded-lg transition-transform group-hover:scale-105"
+          className="rounded-lg"
           loading="lazy"
         />
         {rank != null ? (
@@ -36,7 +40,7 @@ export function MediaCard({
             {rank}
           </span>
         ) : null}
-      </div>
+      </TiltCard>
       <div className="flex flex-col gap-0.5 px-0.5">
         <h3 className="line-clamp-1 text-sm font-medium leading-snug">
           {title}

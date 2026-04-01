@@ -30,6 +30,7 @@ import {
 import type { RecentPersonEntry } from "@/lib/history-utils";
 import { cn } from "@/lib/utils";
 import { DepthLink } from "@/components/depth-link";
+import { TiltCard } from "@/components/tilt-card";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { SearchBook, SuggestItem } from "@/types/books";
 import type { SearchMovie } from "@/types/movies";
@@ -685,29 +686,31 @@ interface RecentMediaItem {
 }
 
 function RecentMediaCard({ item }: { item: RecentMediaItem }) {
+  const variant = item.aspect === "3/4" ? "book" : "poster";
   return (
     <DepthLink
       to={item.to}
       state={item.state}
       className="group"
     >
-      <div
-        className="overflow-hidden rounded-lg border border-white/60 bg-white/40 shadow-warm-sm transition group-hover:shadow-warm-md"
+      <TiltCard
+        variant={variant}
+        className="overflow-hidden rounded-lg border border-white/60 bg-white/40 shadow-warm-sm transition-shadow group-hover:shadow-warm-md"
         style={{ aspectRatio: item.aspect }}
       >
         {item.coverUrl ? (
-          item.aspect === "3/4" ? (
+          variant === "book" ? (
             <BookCover
               src={item.coverUrl}
               title={item.title}
-              className="rounded-lg transition group-hover:scale-[1.02]"
+              className="rounded-lg"
               loading="lazy"
             />
           ) : (
             <img
               src={item.coverUrl}
               alt={item.title}
-              className="h-full w-full rounded-lg object-cover transition group-hover:scale-[1.02]"
+              className="h-full w-full rounded-lg object-cover"
               loading="lazy"
             />
           )
@@ -716,7 +719,7 @@ function RecentMediaCard({ item }: { item: RecentMediaItem }) {
             <Film className="size-10 text-muted-foreground" />
           </div>
         )}
-      </div>
+      </TiltCard>
       <div className="mt-2 px-0.5">
         <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
         <p className="mt-0.5 truncate text-xs text-muted-foreground">{item.subtitle}</p>
