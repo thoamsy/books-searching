@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { LazyMotion, domMax, m, MotionConfig, AnimatePresence, useAnimate } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import {
   bookmarksQueryOptions,
@@ -75,6 +76,7 @@ export function BookmarkButton() {
   const removeMutation = useRemoveBookmark();
 
   const meta = useItemMeta(ctx?.itemId ?? "", ctx?.itemType ?? "book");
+  const [starRef, animateStar] = useAnimate();
 
   if (!ctx || !meta?.title) return null;
 
@@ -93,23 +95,49 @@ export function BookmarkButton() {
         item_cover_url: coverUrl,
         created_at: new Date().toISOString(),
       });
+      // Fire-and-forget: pop animation only on user-initiated bookmark
+      void animateStar(
+        starRef.current,
+        { scale: [1, 1.3, 0.9, 1.05, 1], rotate: [0, -14, 10, -4, 0] },
+        { duration: 0.45, ease: [0.2, 1, 0.3, 1] },
+      );
     }
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleToggle}
-      aria-label={isBookmarked ? "取消收藏" : "加入收藏"}
-      aria-pressed={isBookmarked}
-      className="inline-flex items-center justify-center rounded-full p-2 transition hover:bg-accent"
-    >
-      <Star
-        className={cn(
-          "size-5 transition-colors",
-          isBookmarked ? "fill-current text-star" : "text-muted-foreground"
-        )}
-      />
-    </button>
+    <MotionConfig reducedMotion="user">
+      <LazyMotion features={domMax} strict>
+        <m.button
+          type="button"
+          onClick={handleToggle}
+          aria-label={isBookmarked ? "取消收藏" : "加入收藏"}
+          aria-pressed={isBookmarked}
+          className="relative inline-flex items-center justify-center rounded-full p-2 transition hover:bg-accent"
+          whileTap={{ scale: 0.85 }}
+          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+        >
+          {/* Background glow that blooms when bookmarked */}
+          <AnimatePresence>
+            {isBookmarked && (
+              <m.span
+                className="absolute inset-0 rounded-full bg-star/15"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 1.4, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              />
+            )}
+          </AnimatePresence>
+          <span ref={starRef} className="relative inline-flex">
+            <Star
+              className={cn(
+                "size-5 transition-colors duration-300",
+                isBookmarked ? "fill-current text-star" : "text-muted-foreground"
+              )}
+            />
+          </span>
+        </m.button>
+      </LazyMotion>
+    </MotionConfig>
   );
 }

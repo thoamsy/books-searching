@@ -1,4 +1,5 @@
 import { createBrowserRouter, Outlet, ScrollRestoration, useLocation } from "react-router-dom";
+import { AnimatePresence, LazyMotion, domMax, m, MotionConfig } from "framer-motion";
 import { bookDetailQueryOptions, searchBooksQueryOptions } from "@/lib/book-queries";
 import { celebrityDetailQueryOptions, celebrityWorksQueryOptions } from "@/lib/celebrity-queries";
 import { collectionItemsQueryOptions } from "@/lib/collection-queries";
@@ -17,14 +18,28 @@ function RootLayout() {
     /^\/celebrity\//.test(pathname) ||
     /^\/author\//.test(pathname);
 
+  const navRightKey = isHome ? "user-menu" : isDetailWithBookmark ? "bookmark" : "empty";
+
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
-      <nav className="flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8">
-        <div>{!isHome && <BackButton />}</div>
-        <div>
-          {isHome ? <UserMenu /> : isDetailWithBookmark ? <BookmarkButton /> : null}
-        </div>
-      </nav>
+      <MotionConfig reducedMotion="user">
+        <LazyMotion features={domMax} strict>
+          <nav className="flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8">
+            <div>{!isHome && <BackButton />}</div>
+            <AnimatePresence mode="popLayout" initial={false}>
+              <m.div
+                key={navRightKey}
+                initial={{ opacity: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, filter: "blur(4px)" }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                {isHome ? <UserMenu /> : isDetailWithBookmark ? <BookmarkButton /> : null}
+              </m.div>
+            </AnimatePresence>
+          </nav>
+        </LazyMotion>
+      </MotionConfig>
       <Outlet />
       <footer className="-mt-10 pb-3 text-center text-[10px] text-muted-foreground/30">
         <a href="https://github.com/thoamsy" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-muted-foreground/60">
