@@ -18,7 +18,7 @@ function RootLayout() {
     /^\/author\//.test(pathname);
 
   return (
-    <>
+    <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
       <nav className="flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8">
         <div>{!isHome && <BackButton />}</div>
         <div>
@@ -32,7 +32,7 @@ function RootLayout() {
         </a>
       </footer>
       <ScrollRestoration />
-    </>
+    </div>
   );
 }
 

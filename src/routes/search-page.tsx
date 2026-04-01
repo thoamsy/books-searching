@@ -235,7 +235,7 @@ export function SearchPage() {
 
   return (
     <main className={cn(
-      "min-h-[100dvh] bg-background text-foreground",
+      "flex-1",
       !hasBookmarks && "flex flex-col"
     )}>
 
