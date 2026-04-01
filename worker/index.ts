@@ -55,6 +55,7 @@ async function proxyRequest(target: string, request: Request, options?: { extraH
 async function cachedProxy(
   cacheKey: string,
   env: Env,
+  ctx: ExecutionContext,
   request: Request,
   fetchUpstream: () => Promise<Response>,
   ttl = 30 * 86400 // 30 days
@@ -65,6 +66,7 @@ async function cachedProxy(
     return new Response(cached, {
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=300",
         "X-Cache": "HIT",
         ...corsHeaders(request.headers.get("Origin"))
       }
@@ -77,8 +79,7 @@ async function cachedProxy(
   // 3. Only cache successful JSON responses
   if (res.ok) {
     const body = await res.text();
-    // Write to KV in the background (doesn't block response)
-    void env.DOUBAN_CACHE.put(cacheKey, body, { expirationTtl: ttl });
+    ctx.waitUntil(env.DOUBAN_CACHE.put(cacheKey, body, { expirationTtl: ttl }));
     const headers = new Headers(res.headers);
     headers.set("X-Cache", "MISS");
     return new Response(body, { status: res.status, headers });
@@ -88,7 +89,7 @@ async function cachedProxy(
 }
 
 export default {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
@@ -120,7 +121,7 @@ export default {
         "User-Agent": "MicroMessenger/7.0.0 (iPhone; iOS 14.0; Scale/2.00)",
         Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html"
       };
-      return cachedProxy(`book:${subjectId}`, env, request, () =>
+      return cachedProxy(`book:${subjectId}`, env, ctx, request, () =>
         proxyRequest(
           `https://frodo.douban.com/api/v2/book/${subjectId}?apikey=0ac44ae016490db2204ce0a042db2916`,
           request, { cacheTtl: 86400, extraHeaders: frodoHeaders }
@@ -152,7 +153,7 @@ export default {
       };
       const start = url.searchParams.get("start") ?? "0";
       const count = url.searchParams.get("count") ?? "50";
-      return cachedProxy(`celebrity-works:${celebrityId}:${start}:${count}`, env, request, () =>
+      return cachedProxy(`celebrity-works:${celebrityId}:${start}:${count}`, env, ctx, request, () =>
         proxyRequest(
           `https://frodo.douban.com/api/v2/celebrity/${celebrityId}/works?apikey=0ac44ae016490db2204ce0a042db2916&start=${start}&count=${count}`,
           request, { cacheTtl: 86400, extraHeaders: frodoHeaders }
@@ -167,7 +168,7 @@ export default {
         "User-Agent": "MicroMessenger/7.0.0 (iPhone; iOS 14.0; Scale/2.00)",
         Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html"
       };
-      return cachedProxy(`celebrity:${celebrityId}`, env, request, () =>
+      return cachedProxy(`celebrity:${celebrityId}`, env, ctx, request, () =>
         proxyRequest(
           `https://frodo.douban.com/api/v2/celebrity/${celebrityId}?apikey=0ac44ae016490db2204ce0a042db2916`,
           request, { cacheTtl: 86400, extraHeaders: frodoHeaders }
@@ -182,7 +183,7 @@ export default {
         "User-Agent": "MicroMessenger/7.0.0 (iPhone; iOS 14.0; Scale/2.00)",
         Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html"
       };
-      return cachedProxy(`movie-credits:${subjectId}`, env, request, () =>
+      return cachedProxy(`movie-credits:${subjectId}`, env, ctx, request, () =>
         proxyRequest(
           `https://frodo.douban.com/api/v2/movie/${subjectId}/credits?apikey=0ac44ae016490db2204ce0a042db2916&count=50`,
           request, { cacheTtl: 86400, extraHeaders: frodoHeaders }
@@ -197,7 +198,7 @@ export default {
         "User-Agent": "MicroMessenger/7.0.0 (iPhone; iOS 14.0; Scale/2.00)",
         Referer: "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html"
       };
-      return cachedProxy(`movie:${subjectId}`, env, request, async () => {
+      return cachedProxy(`movie:${subjectId}`, env, ctx, request, async () => {
         const movieRes = await proxyRequest(
           `https://frodo.douban.com/api/v2/movie/${subjectId}?apikey=0ac44ae016490db2204ce0a042db2916`,
           request, { cacheTtl: 86400, extraHeaders: frodoHeaders }
