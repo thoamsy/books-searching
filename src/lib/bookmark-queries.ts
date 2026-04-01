@@ -65,9 +65,6 @@ export function useAddBookmark() {
         queryClient.setQueryData<BookmarkItem[]>(key, context.previous);
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: key });
-    },
   });
 }
 
@@ -97,9 +94,6 @@ export function useRemoveBookmark() {
       if (context?.previous) {
         queryClient.setQueryData<BookmarkItem[]>(key, context.previous);
       }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: key });
     },
   });
 }

@@ -24,7 +24,7 @@ export async function addBookmark(
       item_cover_url: bookmark.item_cover_url,
       status: "want",
     },
-    { onConflict: "user_id,item_id" }
+    { onConflict: "user_id,item_id,item_type" }
   );
   if (error) throw error;
 }
@@ -53,6 +53,6 @@ export async function batchUpsertBookmarks(
   }));
   const { error } = await supabase
     .from("bookmarks")
-    .upsert(rows, { onConflict: "user_id,item_id" });
+    .upsert(rows, { onConflict: "user_id,item_id,item_type" });
   if (error) throw error;
 }
