@@ -10,3 +10,7 @@ directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 run_worker_first = true
+
+[[kv_namespaces]]
+binding = "DOUBAN_CACHE"
+id = "66bffc3bfb5843b3a1c7486ff97f795d"
