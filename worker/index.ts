@@ -19,7 +19,7 @@ function corsHeaders(origin: string | null) {
   };
 }
 
-async function proxyRequest(target: string, request: Request, options?: { extraHeaders?: Record<string, string>; cacheTtl?: number }) {
+async function proxyRequest(target: string, request: Request, options?: { extraHeaders?: Record<string, string>; cacheTtl?: number; maxAge?: number }) {
   const upstream = await fetch(target, {
     headers: {
       ...DEFAULT_HEADERS,
@@ -43,7 +43,7 @@ async function proxyRequest(target: string, request: Request, options?: { extraH
   const headers = new Headers(upstream.headers);
   const origin = request.headers.get("Origin");
   Object.entries(corsHeaders(origin)).forEach(([key, value]) => headers.set(key, value));
-  headers.set("Cache-Control", "public, max-age=300");
+  headers.set("Cache-Control", `public, max-age=${options?.maxAge ?? 300}`);
 
   return new Response(upstream.body, {
     status: upstream.status,
@@ -66,7 +66,7 @@ async function cachedProxy(
     return new Response(cached, {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=300",
+        "Cache-Control": "public, max-age=3600",
         "X-Cache": "HIT",
         ...corsHeaders(request.headers.get("Origin"))
       }
@@ -247,7 +247,7 @@ export default {
         return new Response("Missing image url", { status: 400 });
       }
 
-      return proxyRequest(source, request, { cacheTtl: 604800 });
+      return proxyRequest(source, request, { cacheTtl: 604800, maxAge: 3600 });
     }
 
     return env.ASSETS.fetch(request);
