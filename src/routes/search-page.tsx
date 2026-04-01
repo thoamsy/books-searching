@@ -1,10 +1,9 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Film, LoaderCircle, Search, Tv, User, X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { batchUpsertSearchHistory, upsertSearchHistory, clearSearchHistory } from "@/lib/supabase-api";
-import { searchHistoryQueryOptions } from "@/lib/supabase-queries";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { bookmarksQueryOptions } from "@/lib/bookmark-queries";
+import { BookmarksGrid } from "@/components/bookmarks-grid";
 import { BookCover } from "@/components/book-cover";
 import {
   Combobox,
@@ -21,21 +20,11 @@ import { getCoverUrl, normalizeWorkId, suggestItemToSearchBook } from "@/lib/boo
 import { suggestionsQueryOptions } from "@/lib/book-queries";
 import { movieSuggestionsQueryOptions } from "@/lib/movie-queries";
 import { suggestItemToSearchMovie } from "@/lib/movies-api";
-import {
-  bookHistoryStore,
-  movieHistoryStore,
-  personHistoryStore,
-  writeRowsToLocal,
-} from "@/lib/history-utils";
-import type { RecentPersonEntry } from "@/lib/history-utils";
 import { cn } from "@/lib/utils";
-import { DepthLink } from "@/components/depth-link";
-import { TiltCard } from "@/components/tilt-card";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { SearchBook, SuggestItem } from "@/types/books";
 import type { SearchMovie } from "@/types/movies";
 import type { MovieSuggestItem } from "@/types/movies";
-import type { SearchHistoryRow } from "@/types/supabase";
 
 type SearchOption = {
   id: string;
@@ -68,129 +57,17 @@ export function SearchPage() {
   const [isComposing, setIsComposing] = useState(false);
   const { user } = useAuth();
   const userId = user?.id ?? null;
-  const queryClient = useQueryClient();
 
-  // ---------------------------------------------------------------------------
-  // Unified history query — cloud when logged in, localStorage otherwise.
-  // placeholderData shows localStorage instantly while cloud fetches.
-  // ---------------------------------------------------------------------------
-  const historyQuery = useQuery(searchHistoryQueryOptions(userId));
-  const rows = historyQuery.data ?? [];
-
-  const displayBooks = rows
-    .filter((r) => r.type === "book" && r.extra?.workId && r.extra?.book)
-    .map((r) => ({
-      workId: r.extra.workId as string,
-      query: r.keyword,
-      book: r.extra.book as SearchBook,
-    }));
-
-  const displayMovies = rows
-    .filter((r) => r.type === "movie" && r.extra?.subjectId && r.extra?.movie)
-    .map((r) => ({
-      subjectId: r.extra.subjectId as string,
-      query: r.keyword,
-      movie: r.extra.movie as SearchMovie,
-    }));
-
-  const displayPersons: RecentPersonEntry[] = rows
-    .filter((r) => r.type === "author" || r.type === "celebrity")
-    .map((r) => ({
-      kind: r.type as "author" | "celebrity",
-      name: r.keyword,
-      photoUrl: r.extra?.photoUrl as string | undefined,
-      enName: r.extra?.enName as string | undefined,
-      url: r.extra?.url as string | undefined,
-      celebrityId: r.extra?.celebrityId as string | undefined,
-    }));
+  const { data: bookmarks = [] } = useQuery(bookmarksQueryOptions(userId));
+  const hasBookmarks = bookmarks.length > 0;
 
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 260);
-  const hasBookHistory = displayBooks.length > 0;
-  const hasMovieHistory = displayMovies.length > 0;
-  const hasHistory = hasBookHistory || hasMovieHistory || displayPersons.length > 0;
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-
-  // Sync cloud data back to localStorage so next load's placeholderData is fresh
-  useEffect(() => {
-    if (userId && historyQuery.data && !historyQuery.isPlaceholderData) {
-      writeRowsToLocal(historyQuery.data);
-    }
-  }, [userId, historyQuery.data, historyQuery.isPlaceholderData]);
-
-  // Migrate localStorage to cloud on first login
-  useEffect(() => {
-    if (!userId) return;
-    const migrationKey = `opus-history-migrated-${userId}`;
-    if (localStorage.getItem(migrationKey)) return;
-
-    const localBooks = bookHistoryStore.read();
-    const localMovies = movieHistoryStore.read();
-    const localPersons = personHistoryStore.read();
-
-    const entries = [
-      ...localBooks.map((b) => ({
-        keyword: b.query,
-        type: "book" as const,
-        extra: { workId: b.workId, book: b.book },
-      })),
-      ...localMovies.map((m) => ({
-        keyword: m.query,
-        type: "movie" as const,
-        extra: { subjectId: m.subjectId, movie: m.movie },
-      })),
-      ...localPersons.map((p) => ({
-        keyword: p.name,
-        type: p.kind as "author" | "celebrity",
-        extra: { photoUrl: p.photoUrl, enName: p.enName, url: p.url, celebrityId: p.celebrityId },
-      })),
-    ];
-
-    if (entries.length > 0) {
-      batchUpsertSearchHistory(userId, entries)
-        .then(() => {
-          localStorage.setItem(migrationKey, "1");
-          queryClient.invalidateQueries({ queryKey: ["search-history", userId] });
-        })
-        .catch((err) => console.error("[migration] failed to sync history:", err));
-    } else {
-      localStorage.setItem(migrationKey, "1");
-    }
-  }, [userId, queryClient]);
-
-  // ---------------------------------------------------------------------------
-  // Tri-layer write helper: query cache → localStorage → cloud
-  // ---------------------------------------------------------------------------
-  const historyKey = searchHistoryQueryOptions(userId).queryKey;
-
-  function saveToHistory(
-    type: SearchHistoryRow["type"],
-    keyword: string,
-    extra: Record<string, unknown>,
-    dedupMatch: (r: SearchHistoryRow) => boolean,
-  ) {
-    const newRow: SearchHistoryRow = {
-      id: 0,
-      user_id: userId ?? "local",
-      keyword,
-      type,
-      extra,
-      searched_at: new Date().toISOString(),
-    };
-    const prev = queryClient.getQueryData<SearchHistoryRow[]>(historyKey) ?? [];
-    const updated = [newRow, ...prev.filter((r) => !dedupMatch(r))];
-    queryClient.setQueryData<SearchHistoryRow[]>(historyKey, updated);
-    writeRowsToLocal(updated);
-    if (userId) {
-      upsertSearchHistory(userId, keyword, type, extra)
-        .then(() => queryClient.invalidateQueries({ queryKey: historyKey }))
-        .catch(() => {});
-    }
-  }
 
   // ---------------------------------------------------------------------------
   // Suggestion queries
@@ -216,17 +93,11 @@ export function SearchPage() {
       : "";
 
   // ---------------------------------------------------------------------------
-  // Save & navigate helpers
+  // Navigate helpers
   // ---------------------------------------------------------------------------
   function openBookDetail(book: SearchBook, searchQuery: string) {
     const workId = normalizeWorkId(book.key);
     if (!workId) return false;
-
-    const trimmedQuery = searchQuery.trim();
-    if (trimmedQuery) {
-      saveToHistory("book", trimmedQuery, { workId, book },
-        (r) => r.type === "book" && r.extra?.workId === workId);
-    }
     setIsOpen(false);
     setIsComposing(false);
     navigate(`/book/${workId}?q=${encodeURIComponent(searchQuery)}`, {
@@ -238,12 +109,6 @@ export function SearchPage() {
   function openMovieDetail(movie: SearchMovie, searchQuery: string) {
     const subjectId = movie.key;
     if (!subjectId) return false;
-
-    const trimmedQuery = searchQuery.trim();
-    if (trimmedQuery) {
-      saveToHistory("movie", trimmedQuery, { subjectId, movie },
-        (r) => r.type === "movie" && r.extra?.subjectId === subjectId);
-    }
     setIsOpen(false);
     setIsComposing(false);
     navigate(`/movie/${subjectId}?q=${encodeURIComponent(searchQuery)}`, {
@@ -338,35 +203,18 @@ export function SearchPage() {
     }
 
     if (option.kind === "author" && option.suggest) {
-      const extra = {
-        photoUrl: option.suggest.coverUrl,
-        enName: option.suggest.enName,
-        url: option.suggest.url,
-      };
-      saveToHistory("author", option.label, extra,
-        (r) => r.type === "author" && r.keyword === option.label);
-
       setIsOpen(false);
       setIsComposing(false);
-      const entry: RecentPersonEntry = {
-        kind: "author",
-        name: option.label,
-        photoUrl: option.suggest.coverUrl,
-        enName: option.suggest.enName,
-        url: option.suggest.url,
-      };
-      navigate(buildPersonUrl(entry), { state: { navDepth: 1 } });
+      const params = new URLSearchParams();
+      if (option.suggest.coverUrl) params.set("photo", option.suggest.coverUrl);
+      if (option.suggest.enName) params.set("en", option.suggest.enName);
+      if (option.suggest.url) params.set("url", option.suggest.url);
+      const qs = params.toString();
+      navigate(`/author/${encodeURIComponent(option.label)}${qs ? `?${qs}` : ""}`, { state: { navDepth: 1 } });
       return;
     }
 
     if (option.kind === "celebrity" && option.movieSuggest) {
-      const extra = {
-        photoUrl: option.movieSuggest.coverUrl,
-        celebrityId: option.movieSuggest.id,
-      };
-      saveToHistory("celebrity", option.label, extra,
-        (r) => r.type === "celebrity" && r.keyword === option.label);
-
       setIsOpen(false);
       setIsComposing(false);
       navigate(`/celebrity/${option.movieSuggest.id}`, { state: { navDepth: 1 } });
@@ -385,31 +233,18 @@ export function SearchPage() {
     }
   }
 
-  function handleClear() {
-    // Clear query cache
-    queryClient.setQueryData<SearchHistoryRow[]>(historyKey, []);
-    // Clear localStorage
-    bookHistoryStore.write([]);
-    movieHistoryStore.write([]);
-    personHistoryStore.write([]);
-    // Clear cloud
-    if (userId) {
-      clearSearchHistory(userId).catch(() => {});
-    }
-  }
-
   return (
     <main className={cn(
       "min-h-[100dvh] bg-background text-foreground",
-      !hasBookHistory && "flex flex-col"
+      !hasBookmarks && "flex flex-col"
     )}>
 
       <div className={cn(
         "relative mx-auto w-full max-w-3xl px-5 pb-20 sm:px-8",
-        hasBookHistory ? "pt-6 sm:pt-10" : "my-auto"
+        hasBookmarks ? "pt-6 sm:pt-10" : "my-auto"
       )}>
-        <header className={cn("animate-fade-up", hasBookHistory ? "mb-10" : "mb-8 text-center")}>
-          <p className={cn("flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-primary/70", !hasBookHistory && "justify-center")}>
+        <header className={cn("animate-fade-up", hasBookmarks ? "mb-10" : "mb-8 text-center")}>
+          <p className={cn("flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-primary/70", !hasBookmarks && "justify-center")}>
             <img src="/favicon.svg" alt="" className="size-5" />
             <span className="font-display">Opus</span>
           </p>
@@ -418,7 +253,7 @@ export function SearchPage() {
           </h1>
         </header>
 
-        <div ref={searchBarRef} className={cn("animate-fade-up relative [animation-delay:80ms]", hasBookHistory ? "mb-14" : "mb-6")}>
+        <div ref={searchBarRef} className={cn("animate-fade-up relative [animation-delay:80ms]", hasBookmarks ? "mb-14" : "mb-6")}>
           <Combobox<SearchOption>
             items={suggestionOptions}
             itemToStringLabel={getOptionLabel}
@@ -567,204 +402,12 @@ export function SearchPage() {
           ) : null}
         </div>
 
-        {!hasHistory ? null : (
-          <div className="@container animate-fade-up flex flex-col gap-10 [animation-delay:160ms]">
-            {displayPersons.length > 0 ? (
-              <section>
-                <h2 className="mb-4 text-xs uppercase tracking-[0.28em] text-muted-foreground">最近关注</h2>
-
-                {/* Mobile: horizontal scroll */}
-                <div className="flex gap-3 overflow-x-auto pb-2 sm:hidden">
-                  {displayPersons.map((person) => (
-                    <PersonAvatarCard key={`${person.kind}:${person.name}`} person={person} />
-                  ))}
-                </div>
-
-                {/* Desktop: stacked avatars with hover expand */}
-                <TooltipProvider delayDuration={150}>
-                  <div className="group/stack hidden items-center sm:flex">
-                    <div className="flex items-center">
-                      {displayPersons.map((person, index) => (
-                        <Tooltip key={`${person.kind}:${person.name}`}>
-                          <TooltipTrigger asChild>
-                            <DepthLink
-                              to={buildPersonUrl(person)}
-                              className="relative block shrink-0 transition-[margin] duration-300 ease-out hover:!z-50 group-hover/stack:mr-2"
-                              style={{ marginLeft: index === 0 ? 0 : "-0.75rem", zIndex: displayPersons.length - index }}
-                            >
-                              <div className="size-10 overflow-hidden rounded-full border-2 border-background shadow-sm transition-transform duration-200 hover:scale-110">
-                                {person.photoUrl ? (
-                                  <img src={person.photoUrl} alt={person.name} className="h-full w-full object-cover" />
-                                ) : (
-                                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent text-xs font-medium text-muted-foreground">
-                                    {person.name.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
-                                  </div>
-                                )}
-                              </div>
-                            </DepthLink>
-                          </TooltipTrigger>
-                          <TooltipContent>{person.name}</TooltipContent>
-                        </Tooltip>
-                      ))}
-                    </div>
-                  </div>
-                </TooltipProvider>
-              </section>
-            ) : null}
-
-            {displayMovies.length > 0 ? (
-              <section>
-                <h2 className="mb-5 text-xs uppercase tracking-[0.28em] text-muted-foreground">最近观影</h2>
-                <RecentMediaGrid
-                  items={displayMovies.map((item) => ({
-                    key: item.subjectId,
-                    to: `/movie/${item.subjectId}?q=${encodeURIComponent(item.query)}`,
-                    state: { movie: item.movie },
-                    title: item.movie.title,
-                    subtitle: item.movie.director?.slice(0, 2).join(" / ") || item.movie.year || "",
-                    coverUrl: item.movie.coverUrl,
-                    aspect: "2/3" as const,
-                  }))}
-                />
-              </section>
-            ) : null}
-
-            {displayBooks.length > 0 ? (
-              <section>
-                <div className="mb-5 flex items-center justify-between">
-                  <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">最近翻阅</h2>
-                  <button
-                    type="button"
-                    className="text-xs text-muted-foreground transition hover:text-foreground"
-                    onClick={handleClear}
-                  >
-                    清空
-                  </button>
-                </div>
-
-                <RecentMediaGrid
-                  items={displayBooks.map((item) => ({
-                    key: item.workId,
-                    to: `/book/${item.workId}?q=${encodeURIComponent(item.query)}`,
-                    state: { book: item.book },
-                    title: item.book.title,
-                    subtitle: item.book.authorName?.slice(0, 2).join(" / ") || "",
-                    coverUrl: getCoverUrl(item.book.coverUrl),
-                    aspect: "3/4" as const,
-                  }))}
-                />
-              </section>
-            ) : null}
+        {hasBookmarks ? (
+          <div className="@container animate-fade-up [animation-delay:160ms]">
+            <BookmarksGrid items={bookmarks} />
           </div>
-        )}
+        ) : null}
       </div>
     </main>
-  );
-}
-
-function buildPersonUrl(person: RecentPersonEntry) {
-  if (person.kind === "celebrity" && person.celebrityId) {
-    return `/celebrity/${person.celebrityId}`;
-  }
-  const params = new URLSearchParams();
-  if (person.photoUrl) params.set("photo", person.photoUrl);
-  if (person.enName) params.set("en", person.enName);
-  if (person.url) params.set("url", person.url);
-  const qs = params.toString();
-  return `/author/${encodeURIComponent(person.name)}${qs ? `?${qs}` : ""}`;
-}
-
-interface RecentMediaItem {
-  key: string;
-  to: string;
-  state?: Record<string, unknown>;
-  title: string;
-  subtitle: string;
-  coverUrl?: string | null;
-  aspect: "2/3" | "3/4";
-}
-
-function RecentMediaCard({ item }: { item: RecentMediaItem }) {
-  const variant = item.aspect === "3/4" ? "book" : "poster";
-  return (
-    <DepthLink
-      to={item.to}
-      state={item.state}
-      className="group"
-    >
-      <TiltCard
-        variant={variant}
-        className="overflow-hidden rounded-lg border border-white/60 bg-white/40 shadow-warm-sm transition-shadow group-hover:shadow-warm-md"
-        style={{ aspectRatio: item.aspect }}
-      >
-        {item.coverUrl ? (
-          variant === "book" ? (
-            <BookCover
-              src={item.coverUrl}
-              title={item.title}
-              className="rounded-lg"
-              loading="lazy"
-            />
-          ) : (
-            <img
-              src={item.coverUrl}
-              alt={item.title}
-              className="h-full w-full rounded-lg object-cover"
-              loading="lazy"
-            />
-          )
-        ) : (
-          <div className="flex h-full w-full items-center justify-center rounded-lg bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(231,211,185,0.94))]">
-            <Film className="size-10 text-muted-foreground" />
-          </div>
-        )}
-      </TiltCard>
-      <div className="mt-2 px-0.5">
-        <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
-        <p className="mt-0.5 truncate text-xs text-muted-foreground">{item.subtitle}</p>
-      </div>
-    </DepthLink>
-  );
-}
-
-function RecentMediaGrid({ items }: { items: RecentMediaItem[] }) {
-  return (
-    <>
-      {/* Mobile: horizontal scroll with snap */}
-      <div className="-mr-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pr-5 sm:hidden">
-        {items.map((item) => (
-          <div key={item.key} className="w-[calc((100%-0.75rem*2)/3.4)] shrink-0 snap-start">
-            <RecentMediaCard item={item} />
-          </div>
-        ))}
-      </div>
-
-      {/* Desktop: grid */}
-      <div className="hidden grid-cols-3 gap-3 @2xl:grid-cols-4 sm:grid">
-        {items.map((item) => (
-          <RecentMediaCard key={item.key} item={item} />
-        ))}
-      </div>
-    </>
-  );
-}
-
-function PersonAvatarCard({ person }: { person: RecentPersonEntry }) {
-  return (
-    <DepthLink
-      to={buildPersonUrl(person)}
-      className="flex shrink-0 items-center gap-2.5 rounded-full border border-white/60 bg-white/50 py-1.5 pr-4 pl-1.5 transition hover:bg-white/70"
-    >
-      <div className="size-8 overflow-hidden rounded-full">
-        {person.photoUrl ? (
-          <img src={person.photoUrl} alt={person.name} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent text-xs font-medium text-muted-foreground">
-            {person.name.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
-          </div>
-        )}
-      </div>
-      <span className="whitespace-nowrap text-sm text-foreground">{person.name}</span>
-    </DepthLink>
   );
 }
