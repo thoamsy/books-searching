@@ -1,16 +1,17 @@
 import { Star } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { useQueryClient, useQuery, type QueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import {
   bookmarksQueryOptions,
   useAddBookmark,
   useRemoveBookmark,
 } from "@/lib/bookmark-queries";
+import { bookDetailQueryOptions } from "@/lib/book-queries";
+import { movieDetailQueryOptions } from "@/lib/movie-queries";
+import { celebrityDetailQueryOptions } from "@/lib/celebrity-queries";
 import { cn } from "@/lib/utils";
 import type { BookmarkRow } from "@/types/supabase";
-import type { BookDetail } from "@/types/books";
-import type { MovieDetail, CelebrityDetail } from "@/types/movies";
 
 type BookmarkType = BookmarkRow["item_type"];
 
@@ -25,20 +26,36 @@ function useBookmarkContext(): { itemId: string; itemType: BookmarkType } | null
   return null;
 }
 
-function getItemMeta(queryClient: QueryClient, itemId: string, itemType: BookmarkType): { title: string; coverUrl: string | null } {
+function useItemMeta(itemId: string, itemType: BookmarkType) {
+  const bookQuery = useQuery({
+    ...bookDetailQueryOptions(itemType === "book" ? itemId : ""),
+    enabled: itemType === "book",
+  });
+  const movieQuery = useQuery({
+    ...movieDetailQueryOptions(itemType === "movie" ? itemId : ""),
+    enabled: itemType === "movie",
+  });
+  const celebrityQuery = useQuery({
+    ...celebrityDetailQueryOptions(itemType === "celebrity" ? itemId : ""),
+    enabled: itemType === "celebrity",
+  });
+
   if (itemType === "book") {
-    const detail = queryClient.getQueryData<BookDetail>(["books", "detail", itemId]);
-    if (detail) return { title: detail.title, coverUrl: detail.coverUrl ?? null };
+    const detail = bookQuery.data;
+    if (!detail) return null;
+    return { title: detail.title, coverUrl: detail.coverUrl ?? null };
   }
 
   if (itemType === "movie") {
-    const detail = queryClient.getQueryData<MovieDetail>(["movies", "detail", itemId]);
-    if (detail) return { title: detail.title, coverUrl: detail.coverUrl ?? null };
+    const detail = movieQuery.data;
+    if (!detail) return null;
+    return { title: detail.title, coverUrl: detail.coverUrl ?? null };
   }
 
   if (itemType === "celebrity") {
-    const detail = queryClient.getQueryData<CelebrityDetail>(["celebrity", "detail", itemId]);
-    if (detail) return { title: detail.name, coverUrl: detail.coverUrl ?? null };
+    const detail = celebrityQuery.data;
+    if (!detail) return null;
+    return { title: detail.name, coverUrl: detail.coverUrl ?? null };
   }
 
   if (itemType === "author") {
@@ -46,19 +63,20 @@ function getItemMeta(queryClient: QueryClient, itemId: string, itemType: Bookmar
     return { title: itemId, coverUrl: params.get("photo") };
   }
 
-  return { title: itemId, coverUrl: null };
+  return null;
 }
 
 export function BookmarkButton() {
   const ctx = useBookmarkContext();
   const { user } = useAuth();
   const userId = user?.id ?? null;
-  const queryClient = useQueryClient();
   const { data: bookmarks = [] } = useQuery(bookmarksQueryOptions(userId));
   const addMutation = useAddBookmark();
   const removeMutation = useRemoveBookmark();
 
-  if (!ctx) return null;
+  const meta = useItemMeta(ctx?.itemId ?? "", ctx?.itemType ?? "book");
+
+  if (!ctx || !meta) return null;
 
   const { itemId, itemType } = ctx;
   const isBookmarked = bookmarks.some((b) => b.item_id === itemId);
@@ -67,12 +85,11 @@ export function BookmarkButton() {
     if (isBookmarked) {
       removeMutation.mutate(itemId);
     } else {
-      const meta = getItemMeta(queryClient, itemId, itemType);
       addMutation.mutate({
         item_id: itemId,
         item_type: itemType,
-        item_title: meta.title,
-        item_cover_url: meta.coverUrl,
+        item_title: meta!.title,
+        item_cover_url: meta!.coverUrl,
         created_at: new Date().toISOString(),
       });
     }
