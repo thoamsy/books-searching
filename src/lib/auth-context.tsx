@@ -27,7 +27,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    // PWA / mobile: browser suspends timers when backgrounded, so the
+    // automatic token refresh never fires and the session silently expires.
+    // Restart the refresh loop every time the app comes back to foreground.
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        supabase.auth.startAutoRefresh();
+      } else {
+        supabase.auth.stopAutoRefresh();
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   async function signInWithOAuth(provider: "google" | "github") {
