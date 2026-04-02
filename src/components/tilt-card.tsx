@@ -1,8 +1,6 @@
 import { useRef } from "react";
 import {
-  LazyMotion,
-  domMax,
-  m,
+  motion,
   useMotionValue,
   useSpring,
   useTransform,
@@ -69,38 +67,36 @@ export function TiltCard({
   }
 
   return (
-    <LazyMotion features={domMax} strict>
-      <m.div
-        ref={cardRef}
+    <motion.div
+      ref={cardRef}
+      className={cn(
+        "relative [transform-style:preserve-3d]",
+        className,
+      )}
+      style={{
+        ...style,
+        rotateX,
+        rotateY,
+        scale,
+        perspective: 600,
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      <motion.div
         className={cn(
-          "relative [transform-style:preserve-3d]",
-          className,
+          "pointer-events-none absolute inset-0 rounded-[inherit]",
+          variant === "book" ? "mix-blend-soft-light" : "mix-blend-overlay",
         )}
         style={{
-          ...style,
-          rotateX,
-          rotateY,
-          scale,
-          perspective: 600,
+          opacity: glareOpacity,
+          background: glareBackground,
         }}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        {children}
-        <m.div
-          className={cn(
-            "pointer-events-none absolute inset-0 rounded-[inherit]",
-            variant === "book" ? "mix-blend-soft-light" : "mix-blend-overlay",
-          )}
-          style={{
-            opacity: glareOpacity,
-            background: glareBackground,
-          }}
-        />
-        {variant === "book" && (
-          <div className="pointer-events-none absolute inset-0 rounded-[inherit] [background:linear-gradient(90deg,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.08)_1.5%,transparent_6%,transparent_93%,rgba(0,0,0,0.05)_100%)]" />
-        )}
-      </m.div>
-    </LazyMotion>
+      />
+      {variant === "book" && (
+        <div className="pointer-events-none absolute inset-0 rounded-[inherit] [background:linear-gradient(90deg,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.08)_1.5%,transparent_6%,transparent_93%,rgba(0,0,0,0.05)_100%)]" />
+      )}
+    </motion.div>
   );
 }
