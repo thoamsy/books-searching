@@ -221,9 +221,11 @@ export default {
     const collectionMetaMatch = url.pathname.match(/^\/api\/douban\/collection\/([A-Za-z0-9_]+)\/?$/);
     if (collectionMetaMatch) {
       const collectionId = collectionMetaMatch[1];
-      return proxyRequest(
-        `https://m.douban.com/rexxar/api/v2/subject_collection/${collectionId}`,
-        request, { cacheTtl: 300, extraHeaders: REXXAR_HEADERS }
+      return cachedProxy(`collection:${collectionId}`, env, ctx, request, () =>
+        proxyRequest(
+          `https://m.douban.com/rexxar/api/v2/subject_collection/${collectionId}`,
+          request, { cacheTtl: 300, extraHeaders: REXXAR_HEADERS }
+        )
       );
     }
 
