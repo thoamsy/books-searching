@@ -3,7 +3,7 @@ import type {
   CollectionItemsResponse,
   CollectionMeta
 } from "@/types/collection";
-import { proxifyImageUrl } from "@/lib/books-api";
+import { proxifyImageUrl, fetchProxy } from "@/lib/douban-shared";
 
 interface RexxarCollectionMeta {
   id: string;
@@ -88,8 +88,9 @@ export async function getCollectionItems(
   start = 0,
   count = 20
 ): Promise<CollectionItemsResponse> {
-  const response = await fetch(
-    `/api/douban/collection/${collectionId}/items?start=${start}&count=${count}`
+  const response = await fetchProxy(
+    `/api/douban/collection/${collectionId}/items?start=${start}&count=${count}`,
+    "application/json"
   );
   if (!response.ok) {
     throw new Error(`Failed to fetch collection items (${response.status})`);
