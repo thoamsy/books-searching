@@ -42,7 +42,7 @@ function BookmarkCard({ item }: { item: BookmarkItem }) {
         )}
       </TiltCard>
       <div className="mt-2 px-0.5">
-        <p className="truncate text-sm font-medium text-foreground">{item.item_title}</p>
+        <p className="truncate text-sm font-normal text-foreground">{item.item_title}</p>
       </div>
     </DepthLink>
   );
@@ -60,16 +60,17 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
   }
 
   const persons = items.filter((i) => i.item_type === "author" || i.item_type === "celebrity");
-  const media = items.filter((i) => i.item_type === "book" || i.item_type === "movie");
+  const books = items.filter((i) => i.item_type === "book");
+  const movies = items.filter((i) => i.item_type === "movie");
 
   return (
     <div className="flex flex-col gap-10">
       {persons.length > 0 ? (
-        <section>
-          <h2 className="mb-5 text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏影人 / 作者</h2>
+        <section className="flex flex-col gap-5">
+          <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏影人 / 作者</h2>
 
           {/* Mobile: avatar on top, name below */}
-          <div className="flex gap-5 overflow-x-auto pb-2 sm:hidden">
+          <div className="flex gap-2 overflow-x-auto pb-2 sm:hidden">
             {persons.map((item) => (
               <DepthLink key={item.item_id} to={bookmarkUrl(item)} className="group flex shrink-0 flex-col items-center gap-1.5">
                 <div className="size-16 overflow-hidden rounded-full border-2 border-white/80 shadow-warm-sm transition-shadow group-hover:shadow-warm-md">
@@ -118,14 +119,12 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
         </section>
       ) : null}
 
-      {media.length > 0 ? (
-        <section>
-          {persons.length > 0 ? (
-            <h2 className="mb-5 text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏作品</h2>
-          ) : null}
+      {books.length > 0 ? (
+        <section className="flex flex-col gap-5">
+          <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏书籍</h2>
           {/* Mobile: horizontal scroll with snap */}
           <div className="-mr-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pr-5 sm:hidden">
-            {media.map((item) => (
+            {books.map((item) => (
               <div key={item.item_id} className="w-[calc((100%-0.75rem*2)/3.4)] shrink-0 snap-start">
                 <BookmarkCard item={item} />
               </div>
@@ -133,7 +132,27 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
           </div>
           {/* Desktop: grid */}
           <div className="hidden grid-cols-3 gap-3 @2xl:grid-cols-4 sm:grid">
-            {media.map((item) => (
+            {books.map((item) => (
+              <BookmarkCard key={item.item_id} item={item} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {movies.length > 0 ? (
+        <section className="flex flex-col gap-5">
+          <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏影视</h2>
+          {/* Mobile: horizontal scroll with snap */}
+          <div className="-mr-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pr-5 sm:hidden">
+            {movies.map((item) => (
+              <div key={item.item_id} className="w-[calc((100%-0.75rem*2)/3.4)] shrink-0 snap-start">
+                <BookmarkCard item={item} />
+              </div>
+            ))}
+          </div>
+          {/* Desktop: grid */}
+          <div className="hidden grid-cols-3 gap-3 @2xl:grid-cols-4 sm:grid">
+            {movies.map((item) => (
               <BookmarkCard key={item.item_id} item={item} />
             ))}
           </div>
