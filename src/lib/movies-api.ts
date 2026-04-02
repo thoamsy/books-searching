@@ -1,132 +1,9 @@
 import type { CelebrityDetail, CelebrityWork, CreditPerson, MovieDetail, MovieSearchResponse, MovieSuggestItem, SearchMovie } from "@/types/movies";
-import { extractCollectionId } from "@/lib/books-api";
-
-const API_BASE = (import.meta.env.VITE_DOUBAN_PROXY_BASE ?? "").replace(/\/$/, "");
-
-function normalizeUrl(url?: string | null) {
-  if (!url) {
-    return undefined;
-  }
-
-  if (url.startsWith("//")) {
-    return `https:${url}`;
-  }
-
-  return url.replace("http://", "https://");
-}
-
-function proxifyImageUrl(url?: string) {
-  const normalized = normalizeUrl(url);
-  if (!normalized) {
-    return undefined;
-  }
-
-  if (!normalized.includes("doubanio.com")) {
-    return normalized;
-  }
-
-  return `${API_BASE}/api/douban/image?url=${encodeURIComponent(normalized)}`;
-}
-
-function fetchProxy(path: string, accept = "text/html,application/xhtml+xml") {
-  return fetch(`${API_BASE}${path}`, {
-    headers: { Accept: accept }
-  });
-}
-
-function assertDoubanHtmlAvailable(html: string) {
-  const blockedSignals = ["异常请求", "验证码", "security verification", "检测到有异常请求", "登录跳转豆瓣"];
-  if (blockedSignals.some((signal) => html.includes(signal))) {
-    throw new Error("Douban rate-limited or challenged the request.");
-  }
-}
-
-function parseRating(value?: string | null) {
-  if (!value) {
-    return undefined;
-  }
-
-  const rating = Number.parseFloat(value.trim());
-  return Number.isFinite(rating) ? rating : undefined;
-}
-
-function parseInteger(value?: string | null) {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsed = Number.parseInt(value.replace(/[^\d]/g, ""), 10);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function textContent(node?: Element | null) {
-  return node?.textContent?.replace(/\s+/g, " ").trim() ?? "";
-}
-
-function decodeDoubanRedirect(url?: string | null) {
-  if (!url) {
-    return "";
-  }
-
-  try {
-    const parsed = new URL(url, "https://www.douban.com");
-    return parsed.searchParams.get("url") ?? url;
-  } catch {
-    return url;
-  }
-}
-
-function extractSubjectId(url?: string | null) {
-  return url?.match(/subject\/(\d+)/)?.[1] ?? "";
-}
-
-function parseMovieSubjectCast(value: string) {
-  const parts = value
-    .split("/")
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  // Movie cast format: "director / cast1 cast2 / year"
-  const year = parts[parts.length - 1] ?? "";
-  const director = parts[0] ?? "";
-  const castParts = parts.slice(1, Math.max(1, parts.length - 1));
-
-  return { year, director, cast: castParts };
-}
-
-function parseDoubanMovieSearchHtml(html: string): MovieSearchResponse {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const docs = Array.from(doc.querySelectorAll("div.result")).map((item) => {
-    const redirectUrl =
-      (item.querySelector("div.title a") as HTMLAnchorElement | null)?.getAttribute("href") ??
-      (item.querySelector("div.content a") as HTMLAnchorElement | null)?.getAttribute("href") ??
-      "";
-    const externalUrl = decodeDoubanRedirect(redirectUrl);
-    const subjectId = extractSubjectId(externalUrl);
-    const cast = parseMovieSubjectCast(textContent(item.querySelector("span.subject-cast")));
-    const ratingText = textContent(item.querySelector("span.rating_nums"));
-    const description = textContent(item.querySelector("p"));
-
-    // Detect type from the category badge or URL
-    const typeText = textContent(item.querySelector("span[class='subject-cast']"));
-    const isTV = externalUrl.includes("movie.douban.com") && typeText.includes("集");
-
-    return {
-      key: subjectId,
-      title: textContent(item.querySelector("div.title a")) || "未知影片",
-      coverUrl: proxifyImageUrl(item.querySelector("img")?.getAttribute("src") ?? undefined),
-      year: cast.year.match(/\d{4}/)?.[0],
-      ratingsAverage: parseRating(ratingText),
-      director: cast.director ? [cast.director] : [],
-      cast: cast.cast,
-      type: isTV ? "tv" : "movie",
-      description,
-      externalUrl
-    } satisfies SearchMovie;
-  });
-
-  return { numFound: docs.length, docs: docs.filter((doc) => doc.key) };
-}
+import {
+  proxifyImageUrl,
+  fetchProxy,
+  extractCollectionId,
+} from "@/lib/douban-shared";
 
 interface DoubanMovieSuggestEntry {
   type: string;
@@ -159,20 +36,71 @@ export async function getMovieSuggestions(query: string): Promise<MovieSuggestIt
   }));
 }
 
+interface FrodoSearchTarget {
+  id: string;
+  title: string;
+  rating?: { value?: number; count?: number };
+  cover_url?: string;
+  card_subtitle?: string;
+  year?: string;
+}
+
+interface FrodoSearchResponse {
+  subjects: {
+    total: number;
+    start: number;
+    count: number;
+    items: {
+      target_id: string;
+      target_type: string;
+      target: FrodoSearchTarget;
+    }[];
+  };
+}
+
+function parseMovieCardSubtitle(subtitle?: string) {
+  if (!subtitle) return { director: [], cast: [] };
+  const parts = subtitle.split("/").map((s) => s.trim()).filter(Boolean);
+  // Format: "country / genre1 genre2 / director / actor1 actor2"
+  if (parts.length >= 4) {
+    return {
+      director: parts[2] ? [parts[2]] : [],
+      cast: parts.slice(3),
+    };
+  }
+  return { director: [], cast: [] };
+}
+
 export async function searchMovies(query: string, limit = 18): Promise<MovieSearchResponse> {
-  const response = await fetchProxy(`/api/douban/movie/search?q=${encodeURIComponent(query)}`);
+  const response = await fetchProxy(
+    `/api/douban/search/subjects?type=movie&q=${encodeURIComponent(query)}&count=${limit}`,
+    "application/json"
+  );
   if (!response.ok) {
     throw new Error("Failed to search movies.");
   }
 
-  const html = await response.text();
-  assertDoubanHtmlAvailable(html);
-  const data = parseDoubanMovieSearchHtml(html);
+  const data: FrodoSearchResponse = await response.json();
+  const items = data.subjects?.items ?? [];
 
-  return {
-    numFound: data.numFound,
-    docs: data.docs.slice(0, limit)
-  };
+  const docs: SearchMovie[] = items.map((item) => {
+    const t = item.target;
+    const parsed = parseMovieCardSubtitle(t.card_subtitle);
+    return {
+      key: item.target_id,
+      title: t.title || "未知影片",
+      coverUrl: proxifyImageUrl(t.cover_url),
+      year: t.year?.match(/\d{4}/)?.[0],
+      ratingsAverage: t.rating?.value || undefined,
+      ratingsCount: t.rating?.count || undefined,
+      director: parsed.director,
+      cast: parsed.cast,
+      type: item.target_type === "tv" ? "tv" : "movie",
+      externalUrl: `https://movie.douban.com/subject/${item.target_id}/`,
+    };
+  });
+
+  return { numFound: data.subjects?.total ?? docs.length, docs };
 }
 
 interface FrodoMovieResponse {
