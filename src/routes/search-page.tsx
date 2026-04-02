@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Film, LoaderCircle, Search, Tv, User, X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { bookmarksQueryOptions } from "@/lib/bookmark-queries";
@@ -233,27 +234,30 @@ export function SearchPage() {
     }
   }
 
-  return (
-    <main className={cn(
-      "flex-1",
-      !hasBookmarks && "flex flex-col"
-    )}>
+  const layoutTransition = { type: "spring" as const, stiffness: 180, damping: 28 };
 
-      <div className={cn(
-        "relative mx-auto w-full max-w-3xl px-5 pb-20 sm:px-8",
-        hasBookmarks ? "pt-6 sm:pt-10" : "my-auto"
-      )}>
-        <header className={cn("animate-fade-up", hasBookmarks ? "mb-10" : "mb-8 text-center")}>
-          <p className={cn("flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-primary/70", !hasBookmarks && "justify-center")}>
+  return (
+    <main className="flex flex-1 flex-col">
+
+      <motion.div
+        layout="position"
+        transition={layoutTransition}
+        className={cn(
+          "relative mx-auto w-full max-w-3xl px-5 sm:px-8",
+          hasBookmarks ? "pt-6 pb-20 sm:pt-10" : "my-auto"
+        )}
+      >
+        <motion.header layout="position" transition={layoutTransition} className={cn("animate-fade-up", hasBookmarks ? "mb-10" : "mb-8")}>
+          <p className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-primary/70">
             <img src="/favicon.svg" alt="" className="size-5" />
             <span className="font-display">Opus</span>
           </p>
           <h1 className="mt-3 font-display text-4xl font-medium leading-tight sm:text-5xl">
             找到你的<span className="text-primary">下一部作品</span>
           </h1>
-        </header>
+        </motion.header>
 
-        <div ref={searchBarRef} className={cn("animate-fade-up relative [animation-delay:80ms]", hasBookmarks ? "mb-14" : "mb-6")}>
+        <motion.div layout="position" transition={layoutTransition} ref={searchBarRef} className={cn("animate-fade-up relative [animation-delay:80ms]", hasBookmarks ? "mb-14" : "mb-6")}>
           <Combobox<SearchOption>
             items={suggestionOptions}
             itemToStringLabel={getOptionLabel}
@@ -400,14 +404,22 @@ export function SearchPage() {
               </button>
             </div>
           ) : null}
-        </div>
+        </motion.div>
 
-        {hasBookmarks ? (
-          <div className="@container animate-fade-up [animation-delay:160ms]">
-            <BookmarksGrid items={bookmarks} />
-          </div>
-        ) : null}
-      </div>
+        <AnimatePresence>
+          {hasBookmarks ? (
+            <motion.div
+              key="bookmarks"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+              className="@container"
+            >
+              <BookmarksGrid items={bookmarks} />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </motion.div>
     </main>
   );
 }

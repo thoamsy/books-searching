@@ -64,7 +64,7 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
   const movies = items.filter((i) => i.item_type === "movie");
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-6 sm:gap-10">
       {persons.length > 0 ? (
         <section className="flex flex-col gap-5">
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏影人 / 作者</h2>
