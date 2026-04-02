@@ -23,9 +23,7 @@ describe("movies-api integration", () => {
   });
 
   describe("searchMovies", () => {
-    // Douban movie search now uses client-side rendering (JS loads results).
-    // HTML parsing cannot extract results. Book search still uses server-rendered HTML.
-    it.skip("returns search results with expected shape", async () => {
+    it("returns search results with expected shape", async () => {
       const result = await searchMovies("霸王别姬");
 
       expect(result).toHaveProperty("numFound");
