@@ -1,152 +1,77 @@
 import type { BookDetail, SearchBook, SearchResponse, SuggestItem } from "@/types/books";
+import {
+  proxifyImageUrl,
+  fetchProxy,
+  extractCollectionId,
+} from "@/lib/douban-shared";
 
-const API_BASE = (import.meta.env.VITE_DOUBAN_PROXY_BASE ?? "").replace(/\/$/, "");
+// Re-export for consumers that import from books-api
+export { proxifyImageUrl, extractCollectionId };
 
-function normalizeUrl(url?: string | null) {
-  if (!url) {
-    return undefined;
-  }
-
-  if (url.startsWith("//")) {
-    return `https:${url}`;
-  }
-
-  return url.replace("http://", "https://");
+interface FrodoSearchTarget {
+  id: string;
+  title: string;
+  rating?: { value?: number; count?: number };
+  cover_url?: string;
+  card_subtitle?: string;
 }
 
-export function proxifyImageUrl(url?: string) {
-  const normalized = normalizeUrl(url);
-  if (!normalized) {
-    return undefined;
-  }
-
-  if (!normalized.includes("doubanio.com")) {
-    return normalized;
-  }
-
-  return `${API_BASE}/api/douban/image?url=${encodeURIComponent(normalized)}`;
+interface FrodoSearchResponse {
+  subjects: {
+    total: number;
+    start: number;
+    count: number;
+    items: {
+      target_id: string;
+      target_type: string;
+      target: FrodoSearchTarget;
+    }[];
+  };
 }
 
-/** Extract collection ID from douban URI like "douban://douban.com/subject_collection/ECZZABULI?..." */
-export function extractCollectionId(uri?: string): string | undefined {
-  if (!uri) return undefined;
-  const match = uri.match(/subject_collection\/([^?/]+)/);
-  return match?.[1];
-}
-
-function fetchProxy(path: string, accept = "text/html,application/xhtml+xml") {
-  return fetch(`${API_BASE}${path}`, {
-    headers: { Accept: accept }
-  });
-}
-
-function assertDoubanHtmlAvailable(html: string) {
-  const blockedSignals = ["异常请求", "验证码", "security verification", "检测到有异常请求", "登录跳转豆瓣"];
-  if (blockedSignals.some((signal) => html.includes(signal))) {
-    throw new Error("Douban rate-limited or challenged the request.");
-  }
-}
-
-function parseRating(value?: string | null) {
-  if (!value) {
-    return undefined;
-  }
-
-  const rating = Number.parseFloat(value.trim());
-  return Number.isFinite(rating) ? rating : undefined;
-}
-
-function parseInteger(value?: string | null) {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsed = Number.parseInt(value.replace(/[^\d]/g, ""), 10);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function extractYear(value?: string | null) {
-  const year = value?.match(/\d{4}/)?.[0];
-  return year ? Number(year) : undefined;
-}
-
-function textContent(node?: Element | null) {
-  return node?.textContent?.replace(/\s+/g, " ").trim() ?? "";
-}
-
-function decodeDoubanRedirect(url?: string | null) {
-  if (!url) {
-    return "";
-  }
-
-  try {
-    const parsed = new URL(url, "https://www.douban.com");
-    return parsed.searchParams.get("url") ?? url;
-  } catch {
-    return url;
-  }
-}
-
-function extractSubjectId(url?: string | null) {
-  return url?.match(/subject\/(\d+)/)?.[1] ?? "";
-}
-
-function parseSubjectCast(value: string) {
-  const parts = value
-    .split("/")
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  const year = parts[parts.length - 1] ?? "";
-  const publisher = parts[parts.length - 2] ?? "";
+function parseBookCardSubtitle(subtitle?: string) {
+  if (!subtitle) return { authors: [], publisher: undefined, year: undefined };
+  const parts = subtitle.split("/").map((s) => s.trim()).filter(Boolean);
+  // Format: "author / year / publisher"
+  const year = parts[parts.length - 2]?.match(/\d{4}/)?.[0];
+  const publisher = parts[parts.length - 1];
   const authors = parts.slice(0, Math.max(0, parts.length - 2));
-
-  return { year, publisher, authors };
-}
-
-function parseDoubanSearchHtml(html: string): SearchResponse {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const docs = Array.from(doc.querySelectorAll("div.result")).map((item) => {
-    const redirectUrl =
-      (item.querySelector("div.title a") as HTMLAnchorElement | null)?.getAttribute("href") ??
-      (item.querySelector("div.content a") as HTMLAnchorElement | null)?.getAttribute("href") ??
-      "";
-    const externalUrl = decodeDoubanRedirect(redirectUrl);
-    const subjectId = extractSubjectId(externalUrl);
-    const cast = parseSubjectCast(textContent(item.querySelector("span.subject-cast")));
-    const ratingText = textContent(item.querySelector("span.rating_nums"));
-    const description = textContent(item.querySelector("p"));
-
   return {
-      key: subjectId,
-      title: textContent(item.querySelector("div.title a")) || "未知书名",
-      authorName: cast.authors,
-      coverUrl: proxifyImageUrl(item.querySelector("img")?.getAttribute("src") ?? undefined),
-      firstPublishYear: extractYear(cast.year),
-      ratingsAverage: parseRating(ratingText),
-      publisher: cast.publisher,
-      description,
-      externalUrl
-    } satisfies SearchBook;
-  });
-
-  return { numFound: docs.length, docs: docs.filter((doc) => doc.key) };
+    authors,
+    publisher,
+    year: year ? Number(year) : undefined,
+  };
 }
 
 export async function searchBooks(query: string, limit = 18): Promise<SearchResponse> {
-  const response = await fetchProxy(`/api/douban/search?cat=1001&q=${encodeURIComponent(query)}`);
+  const response = await fetchProxy(
+    `/api/douban/search/subjects?type=book&q=${encodeURIComponent(query)}&count=${limit}`,
+    "application/json"
+  );
   if (!response.ok) {
     throw new Error("Failed to search books.");
   }
 
-  const html = await response.text();
-  assertDoubanHtmlAvailable(html);
-  const data = parseDoubanSearchHtml(html);
+  const data: FrodoSearchResponse = await response.json();
+  const items = data.subjects?.items ?? [];
 
-  return {
-    numFound: data.numFound,
-    docs: data.docs.slice(0, limit)
-  };
+  const docs: SearchBook[] = items.map((item) => {
+    const t = item.target;
+    const parsed = parseBookCardSubtitle(t.card_subtitle);
+    return {
+      key: item.target_id,
+      title: t.title || "未知书名",
+      authorName: parsed.authors,
+      coverUrl: proxifyImageUrl(t.cover_url),
+      firstPublishYear: parsed.year,
+      ratingsAverage: t.rating?.value || undefined,
+      ratingsCount: t.rating?.count || undefined,
+      publisher: parsed.publisher,
+      externalUrl: `https://book.douban.com/subject/${item.target_id}/`,
+    };
+  });
+
+  return { numFound: data.subjects?.total ?? docs.length, docs };
 }
 
 interface DoubanSuggestEntry {
@@ -254,4 +179,3 @@ export function getCoverUrl(coverUrl?: string) {
 export function normalizeWorkId(key: string) {
   return key.replace(/[^\d]/g, "");
 }
-
