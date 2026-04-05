@@ -3,6 +3,10 @@ interface Env {
   DOUBAN_CACHE: KVNamespace;
 }
 
+const MAX_PAGINATION_COUNT = 50;
+const MAX_PAGINATION_START = 1000;
+const ALLOWED_IMAGE_HOST_SUFFIXES = ["doubanio.com"];
+
 const DEFAULT_HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -15,8 +19,62 @@ function corsHeaders(origin: string | null) {
   return {
     "Access-Control-Allow-Origin": origin ?? "*",
     "Access-Control-Allow-Methods": "GET,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
+    "Access-Control-Allow-Headers": "Content-Type",
+    Vary: "Origin"
   };
+}
+
+function resolveCorsOrigin(request: Request) {
+  const origin = request.headers.get("Origin");
+  if (!origin) {
+    return null;
+  }
+
+  try {
+    const requestUrl = new URL(request.url);
+    const originUrl = new URL(origin);
+    const isLocalDevOrigin = originUrl.hostname === "localhost" || originUrl.hostname === "127.0.0.1";
+    if (originUrl.origin === requestUrl.origin || isLocalDevOrigin) {
+      return originUrl.origin;
+    }
+  } catch {
+    return null;
+  }
+
+  return request.url ? new URL(request.url).origin : null;
+}
+
+function jsonError(message: string, status: number, origin: string | null) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...corsHeaders(origin)
+    }
+  });
+}
+
+function normalizePagination(value: string | null, fallback: number, max: number) {
+  const parsed = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return String(fallback);
+  }
+
+  return String(Math.min(parsed, max));
+}
+
+function parseImageSource(source: string) {
+  try {
+    const url = new URL(source);
+    const isAllowedHost = ALLOWED_IMAGE_HOST_SUFFIXES.some((suffix) => url.hostname === suffix || url.hostname.endsWith(`.${suffix}`));
+    if (url.protocol !== "https:" || !isAllowedHost) {
+      return null;
+    }
+
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 const FRODO_HEADERS = {
@@ -33,6 +91,7 @@ const REXXAR_HEADERS = {
 };
 
 async function proxyRequest(target: string, request: Request, options?: { extraHeaders?: Record<string, string>; cacheTtl?: number; maxAge?: number }) {
+  const origin = resolveCorsOrigin(request);
   const upstream = await fetch(target, {
     headers: {
       ...DEFAULT_HEADERS,
@@ -49,12 +108,11 @@ async function proxyRequest(target: string, request: Request, options?: { extraH
   if (upstream.url?.includes("sec.douban.com")) {
     return new Response(JSON.stringify({ error: "rate-limited" }), {
       status: 429,
-      headers: { "Content-Type": "application/json", ...corsHeaders(request.headers.get("Origin")) }
+      headers: { "Content-Type": "application/json", ...corsHeaders(origin) }
     });
   }
 
   const headers = new Headers(upstream.headers);
-  const origin = request.headers.get("Origin");
   Object.entries(corsHeaders(origin)).forEach(([key, value]) => headers.set(key, value));
   headers.set("Cache-Control", `public, max-age=${options?.maxAge ?? 300}`);
 
@@ -73,6 +131,7 @@ async function cachedProxy(
   fetchUpstream: () => Promise<Response>,
   ttl = 30 * 86400 // 30 days
 ): Promise<Response> {
+  const origin = resolveCorsOrigin(request);
   // 1. Check KV
   const cached = await env.DOUBAN_CACHE.get(cacheKey);
   if (cached) {
@@ -81,7 +140,7 @@ async function cachedProxy(
         "Content-Type": "application/json",
         "Cache-Control": "public, max-age=3600",
         "X-Cache": "HIT",
-        ...corsHeaders(request.headers.get("Origin"))
+        ...corsHeaders(origin)
       }
     });
   }
@@ -103,141 +162,153 @@ async function cachedProxy(
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    const url = new URL(request.url);
+    const origin = resolveCorsOrigin(request);
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders(request.headers.get("Origin"))
-      });
-    }
+    try {
+      const url = new URL(request.url);
 
-    if (url.pathname === "/api/douban/suggest") {
-      const query = url.searchParams.get("q") ?? "";
-      const target = new URL("https://book.douban.com/j/subject_suggest");
-      target.searchParams.set("q", query);
-      return proxyRequest(target.toString(), request, { extraHeaders: { Referer: "https://book.douban.com/" } });
-    }
-
-    if (url.pathname === "/api/douban/movie/suggest") {
-      const query = url.searchParams.get("q") ?? "";
-      const target = new URL("https://movie.douban.com/j/subject_suggest");
-      target.searchParams.set("q", query);
-      return proxyRequest(target.toString(), request, { extraHeaders: { Referer: "https://movie.douban.com/" } });
-    }
-
-    if (url.pathname === "/api/douban/search/subjects") {
-      const query = url.searchParams.get("q") ?? "";
-      const type = url.searchParams.get("type") ?? "";
-      const start = url.searchParams.get("start") ?? "0";
-      const count = url.searchParams.get("count") ?? "20";
-      const target = new URL("https://frodo.douban.com/api/v2/search/subjects");
-      target.searchParams.set("q", query);
-      if (type) target.searchParams.set("type", type);
-      target.searchParams.set("start", start);
-      target.searchParams.set("count", count);
-      target.searchParams.set("apikey", FRODO_APIKEY);
-      return proxyRequest(target.toString(), request, {
-        cacheTtl: 1800,
-        extraHeaders: FRODO_HEADERS
-      });
-    }
-
-    const bookMatch = url.pathname.match(/^\/api\/douban\/book\/(\d+)\/?$/);
-    if (bookMatch) {
-      const subjectId = bookMatch[1];
-      return cachedProxy(`book:${subjectId}`, env, ctx, request, () =>
-        proxyRequest(
-          `https://frodo.douban.com/api/v2/book/${subjectId}?apikey=${FRODO_APIKEY}`,
-          request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
-        )
-      );
-    }
-
-    const celebrityWorksMatch = url.pathname.match(/^\/api\/douban\/celebrity\/(\d+)\/works\/?$/);
-    if (celebrityWorksMatch) {
-      const celebrityId = celebrityWorksMatch[1];
-      const start = url.searchParams.get("start") ?? "0";
-      const count = url.searchParams.get("count") ?? "50";
-      return cachedProxy(`celebrity-works:${celebrityId}:${start}:${count}`, env, ctx, request, () =>
-        proxyRequest(
-          `https://frodo.douban.com/api/v2/celebrity/${celebrityId}/works?apikey=${FRODO_APIKEY}&start=${start}&count=${count}`,
-          request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
-        )
-      );
-    }
-
-    const celebrityMatch = url.pathname.match(/^\/api\/douban\/celebrity\/(\d+)\/?$/);
-    if (celebrityMatch) {
-      const celebrityId = celebrityMatch[1];
-      return cachedProxy(`celebrity:${celebrityId}`, env, ctx, request, () =>
-        proxyRequest(
-          `https://frodo.douban.com/api/v2/celebrity/${celebrityId}?apikey=${FRODO_APIKEY}`,
-          request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
-        )
-      );
-    }
-
-    const movieCreditsMatch = url.pathname.match(/^\/api\/douban\/movie\/(\d+)\/credits\/?$/);
-    if (movieCreditsMatch) {
-      const subjectId = movieCreditsMatch[1];
-      return cachedProxy(`movie-credits:${subjectId}`, env, ctx, request, () =>
-        proxyRequest(
-          `https://frodo.douban.com/api/v2/movie/${subjectId}/credits?apikey=${FRODO_APIKEY}&count=50`,
-          request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
-        )
-      );
-    }
-
-    const movieMatch = url.pathname.match(/^\/api\/douban\/movie\/(\d+)\/?$/);
-    if (movieMatch) {
-      const subjectId = movieMatch[1];
-      return cachedProxy(`movie:${subjectId}`, env, ctx, request, async () => {
-        const movieRes = await proxyRequest(
-          `https://frodo.douban.com/api/v2/movie/${subjectId}?apikey=${FRODO_APIKEY}`,
-          request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
-        );
-        if (movieRes.status === 400 || movieRes.status === 404) {
-          return proxyRequest(
-            `https://frodo.douban.com/api/v2/tv/${subjectId}?apikey=${FRODO_APIKEY}`,
-            request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
-          );
-        }
-        return movieRes;
-      });
-    }
-
-    const collectionItemsMatch = url.pathname.match(/^\/api\/douban\/collection\/([A-Za-z0-9_]+)\/items\/?$/);
-    if (collectionItemsMatch) {
-      const collectionId = collectionItemsMatch[1];
-      const start = url.searchParams.get("start") ?? "0";
-      const count = url.searchParams.get("count") ?? "20";
-      return proxyRequest(
-        `https://m.douban.com/rexxar/api/v2/subject_collection/${collectionId}/items?start=${start}&count=${count}`,
-        request, { cacheTtl: 300, extraHeaders: REXXAR_HEADERS }
-      );
-    }
-
-    const collectionMetaMatch = url.pathname.match(/^\/api\/douban\/collection\/([A-Za-z0-9_]+)\/?$/);
-    if (collectionMetaMatch) {
-      const collectionId = collectionMetaMatch[1];
-      return cachedProxy(`collection:${collectionId}`, env, ctx, request, () =>
-        proxyRequest(
-          `https://m.douban.com/rexxar/api/v2/subject_collection/${collectionId}`,
-          request, { cacheTtl: 300, extraHeaders: REXXAR_HEADERS }
-        )
-      );
-    }
-
-    if (url.pathname === "/api/douban/image") {
-      const source = url.searchParams.get("url");
-      if (!source) {
-        return new Response("Missing image url", { status: 400 });
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: corsHeaders(origin)
+        });
       }
 
-      return proxyRequest(source, request, { cacheTtl: 604800, maxAge: 3600 });
-    }
+      if (url.pathname === "/api/douban/suggest") {
+        const query = url.searchParams.get("q") ?? "";
+        const target = new URL("https://book.douban.com/j/subject_suggest");
+        target.searchParams.set("q", query);
+        return proxyRequest(target.toString(), request, { extraHeaders: { Referer: "https://book.douban.com/" } });
+      }
 
-    return env.ASSETS.fetch(request);
+      if (url.pathname === "/api/douban/movie/suggest") {
+        const query = url.searchParams.get("q") ?? "";
+        const target = new URL("https://movie.douban.com/j/subject_suggest");
+        target.searchParams.set("q", query);
+        return proxyRequest(target.toString(), request, { extraHeaders: { Referer: "https://movie.douban.com/" } });
+      }
+
+      if (url.pathname === "/api/douban/search/subjects") {
+        const query = url.searchParams.get("q") ?? "";
+        const type = url.searchParams.get("type") ?? "";
+        const start = normalizePagination(url.searchParams.get("start"), 0, MAX_PAGINATION_START);
+        const count = normalizePagination(url.searchParams.get("count"), 20, MAX_PAGINATION_COUNT);
+        const target = new URL("https://frodo.douban.com/api/v2/search/subjects");
+        target.searchParams.set("q", query);
+        if (type) target.searchParams.set("type", type);
+        target.searchParams.set("start", start);
+        target.searchParams.set("count", count);
+        target.searchParams.set("apikey", FRODO_APIKEY);
+        return proxyRequest(target.toString(), request, {
+          cacheTtl: 1800,
+          extraHeaders: FRODO_HEADERS
+        });
+      }
+
+      const bookMatch = url.pathname.match(/^\/api\/douban\/book\/(\d+)\/?$/);
+      if (bookMatch) {
+        const subjectId = bookMatch[1];
+        return cachedProxy(`book:${subjectId}`, env, ctx, request, () =>
+          proxyRequest(
+            `https://frodo.douban.com/api/v2/book/${subjectId}?apikey=${FRODO_APIKEY}`,
+            request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
+          )
+        );
+      }
+
+      const celebrityWorksMatch = url.pathname.match(/^\/api\/douban\/celebrity\/(\d+)\/works\/?$/);
+      if (celebrityWorksMatch) {
+        const celebrityId = celebrityWorksMatch[1];
+        const start = normalizePagination(url.searchParams.get("start"), 0, MAX_PAGINATION_START);
+        const count = normalizePagination(url.searchParams.get("count"), 50, MAX_PAGINATION_COUNT);
+        return cachedProxy(`celebrity-works:${celebrityId}:${start}:${count}`, env, ctx, request, () =>
+          proxyRequest(
+            `https://frodo.douban.com/api/v2/celebrity/${celebrityId}/works?apikey=${FRODO_APIKEY}&start=${start}&count=${count}`,
+            request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
+          )
+        );
+      }
+
+      const celebrityMatch = url.pathname.match(/^\/api\/douban\/celebrity\/(\d+)\/?$/);
+      if (celebrityMatch) {
+        const celebrityId = celebrityMatch[1];
+        return cachedProxy(`celebrity:${celebrityId}`, env, ctx, request, () =>
+          proxyRequest(
+            `https://frodo.douban.com/api/v2/celebrity/${celebrityId}?apikey=${FRODO_APIKEY}`,
+            request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
+          )
+        );
+      }
+
+      const movieCreditsMatch = url.pathname.match(/^\/api\/douban\/movie\/(\d+)\/credits\/?$/);
+      if (movieCreditsMatch) {
+        const subjectId = movieCreditsMatch[1];
+        return cachedProxy(`movie-credits:${subjectId}`, env, ctx, request, () =>
+          proxyRequest(
+            `https://frodo.douban.com/api/v2/movie/${subjectId}/credits?apikey=${FRODO_APIKEY}&count=50`,
+            request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
+          )
+        );
+      }
+
+      const movieMatch = url.pathname.match(/^\/api\/douban\/movie\/(\d+)\/?$/);
+      if (movieMatch) {
+        const subjectId = movieMatch[1];
+        return cachedProxy(`movie:${subjectId}`, env, ctx, request, async () => {
+          const movieRes = await proxyRequest(
+            `https://frodo.douban.com/api/v2/movie/${subjectId}?apikey=${FRODO_APIKEY}`,
+            request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
+          );
+          if (movieRes.status === 400 || movieRes.status === 404) {
+            return proxyRequest(
+              `https://frodo.douban.com/api/v2/tv/${subjectId}?apikey=${FRODO_APIKEY}`,
+              request, { cacheTtl: 86400, extraHeaders: FRODO_HEADERS }
+            );
+          }
+          return movieRes;
+        });
+      }
+
+      const collectionItemsMatch = url.pathname.match(/^\/api\/douban\/collection\/([A-Za-z0-9_]+)\/items\/?$/);
+      if (collectionItemsMatch) {
+        const collectionId = collectionItemsMatch[1];
+        const start = normalizePagination(url.searchParams.get("start"), 0, MAX_PAGINATION_START);
+        const count = normalizePagination(url.searchParams.get("count"), 20, MAX_PAGINATION_COUNT);
+        return proxyRequest(
+          `https://m.douban.com/rexxar/api/v2/subject_collection/${collectionId}/items?start=${start}&count=${count}`,
+          request, { cacheTtl: 300, extraHeaders: REXXAR_HEADERS }
+        );
+      }
+
+      const collectionMetaMatch = url.pathname.match(/^\/api\/douban\/collection\/([A-Za-z0-9_]+)\/?$/);
+      if (collectionMetaMatch) {
+        const collectionId = collectionMetaMatch[1];
+        return cachedProxy(`collection:${collectionId}`, env, ctx, request, () =>
+          proxyRequest(
+            `https://m.douban.com/rexxar/api/v2/subject_collection/${collectionId}`,
+            request, { cacheTtl: 300, extraHeaders: REXXAR_HEADERS }
+          )
+        );
+      }
+
+      if (url.pathname === "/api/douban/image") {
+        const source = url.searchParams.get("url");
+        if (!source) {
+          return jsonError("missing-image-url", 400, origin);
+        }
+
+        const imageUrl = parseImageSource(source);
+        if (!imageUrl) {
+          return jsonError("invalid-image-url", 400, origin);
+        }
+
+        return proxyRequest(imageUrl, request, { cacheTtl: 604800, maxAge: 3600 });
+      }
+
+      return env.ASSETS.fetch(request);
+    } catch (error) {
+      console.error("worker fetch failed", error);
+      return jsonError("upstream-fetch-failed", 502, origin);
+    }
   }
 };
