@@ -288,6 +288,13 @@ export function SearchPage() {
                 setQuery(event.currentTarget.value);
               }}
               onKeyDown={(event) => {
+                if (event.key === "Enter" && !isComposing) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  submitSearch(query);
+                  return;
+                }
+
                 if (event.key === "Escape") {
                   setIsOpen(false);
                   if (query) {
