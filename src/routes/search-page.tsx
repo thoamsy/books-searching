@@ -257,8 +257,20 @@ export function SearchPage() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <div className="mx-auto w-full max-w-3xl px-5 sm:px-8 lg:max-w-5xl lg:grid lg:grid-cols-[1fr_240px] lg:gap-x-12">
-      <div className={cn("relative w-full lg:col-start-1", hasBookmarks ? "pt-6 sm:pt-10" : "my-auto")}>
+      <div className={cn(
+        "mx-auto w-full px-5 sm:px-8",
+        hasBookmarks
+          ? "max-w-5xl lg:grid lg:grid-cols-[1fr_240px] lg:gap-x-12"
+          : "my-auto max-w-3xl"
+      )}>
+      <motion.div
+        layout="position"
+        transition={{ layout: { type: "spring", stiffness: 180, damping: 28 } }}
+        className={cn(
+          "relative w-full",
+          hasBookmarks && "pt-6 lg:col-start-1 sm:pt-10"
+        )}
+      >
         <motion.header
           initial={isFirstVisit ? { opacity: 0, y: 12 } : false}
           animate={{ opacity: 1, y: 0 }}
@@ -436,7 +448,7 @@ export function SearchPage() {
           ) : null}
         </motion.div>
 
-      </div>
+      </motion.div>
 
       {hasBookmarks ? (
         <div className="@container pb-20 lg:col-start-1">
