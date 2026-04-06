@@ -258,12 +258,12 @@ export function SearchPage() {
   return (
     <main className="flex flex-1 flex-col">
       <div className="mx-auto w-full max-w-3xl px-5 sm:px-8 lg:max-w-5xl lg:grid lg:grid-cols-[1fr_240px] lg:gap-x-12">
-      <div className="relative w-full pt-6 lg:col-start-1 sm:pt-10">
+      <div className={cn("relative w-full lg:col-start-1", hasBookmarks ? "pt-6 sm:pt-10" : "my-auto")}>
         <motion.header
           initial={isFirstVisit ? { opacity: 0, y: 12 } : false}
           animate={{ opacity: 1, y: 0 }}
           transition={entrance}
-          className="mb-10"
+          className={cn(hasBookmarks ? "mb-10" : "mb-8")}
         >
           <p className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-primary/70">
             <img src="/favicon.svg" alt="" className="size-5" />
@@ -279,7 +279,7 @@ export function SearchPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...entrance, delay: 0.08 }}
           ref={searchBarRef}
-          className="relative mb-14"
+          className={cn("relative", hasBookmarks ? "mb-14" : "mb-6")}
         >
           <Combobox<SearchOption>
             items={suggestionOptions}
