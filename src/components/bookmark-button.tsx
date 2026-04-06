@@ -1,6 +1,6 @@
 import { Star } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { motion, MotionConfig, AnimatePresence, useAnimate } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -14,6 +14,7 @@ import { celebrityDetailQueryOptions } from "@/lib/celebrity-queries";
 import { collectionItemsQueryOptions } from "@/lib/collection-queries";
 import { cn } from "@/lib/utils";
 import type { BookmarkRow } from "@/types/supabase";
+import type { CollectionItemsResponse } from "@/types/collection";
 
 type BookmarkType = BookmarkRow["item_type"];
 
@@ -70,9 +71,7 @@ function useItemMeta(itemId: string, itemType: BookmarkType) {
 
   if (itemType === "collection") {
     const queryKey = collectionItemsQueryOptions(itemId).queryKey;
-    const cachedData = queryClient.getQueryData<{
-      pages: Array<{ meta: { title: string }; items: Array<{ normalCoverUrl?: string }> }>;
-    }>(queryKey);
+    const cachedData = queryClient.getQueryData<InfiniteData<CollectionItemsResponse>>(queryKey);
     if (!cachedData?.pages?.[0]) return null;
     const { meta, items } = cachedData.pages[0];
     const coverUrls = items

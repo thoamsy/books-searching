@@ -164,10 +164,10 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
       ) : null}
 
       {collections.length > 0 ? (
-        <section className="flex flex-col gap-5">
+        <section className="flex flex-col gap-5 lg:hidden">
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏榜单</h2>
-          {/* Mobile: horizontal scroll */}
-          <div className="-mr-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pr-5 lg:hidden">
+          {/* Mobile only: desktop shows collections in aside */}
+          <div className="-mr-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pr-5">
             {collections.map((item) => (
               <div key={item.item_id} className="w-[calc((100%-0.75rem*2)/3.4)] shrink-0 snap-start">
                 <DepthLink to={`/collection/${item.item_id}`} className="group">

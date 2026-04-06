@@ -41,7 +41,8 @@ export async function updateBookmarkCovers(
     .from("bookmarks")
     .update({ item_cover_urls: coverUrls })
     .eq("user_id", userId)
-    .eq("item_id", itemId);
+    .eq("item_id", itemId)
+    .eq("item_type", "collection");
   if (error) throw error;
 }
 

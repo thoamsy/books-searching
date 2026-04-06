@@ -47,9 +47,18 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
   const userId = user?.id ?? null;
   const { data: bookmarks = [] } = useQuery(bookmarksQueryOptions(userId));
   const updateCovers = useUpdateBookmarkCovers();
+  const hasRefreshedRef = useRef(false);
+
+  // Reset refresh flag when collection changes
+  useEffect(() => {
+    hasRefreshedRef.current = false;
+  }, [collectionId]);
 
   // Refresh stale cover URLs when visiting a bookmarked collection
+  const updateCoversMutate = updateCovers.mutate;
   useEffect(() => {
+    if (hasRefreshedRef.current) return;
+
     const bookmark = bookmarks.find(
       (b) => b.item_id === collectionId && b.item_type === "collection"
     );
@@ -66,9 +75,10 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
       currentUrls.some((url, i) => url !== storedUrls[i]);
 
     if (isDifferent && currentUrls.length > 0) {
-      updateCovers.mutate({ itemId: collectionId, coverUrls: currentUrls });
+      hasRefreshedRef.current = true;
+      updateCoversMutate({ itemId: collectionId, coverUrls: currentUrls });
     }
-  }, [collectionId, bookmarks, items, updateCovers]);
+  }, [collectionId, bookmarks, items, updateCoversMutate]);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const columnCount = useColumnCount(gridRef);
