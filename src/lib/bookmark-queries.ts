@@ -11,6 +11,7 @@ import type { BookmarkRow } from "@/types/supabase";
 
 // Shared type for both local and cloud bookmarks displayed in UI
 export type BookmarkItem = Pick<BookmarkRow, "item_id" | "item_type" | "item_title" | "item_cover_url"> & {
+  item_cover_urls?: string[] | null;
   created_at: string;
 };
 
@@ -29,6 +30,7 @@ export function bookmarksQueryOptions(userId: string | null) {
             item_type: r.item_type,
             item_title: r.item_title,
             item_cover_url: r.item_cover_url,
+            item_cover_urls: r.item_cover_urls,
             created_at: r.created_at,
           }));
         }

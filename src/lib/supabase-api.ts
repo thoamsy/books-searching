@@ -13,7 +13,9 @@ export async function getBookmarks(userId: string): Promise<BookmarkRow[]> {
 
 export async function addBookmark(
   userId: string,
-  bookmark: Pick<BookmarkRow, "item_id" | "item_type" | "item_title" | "item_cover_url">
+  bookmark: Pick<BookmarkRow, "item_id" | "item_type" | "item_title" | "item_cover_url"> & {
+    item_cover_urls?: string[] | null;
+  }
 ) {
   const { error } = await supabase.from("bookmarks").upsert(
     {
@@ -22,10 +24,24 @@ export async function addBookmark(
       item_type: bookmark.item_type,
       item_title: bookmark.item_title,
       item_cover_url: bookmark.item_cover_url,
+      item_cover_urls: bookmark.item_cover_urls ?? null,
       status: "want",
     },
     { onConflict: "user_id,item_id,item_type" }
   );
+  if (error) throw error;
+}
+
+export async function updateBookmarkCovers(
+  userId: string,
+  itemId: string,
+  coverUrls: string[]
+) {
+  const { error } = await supabase
+    .from("bookmarks")
+    .update({ item_cover_urls: coverUrls })
+    .eq("user_id", userId)
+    .eq("item_id", itemId);
   if (error) throw error;
 }
 
@@ -40,7 +56,9 @@ export async function removeBookmark(userId: string, itemId: string) {
 
 export async function batchUpsertBookmarks(
   userId: string,
-  bookmarks: Array<Pick<BookmarkRow, "item_id" | "item_type" | "item_title" | "item_cover_url">>
+  bookmarks: Array<Pick<BookmarkRow, "item_id" | "item_type" | "item_title" | "item_cover_url"> & {
+    item_cover_urls?: string[] | null;
+  }>
 ) {
   if (bookmarks.length === 0) return;
   const rows = bookmarks.map((b) => ({
@@ -49,6 +67,7 @@ export async function batchUpsertBookmarks(
     item_type: b.item_type,
     item_title: b.item_title,
     item_cover_url: b.item_cover_url,
+    item_cover_urls: b.item_cover_urls ?? null,
     status: "want" as const,
   }));
   const { error } = await supabase

@@ -1,6 +1,7 @@
 import type { BookmarkRow } from "@/types/supabase";
 
 export type LocalBookmark = Pick<BookmarkRow, "item_id" | "item_type" | "item_title" | "item_cover_url"> & {
+  item_cover_urls?: string[] | null;
   created_at: string;
 };
 

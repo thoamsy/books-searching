@@ -15,6 +15,8 @@ function bookmarkUrl(item: BookmarkItem): string {
       return `/celebrity/${item.item_id}`;
     case "author":
       return `/author/${encodeURIComponent(item.item_id)}`;
+    case "collection":
+      return `/collection/${item.item_id}`;
   }
 }
 
