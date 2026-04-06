@@ -22,7 +22,8 @@ import { suggestionsQueryOptions } from "@/lib/book-queries";
 import { movieSuggestionsQueryOptions } from "@/lib/movie-queries";
 import { suggestItemToSearchMovie } from "@/lib/movies-api";
 import { cn } from "@/lib/utils";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useNavigationType } from "react-router-dom";
+import { useSearchScrollRestoration } from "@/hooks/use-search-scroll-restoration";
 import type { SearchBook, SuggestItem } from "@/types/books";
 import type { SearchMovie } from "@/types/movies";
 import type { MovieSuggestItem } from "@/types/movies";
@@ -59,7 +60,11 @@ export function SearchPage() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
 
+  const navigationType = useNavigationType();
+  const isPop = navigationType === "POP";
+
   const { data: bookmarks = [] } = useQuery(bookmarksQueryOptions(userId));
+  useSearchScrollRestoration("home");
   const hasBookmarks = bookmarks.length > 0;
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -240,14 +245,14 @@ export function SearchPage() {
     <main className="flex flex-1 flex-col">
 
       <motion.div
-        layout="position"
+        layout={isPop ? false : "position"}
         transition={layoutTransition}
         className={cn(
           "relative mx-auto w-full max-w-3xl px-5 sm:px-8",
           hasBookmarks ? "pt-6 pb-20 sm:pt-10" : "my-auto"
         )}
       >
-        <motion.header layout="position" transition={layoutTransition} className={cn("animate-fade-up", hasBookmarks ? "mb-10" : "mb-8")}>
+        <motion.header layout={isPop ? false : "position"} transition={layoutTransition} className={cn("animate-fade-up", hasBookmarks ? "mb-10" : "mb-8")}>
           <p className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-primary/70">
             <img src="/favicon.svg" alt="" className="size-5" />
             <span className="font-display">Opus</span>
@@ -257,7 +262,7 @@ export function SearchPage() {
           </h1>
         </motion.header>
 
-        <motion.div layout="position" transition={layoutTransition} ref={searchBarRef} className={cn("animate-fade-up relative [animation-delay:80ms]", hasBookmarks ? "mb-14" : "mb-6")}>
+        <motion.div layout={isPop ? false : "position"} transition={layoutTransition} ref={searchBarRef} className={cn("animate-fade-up relative [animation-delay:80ms]", hasBookmarks ? "mb-14" : "mb-6")}>
           <Combobox<SearchOption>
             items={suggestionOptions}
             itemToStringLabel={getOptionLabel}
@@ -417,7 +422,7 @@ export function SearchPage() {
           {hasBookmarks ? (
             <motion.div
               key="bookmarks"
-              initial={{ opacity: 0, y: 12 }}
+              initial={isPop ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
               className="@container"
