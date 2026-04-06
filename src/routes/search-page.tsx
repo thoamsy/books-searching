@@ -253,7 +253,7 @@ export function SearchPage() {
       <div className={cn(
         "mx-auto w-full px-5 sm:px-8",
         hasCollections
-          ? "max-w-5xl lg:grid lg:grid-cols-[1fr_200px] lg:items-start lg:gap-8"
+          ? "max-w-5xl lg:grid lg:grid-cols-[1fr_240px] lg:gap-x-12"
           : "max-w-3xl"
       )}>
       <motion.div
@@ -261,7 +261,8 @@ export function SearchPage() {
         transition={layoutTransition}
         className={cn(
           "relative w-full",
-          hasBookmarks ? "pt-6 pb-20 sm:pt-10" : "my-auto"
+          hasBookmarks ? "pt-6 sm:pt-10" : "my-auto",
+          hasCollections && "lg:col-start-1"
         )}
       >
         <motion.header layout={isPop ? false : "position"} transition={layoutTransition} className={cn("animate-fade-up", hasBookmarks ? "mb-10" : "mb-8")}>
@@ -430,25 +431,26 @@ export function SearchPage() {
           ) : null}
         </motion.div>
 
-        <AnimatePresence>
-          {hasBookmarks ? (
-            <motion.div
-              key="bookmarks"
-              initial={isPop ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
-              className="@container"
-            >
-              <BookmarksGrid items={bookmarks} />
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
       </motion.div>
 
+      <AnimatePresence>
+        {hasBookmarks ? (
+          <motion.div
+            key="bookmarks"
+            initial={isPop ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+            className={cn("@container pb-20", hasCollections && "lg:col-start-1")}
+          >
+            <BookmarksGrid items={bookmarks} />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
       {hasCollections ? (
-        <aside className="hidden pt-6 sm:pt-10 lg:sticky lg:top-4 lg:block">
+        <aside className="hidden lg:sticky lg:top-10 lg:col-start-2 lg:row-start-2 lg:block">
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏榜单</h2>
-          <div className="mt-5 flex flex-col gap-4">
+          <div className="mt-5 flex flex-col gap-6">
             {collectionBookmarks.map((item) => (
               <DepthLink key={item.item_id} to={`/collection/${item.item_id}`} className="group">
                 <CollectionCover
@@ -456,7 +458,7 @@ export function SearchPage() {
                   title={item.item_title}
                   className="transition-shadow group-hover:shadow-warm-md"
                 />
-                <p className="mt-2 truncate text-sm text-foreground">{item.item_title}</p>
+                <p className="mt-2.5 truncate text-sm font-medium text-foreground">{item.item_title}</p>
               </DepthLink>
             ))}
           </div>

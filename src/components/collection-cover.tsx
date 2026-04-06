@@ -14,11 +14,11 @@ export function CollectionCover({
   return (
     <div
       className={cn(
-        "aspect-square overflow-hidden rounded-lg border border-white/60 shadow-warm-sm",
+        "aspect-[4/5] overflow-hidden rounded-lg border border-white/60 bg-accent shadow-warm-sm",
         className
       )}
     >
-      <div className="grid h-full w-full grid-cols-2 grid-rows-2">
+      <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-px">
         {slots.map((url, i) =>
           url ? (
             <img
