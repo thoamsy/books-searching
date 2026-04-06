@@ -269,7 +269,7 @@ function DetailDescriptionPanel({
   const description = bookDetail.description || fallbackBook?.description || "";
 
   return (
-    <article className="rounded-lg border border-white/70 bg-surface p-7 shadow-warm-md">
+    <article className="rounded-lg border border-white/70 bg-surface p-7 shadow-warm-md lg:sticky lg:top-4 lg:self-start">
       <h2 className="font-display text-2xl font-medium sm:text-3xl">内容简介</h2>
       <ExpandableDescription
         text={description || "当前来源没有提供简介信息。你可以返回搜索查看更多相关版本。"}
@@ -288,7 +288,7 @@ function DetailSidebarPanel({
   const subjects = (bookDetail.subjects ?? fallbackBook?.subject ?? []).slice(0, 12);
 
   return (
-    <aside className="flex flex-col gap-6">
+    <aside className="flex flex-col gap-6 lg:sticky lg:top-4 lg:self-start">
       <section className="rounded-lg border border-white/70 bg-surface p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">主题标签</h3>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -318,9 +318,7 @@ function DetailSidebarPanel({
       {bookDetail.catalog ? (
         <section className="rounded-lg border border-white/70 bg-surface p-6">
           <h3 className="font-display text-xl font-medium sm:text-2xl">目录</h3>
-          <p className="mt-4 max-h-48 overflow-y-auto whitespace-pre-line text-sm leading-7 text-muted-foreground">
-            {bookDetail.catalog}
-          </p>
+          <ExpandableDescription text={bookDetail.catalog} />
         </section>
       ) : null}
 
