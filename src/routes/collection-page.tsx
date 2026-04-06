@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useEffectEvent, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
@@ -48,11 +48,8 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
   const { data: bookmarks = [] } = useQuery(bookmarksQueryOptions(userId));
   const { mutate: updateCovers } = useUpdateBookmarkCovers();
 
-  // Refresh stale cover URLs once when visiting a bookmarked collection.
-  // collectionId change remounts via Suspense, so no reset logic needed.
-  const hasRefreshedRef = useRef(false);
-  useEffect(() => {
-    if (hasRefreshedRef.current || items.length === 0) return;
+  const refreshCoversIfStale = useEffectEvent(() => {
+    if (items.length === 0) return;
 
     const bookmark = bookmarks.find(
       (b) => b.item_id === collectionId && b.item_type === "collection"
@@ -71,10 +68,13 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
       currentUrls.some((url, i) => url !== storedUrls[i]);
 
     if (isDifferent) {
-      hasRefreshedRef.current = true;
       updateCovers({ itemId: collectionId, coverUrls: currentUrls });
     }
-  }, [collectionId, bookmarks, items, updateCovers]);
+  });
+
+  // Refresh stale cover URLs once when visiting a bookmarked collection.
+  // collectionId change remounts via Suspense, so this runs once per visit.
+  useEffect(refreshCoversIfStale, [refreshCoversIfStale]);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const columnCount = useColumnCount(gridRef);
