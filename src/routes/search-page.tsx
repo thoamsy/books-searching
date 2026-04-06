@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Film, LoaderCircle, Search, Tv, User, X } from "lucide-react";
+import { Bookmark, Film, LoaderCircle, Search, Tv, User, X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { bookmarksQueryOptions } from "@/lib/bookmark-queries";
 import { BookmarksGrid } from "@/components/bookmarks-grid";
@@ -253,31 +253,17 @@ export function SearchPage() {
     }
   }
 
-  const spring = { type: "spring" as const, stiffness: 180, damping: 28 };
   const entrance = { duration: 0.4, ease: [0, 0, 0.58, 1] as const };
 
   return (
     <main className="flex flex-1 flex-col">
-      <div className={cn(
-        "mx-auto w-full px-5 sm:px-8",
-        hasCollections
-          ? "max-w-5xl lg:grid lg:grid-cols-[1fr_240px] lg:gap-x-12"
-          : "max-w-3xl"
-      )}>
-      <motion.div
-        layout={isFirstVisit ? "position" : false}
-        transition={{ layout: spring }}
-        className={cn(
-          "relative w-full",
-          hasBookmarks ? "pt-6 sm:pt-10" : "my-auto",
-          hasCollections && "lg:col-start-1"
-        )}
-      >
+      <div className="mx-auto w-full max-w-3xl px-5 sm:px-8 lg:max-w-5xl lg:grid lg:grid-cols-[1fr_240px] lg:gap-x-12">
+      <div className="relative w-full pt-6 lg:col-start-1 sm:pt-10">
         <motion.header
           initial={isFirstVisit ? { opacity: 0, y: 12 } : false}
           animate={{ opacity: 1, y: 0 }}
           transition={entrance}
-          className={cn(hasBookmarks ? "mb-10" : "mb-8")}
+          className="mb-10"
         >
           <p className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-primary/70">
             <img src="/favicon.svg" alt="" className="size-5" />
@@ -293,7 +279,7 @@ export function SearchPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...entrance, delay: 0.08 }}
           ref={searchBarRef}
-          className={cn("relative", hasBookmarks ? "mb-14" : "mb-6")}
+          className="relative mb-14"
         >
           <Combobox<SearchOption>
             items={suggestionOptions}
@@ -450,30 +436,54 @@ export function SearchPage() {
           ) : null}
         </motion.div>
 
-      </motion.div>
+      </div>
 
       {hasBookmarks ? (
-        <div className={cn("@container pb-20", hasCollections && "lg:col-start-1")}>
+        <div className="@container pb-20 lg:col-start-1">
           <BookmarksGrid items={bookmarks} animate={isFirstVisit} />
         </div>
       ) : null}
 
-      {hasCollections ? (
-        <aside className="hidden lg:sticky lg:top-10 lg:col-start-2 lg:row-start-2 lg:block">
+      {hasBookmarks ? (
+        <motion.aside
+          initial={isFirstVisit ? { opacity: 0, y: 12 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...entrance, delay: 0.16 }}
+          className="hidden lg:sticky lg:top-10 lg:col-start-2 lg:row-start-2 lg:block"
+        >
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏榜单</h2>
-          <div className="mt-5 flex flex-col gap-6">
-            {collectionBookmarks.map((item) => (
-              <DepthLink key={item.item_id} to={`/collection/${item.item_id}`} className="group">
-                <CollectionCover
-                  urls={item.item_cover_urls ?? []}
-                  title={item.item_title}
-                  className="transition-shadow group-hover:shadow-warm-md"
-                />
-                <p className="mt-2.5 truncate text-sm font-medium text-foreground">{item.item_title}</p>
-              </DepthLink>
-            ))}
-          </div>
-        </aside>
+          {hasCollections ? (
+            <div className="mt-5 flex flex-col gap-6">
+              {collectionBookmarks.map((item) => (
+                <DepthLink key={item.item_id} to={`/collection/${item.item_id}`} className="group">
+                  <CollectionCover
+                    urls={item.item_cover_urls ?? []}
+                    title={item.item_title}
+                    className="transition-shadow group-hover:shadow-warm-md"
+                  />
+                  <p className="mt-2.5 truncate text-sm font-medium text-foreground">{item.item_title}</p>
+                </DepthLink>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-5">
+              <div className="flex h-20 items-end gap-1">
+                {[
+                  { w: "w-3.5", bg: "bg-primary/15", h: "h-full" },
+                  { w: "w-2.5", bg: "bg-primary/25", h: "h-[85%]" },
+                  { w: "w-4",   bg: "bg-primary/10", h: "h-[92%]" },
+                  { w: "w-2",   bg: "bg-primary/20", h: "h-[78%]" },
+                  { w: "w-3",   bg: "bg-primary/12", h: "h-[88%]" },
+                ].map(({ w, bg, h }, i) => (
+                  <div key={i} className={cn(w, bg, h, "rounded-sm")} />
+                ))}
+              </div>
+              <p className="mt-4 font-display text-sm text-muted-foreground/70">
+                收藏的榜单会出现在这里
+              </p>
+            </div>
+          )}
+        </motion.aside>
       ) : null}
       </div>
     </main>
