@@ -6,6 +6,8 @@ import { useAuth } from "@/lib/auth-context";
 import { bookmarksQueryOptions } from "@/lib/bookmark-queries";
 import { BookmarksGrid } from "@/components/bookmarks-grid";
 import { BookCover } from "@/components/book-cover";
+import { CollectionCover } from "@/components/collection-cover";
+import { DepthLink } from "@/components/depth-link";
 import {
   Combobox,
   ComboboxContent,
@@ -66,6 +68,8 @@ export function SearchPage() {
   const { data: bookmarks = [] } = useQuery(bookmarksQueryOptions(userId));
   useSearchScrollRestoration("home");
   const hasBookmarks = bookmarks.length > 0;
+  const collectionBookmarks = bookmarks.filter((b) => b.item_type === "collection");
+  const hasCollections = collectionBookmarks.length > 0;
 
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
@@ -243,12 +247,17 @@ export function SearchPage() {
 
   return (
     <main className="flex flex-1 flex-col">
-
+      <div className={cn(
+        "mx-auto w-full px-5 sm:px-8",
+        hasCollections
+          ? "max-w-5xl lg:grid lg:grid-cols-[1fr_200px] lg:items-start lg:gap-8"
+          : "max-w-3xl"
+      )}>
       <motion.div
         layout={isPop ? false : "position"}
         transition={layoutTransition}
         className={cn(
-          "relative mx-auto w-full max-w-3xl px-5 sm:px-8",
+          "relative w-full",
           hasBookmarks ? "pt-6 pb-20 sm:pt-10" : "my-auto"
         )}
       >
@@ -432,6 +441,25 @@ export function SearchPage() {
           ) : null}
         </AnimatePresence>
       </motion.div>
+
+      {hasCollections ? (
+        <aside className="hidden pt-6 sm:pt-10 lg:sticky lg:top-4 lg:block">
+          <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏榜单</h2>
+          <div className="mt-5 flex flex-col gap-4">
+            {collectionBookmarks.map((item) => (
+              <DepthLink key={item.item_id} to={`/collection/${item.item_id}`} className="group">
+                <CollectionCover
+                  urls={item.item_cover_urls ?? []}
+                  title={item.item_title}
+                  className="transition-shadow group-hover:shadow-warm-md"
+                />
+                <p className="mt-2 truncate text-sm text-foreground">{item.item_title}</p>
+              </DepthLink>
+            ))}
+          </div>
+        </aside>
+      ) : null}
+      </div>
     </main>
   );
 }
