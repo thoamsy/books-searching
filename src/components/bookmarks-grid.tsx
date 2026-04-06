@@ -2,6 +2,7 @@ import { Film, User } from "lucide-react";
 import { DepthLink } from "@/components/depth-link";
 import { BookCover } from "@/components/book-cover";
 import { TiltCard } from "@/components/tilt-card";
+import { CollectionCover } from "@/components/collection-cover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { BookmarkItem } from "@/lib/bookmark-queries";
 
@@ -64,6 +65,7 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
   const persons = items.filter((i) => i.item_type === "author" || i.item_type === "celebrity");
   const books = items.filter((i) => i.item_type === "book");
   const movies = items.filter((i) => i.item_type === "movie");
+  const collections = items.filter((i) => i.item_type === "collection");
 
   return (
     <div className="flex flex-col gap-6 sm:gap-10">
@@ -158,6 +160,30 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
               <BookmarkCard key={item.item_id} item={item} />
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {collections.length > 0 ? (
+        <section className="flex flex-col gap-5">
+          <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏榜单</h2>
+          {/* Mobile: horizontal scroll */}
+          <div className="-mr-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pr-5 lg:hidden">
+            {collections.map((item) => (
+              <div key={item.item_id} className="w-[calc((100%-0.75rem*2)/3.4)] shrink-0 snap-start">
+                <DepthLink to={`/collection/${item.item_id}`} className="group">
+                  <CollectionCover
+                    urls={item.item_cover_urls ?? []}
+                    title={item.item_title}
+                    className="transition-shadow group-hover:shadow-warm-md"
+                  />
+                  <div className="mt-2 px-0.5">
+                    <p className="truncate text-sm font-normal text-foreground">{item.item_title}</p>
+                  </div>
+                </DepthLink>
+              </div>
+            ))}
+          </div>
+          {/* Desktop: hidden here, shown in aside */}
         </section>
       ) : null}
     </div>
