@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { DetailErrorFallback } from "@/components/detail-error-fallback";
 import { MediaCard } from "@/components/media-card";
@@ -8,6 +8,11 @@ import { QueryErrorBoundary } from "@/components/query-error-boundary";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useColumnCount } from "@/hooks/use-column-count";
 import { collectionItemsQueryOptions } from "@/lib/collection-queries";
+import { useAuth } from "@/lib/auth-context";
+import {
+  bookmarksQueryOptions,
+  useUpdateBookmarkCovers,
+} from "@/lib/bookmark-queries";
 
 function CollectionSkeleton() {
   return (
@@ -37,6 +42,33 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
     () => data.pages.flatMap((page) => page.items),
     [data.pages],
   );
+
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const { data: bookmarks = [] } = useQuery(bookmarksQueryOptions(userId));
+  const updateCovers = useUpdateBookmarkCovers();
+
+  // Refresh stale cover URLs when visiting a bookmarked collection
+  useEffect(() => {
+    const bookmark = bookmarks.find(
+      (b) => b.item_id === collectionId && b.item_type === "collection"
+    );
+    if (!bookmark || items.length === 0) return;
+
+    const currentUrls = items
+      .slice(0, 4)
+      .map((item) => item.normalCoverUrl)
+      .filter((url): url is string => Boolean(url));
+
+    const storedUrls = bookmark.item_cover_urls ?? [];
+    const isDifferent =
+      currentUrls.length !== storedUrls.length ||
+      currentUrls.some((url, i) => url !== storedUrls[i]);
+
+    if (isDifferent && currentUrls.length > 0) {
+      updateCovers.mutate({ itemId: collectionId, coverUrls: currentUrls });
+    }
+  }, [collectionId, bookmarks, items, updateCovers]);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const columnCount = useColumnCount(gridRef);

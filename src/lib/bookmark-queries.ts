@@ -1,6 +1,6 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
-import { addBookmark, getBookmarks, removeBookmark } from "@/lib/supabase-api";
+import { addBookmark, getBookmarks, removeBookmark, updateBookmarkCovers } from "@/lib/supabase-api";
 import {
   addLocalBookmark,
   readLocalBookmarks,
@@ -66,6 +66,23 @@ export function useAddBookmark() {
       if (context?.previous) {
         queryClient.setQueryData<BookmarkItem[]>(key, context.previous);
       }
+    },
+  });
+}
+
+export function useUpdateBookmarkCovers() {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const queryClient = useQueryClient();
+  const key = bookmarksQueryKey(userId);
+
+  return useMutation({
+    mutationFn: async ({ itemId, coverUrls }: { itemId: string; coverUrls: string[] }) => {
+      if (!userId) return;
+      await updateBookmarkCovers(userId, itemId, coverUrls);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
     },
   });
 }
