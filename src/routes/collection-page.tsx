@@ -46,39 +46,35 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const { data: bookmarks = [] } = useQuery(bookmarksQueryOptions(userId));
-  const updateCovers = useUpdateBookmarkCovers();
+  const { mutate: updateCovers } = useUpdateBookmarkCovers();
+
+  // Refresh stale cover URLs once when visiting a bookmarked collection.
+  // collectionId change remounts via Suspense, so no reset logic needed.
   const hasRefreshedRef = useRef(false);
-
-  // Reset refresh flag when collection changes
   useEffect(() => {
-    hasRefreshedRef.current = false;
-  }, [collectionId]);
-
-  // Refresh stale cover URLs when visiting a bookmarked collection
-  const updateCoversMutate = updateCovers.mutate;
-  useEffect(() => {
-    if (hasRefreshedRef.current) return;
+    if (hasRefreshedRef.current || items.length === 0) return;
 
     const bookmark = bookmarks.find(
       (b) => b.item_id === collectionId && b.item_type === "collection"
     );
-    if (!bookmark || items.length === 0) return;
+    if (!bookmark) return;
 
     const currentUrls = items
       .slice(0, 4)
       .map((item) => item.normalCoverUrl)
       .filter((url): url is string => Boolean(url));
+    if (currentUrls.length === 0) return;
 
     const storedUrls = bookmark.item_cover_urls ?? [];
     const isDifferent =
       currentUrls.length !== storedUrls.length ||
       currentUrls.some((url, i) => url !== storedUrls[i]);
 
-    if (isDifferent && currentUrls.length > 0) {
+    if (isDifferent) {
       hasRefreshedRef.current = true;
-      updateCoversMutate({ itemId: collectionId, coverUrls: currentUrls });
+      updateCovers({ itemId: collectionId, coverUrls: currentUrls });
     }
-  }, [collectionId, bookmarks, items, updateCoversMutate]);
+  }, [collectionId, bookmarks, items, updateCovers]);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const columnCount = useColumnCount(gridRef);

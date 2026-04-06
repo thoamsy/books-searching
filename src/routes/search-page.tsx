@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Film, LoaderCircle, Search, Tv, User, X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -68,7 +68,10 @@ export function SearchPage() {
   const { data: bookmarks = [] } = useQuery(bookmarksQueryOptions(userId));
   useSearchScrollRestoration("home");
   const hasBookmarks = bookmarks.length > 0;
-  const collectionBookmarks = bookmarks.filter((b) => b.item_type === "collection");
+  const collectionBookmarks = useMemo(
+    () => bookmarks.filter((b) => b.item_type === "collection"),
+    [bookmarks]
+  );
   const hasCollections = collectionBookmarks.length > 0;
 
   const inputRef = useRef<HTMLInputElement>(null);

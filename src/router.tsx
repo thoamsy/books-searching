@@ -15,11 +15,7 @@ function RootLayout() {
   const { pathname } = useLocation();
   const isHome = pathname === "/";
 
-  const isDetailWithBookmark =
-    /^\/(book|movie)\//.test(pathname) ||
-    /^\/celebrity\//.test(pathname) ||
-    /^\/author\//.test(pathname) ||
-    /^\/collection\//.test(pathname);
+  const isDetailWithBookmark = /^\/(book|movie|celebrity|author|collection)\//.test(pathname);
 
   const navRightKey = isHome ? "user-menu" : isDetailWithBookmark ? "bookmark" : "empty";
 

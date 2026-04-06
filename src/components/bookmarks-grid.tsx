@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Film, User } from "lucide-react";
 import { DepthLink } from "@/components/depth-link";
 import { BookCover } from "@/components/book-cover";
@@ -62,10 +63,16 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
     );
   }
 
-  const persons = items.filter((i) => i.item_type === "author" || i.item_type === "celebrity");
-  const books = items.filter((i) => i.item_type === "book");
-  const movies = items.filter((i) => i.item_type === "movie");
-  const collections = items.filter((i) => i.item_type === "collection");
+  const { persons, books, movies, collections } = useMemo(() => {
+    const result = { persons: [] as BookmarkItem[], books: [] as BookmarkItem[], movies: [] as BookmarkItem[], collections: [] as BookmarkItem[] };
+    for (const item of items) {
+      if (item.item_type === "author" || item.item_type === "celebrity") result.persons.push(item);
+      else if (item.item_type === "book") result.books.push(item);
+      else if (item.item_type === "movie") result.movies.push(item);
+      else if (item.item_type === "collection") result.collections.push(item);
+    }
+    return result;
+  }, [items]);
 
   return (
     <div className="flex flex-col gap-6 sm:gap-10">
