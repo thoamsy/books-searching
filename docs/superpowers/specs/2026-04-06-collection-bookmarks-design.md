@@ -94,10 +94,19 @@ Current single-column `max-w-3xl` becomes a two-column layout:
 
 New section at the bottom of BookmarksGrid: "收藏榜单". Horizontal snap-scroll carousel of square `CollectionCover` cards, same interaction pattern as books/movies sections.
 
+### Stale Cover Refresh
+
+Cover URLs are written at bookmark creation time but collection rankings change over time. To keep covers fresh:
+
+- When the user visits a bookmarked collection page, compare the current top-4 `pic.normal` URLs against the stored `item_cover_urls`.
+- If they differ, silently upsert the bookmark with the new URLs.
+- No user interaction required — this is a background side effect of viewing the page.
+
 ### Supabase API
 
 - `addBookmark`: include `item_cover_urls` in upsert payload.
 - `getBookmarks`: ensure `item_cover_urls` is selected and returned.
+- `updateBookmarkCovers(userId, itemId, coverUrls)`: new function to patch `item_cover_urls` only. Used by the stale cover refresh logic.
 - No changes to `removeBookmark`.
 
 ### LocalStorage Fallback
@@ -116,6 +125,6 @@ Prefer adding `normalCoverUrl` to `CollectionItem` — cleaner, reusable.
 ## Scope Exclusions
 
 - No offline caching of collection content.
-- No syncing of collection item changes after bookmark creation.
+- Cover URLs are refreshed on visit only, not on a background schedule.
 - `status` and `recommendation` fields are unused for collections (default `"want"`, null).
 - No new filtering/tabs on the homepage — collection section appears alongside existing sections.
