@@ -20,6 +20,7 @@ export interface CollectionItem {
   type: "book" | "movie" | "tv";
   rank?: number;
   coverUrl?: string;
+  normalCoverUrl?: string;
   rating?: {
     value: number;
     count: number;

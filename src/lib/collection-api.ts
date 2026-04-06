@@ -66,12 +66,14 @@ function mapMeta(raw: RexxarCollectionMeta): CollectionMeta {
 
 function mapItem(raw: RexxarCollectionItem): CollectionItem {
   const coverUrl = raw.pic?.large ?? raw.pic?.normal ?? raw.cover?.url;
+  const normalCoverUrl = raw.pic?.normal ?? raw.cover?.url;
   return {
     id: raw.id,
     title: raw.title,
     type: (raw.type as CollectionItem["type"]) ?? "book",
     rank: raw.rank ?? raw.rank_value,
     coverUrl: proxifyImageUrl(coverUrl),
+    normalCoverUrl: proxifyImageUrl(normalCoverUrl),
     rating:
       raw.rating?.value != null
         ? { value: raw.rating.value, count: raw.rating.count ?? 0 }
