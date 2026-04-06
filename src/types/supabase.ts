@@ -11,9 +11,10 @@ export interface BookmarkRow {
   id: number;
   user_id: string;
   item_id: string;
-  item_type: "book" | "movie" | "author" | "celebrity";
+  item_type: "book" | "movie" | "author" | "celebrity" | "collection";
   item_title: string;
   item_cover_url: string | null;
+  item_cover_urls: string[] | null;
   status: "want" | "done";
   recommendation: "up" | "down" | null;
   created_at: string;

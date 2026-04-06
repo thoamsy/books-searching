@@ -111,3 +111,12 @@ create index idx_bookmarks_user_status
 create index idx_bookmarks_public_recommendations
   on public.bookmarks (user_id)
   where status = 'done' and recommendation = 'up';
+
+-- Collection bookmarks: expand item_type, add cover URLs array
+alter table public.bookmarks
+  drop constraint bookmarks_item_type_check,
+  add constraint bookmarks_item_type_check
+    check (item_type in ('book', 'movie', 'author', 'celebrity', 'collection'));
+
+alter table public.bookmarks
+  add column if not exists item_cover_urls text[];
