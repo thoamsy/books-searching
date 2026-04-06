@@ -74,7 +74,8 @@ function CollectionContent({ collectionId }: { collectionId: string }) {
 
   // Refresh stale cover URLs once when visiting a bookmarked collection.
   // collectionId change remounts via Suspense, so this runs once per visit.
-  useEffect(refreshCoversIfStale, [refreshCoversIfStale]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(refreshCoversIfStale, []);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const columnCount = useColumnCount(gridRef);
