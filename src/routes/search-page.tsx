@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Film, LoaderCircle, Search, Tv, User, X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { bookmarksQueryOptions } from "@/lib/bookmark-queries";
@@ -24,7 +24,7 @@ import { suggestionsQueryOptions } from "@/lib/book-queries";
 import { movieSuggestionsQueryOptions } from "@/lib/movie-queries";
 import { suggestItemToSearchMovie } from "@/lib/movies-api";
 import { cn } from "@/lib/utils";
-import { useLocation, useNavigate, useNavigationType } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSearchScrollRestoration } from "@/hooks/use-search-scroll-restoration";
 import type { SearchBook, SuggestItem } from "@/types/books";
 import type { SearchMovie } from "@/types/movies";
@@ -52,6 +52,9 @@ function getMovieSuggestionOptionId(item: MovieSuggestItem, index: number) {
 
 const getOptionLabel = (item: SearchOption) => item.label;
 
+// Track whether the search page has been mounted before in this session
+let hasSearchPageMounted = false;
+
 export function SearchPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -62,8 +65,12 @@ export function SearchPage() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
 
-  const navigationType = useNavigationType();
-  const isPop = navigationType === "POP";
+  // Only play entrance animations on the very first mount
+  const [isFirstVisit] = useState(() => {
+    if (hasSearchPageMounted) return false;
+    hasSearchPageMounted = true;
+    return true;
+  });
 
   const { data: bookmarks = [] } = useQuery(bookmarksQueryOptions(userId));
   useSearchScrollRestoration("home");
@@ -246,7 +253,8 @@ export function SearchPage() {
     }
   }
 
-  const layoutTransition = { type: "spring" as const, stiffness: 180, damping: 28 };
+  const spring = { type: "spring" as const, stiffness: 180, damping: 28 };
+  const entrance = { duration: 0.4, ease: [0, 0, 0.58, 1] as const };
 
   return (
     <main className="flex flex-1 flex-col">
@@ -257,15 +265,20 @@ export function SearchPage() {
           : "max-w-3xl"
       )}>
       <motion.div
-        layout={isPop ? false : "position"}
-        transition={layoutTransition}
+        layout={isFirstVisit ? "position" : false}
+        transition={{ layout: spring }}
         className={cn(
           "relative w-full",
           hasBookmarks ? "pt-6 sm:pt-10" : "my-auto",
           hasCollections && "lg:col-start-1"
         )}
       >
-        <motion.header layout={isPop ? false : "position"} transition={layoutTransition} className={cn("animate-fade-up", hasBookmarks ? "mb-10" : "mb-8")}>
+        <motion.header
+          initial={isFirstVisit ? { opacity: 0, y: 12 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={entrance}
+          className={cn(hasBookmarks ? "mb-10" : "mb-8")}
+        >
           <p className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-primary/70">
             <img src="/favicon.svg" alt="" className="size-5" />
             <span className="font-display">Opus</span>
@@ -275,7 +288,13 @@ export function SearchPage() {
           </h1>
         </motion.header>
 
-        <motion.div layout={isPop ? false : "position"} transition={layoutTransition} ref={searchBarRef} className={cn("animate-fade-up relative [animation-delay:80ms]", hasBookmarks ? "mb-14" : "mb-6")}>
+        <motion.div
+          initial={isFirstVisit ? { opacity: 0, y: 12 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...entrance, delay: 0.08 }}
+          ref={searchBarRef}
+          className={cn("relative", hasBookmarks ? "mb-14" : "mb-6")}
+        >
           <Combobox<SearchOption>
             items={suggestionOptions}
             itemToStringLabel={getOptionLabel}
@@ -433,19 +452,11 @@ export function SearchPage() {
 
       </motion.div>
 
-      <AnimatePresence>
-        {hasBookmarks ? (
-          <motion.div
-            key="bookmarks"
-            initial={isPop ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
-            className={cn("@container pb-20", hasCollections && "lg:col-start-1")}
-          >
-            <BookmarksGrid items={bookmarks} />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {hasBookmarks ? (
+        <div className={cn("@container pb-20", hasCollections && "lg:col-start-1")}>
+          <BookmarksGrid items={bookmarks} animate={isFirstVisit} />
+        </div>
+      ) : null}
 
       {hasCollections ? (
         <aside className="hidden lg:sticky lg:top-10 lg:col-start-2 lg:row-start-2 lg:block">

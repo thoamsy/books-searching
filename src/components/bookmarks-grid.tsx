@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { motion } from "framer-motion";
 import { Film, User } from "lucide-react";
 import { DepthLink } from "@/components/depth-link";
 import { BookCover } from "@/components/book-cover";
@@ -52,7 +53,9 @@ function BookmarkCard({ item }: { item: BookmarkItem }) {
   );
 }
 
-export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
+const entrance = { duration: 0.4, ease: [0, 0, 0.58, 1] as const };
+
+export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[]; animate?: boolean }) {
   if (items.length === 0) {
     return (
       <div className="rounded-lg border border-white/70 bg-surface px-8 py-12 text-center">
@@ -74,10 +77,27 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
     return result;
   }, [items]);
 
+  // Build ordered list of visible sections for stagger delay
+  const sectionOrder: string[] = [];
+  if (persons.length > 0) sectionOrder.push("persons");
+  if (books.length > 0) sectionOrder.push("books");
+  if (movies.length > 0) sectionOrder.push("movies");
+  if (collections.length > 0) sectionOrder.push("collections");
+
+  function sectionProps(key: string) {
+    if (!animate) return {};
+    const index = sectionOrder.indexOf(key);
+    return {
+      initial: { opacity: 0, y: 12 } as const,
+      animate: { opacity: 1, y: 0 } as const,
+      transition: { ...entrance, delay: 0.16 + index * 0.08 },
+    };
+  }
+
   return (
     <div className="flex flex-col gap-6 sm:gap-10">
       {persons.length > 0 ? (
-        <section className="flex flex-col gap-5">
+        <motion.section className="flex flex-col gap-5" {...sectionProps("persons")}>
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏影人 / 作者</h2>
 
           {/* Mobile: avatar on top, name below */}
@@ -127,11 +147,11 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
               </div>
             </div>
           </TooltipProvider>
-        </section>
+        </motion.section>
       ) : null}
 
       {books.length > 0 ? (
-        <section className="flex flex-col gap-5">
+        <motion.section className="flex flex-col gap-5" {...sectionProps("books")}>
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏书籍</h2>
           {/* Mobile: horizontal scroll with snap */}
           <div className="-mr-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pr-5 sm:hidden">
@@ -147,11 +167,11 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
               <BookmarkCard key={item.item_id} item={item} />
             ))}
           </div>
-        </section>
+        </motion.section>
       ) : null}
 
       {movies.length > 0 ? (
-        <section className="flex flex-col gap-5">
+        <motion.section className="flex flex-col gap-5" {...sectionProps("movies")}>
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏影视</h2>
           {/* Mobile: horizontal scroll with snap */}
           <div className="-mr-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pr-5 sm:hidden">
@@ -167,11 +187,11 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
               <BookmarkCard key={item.item_id} item={item} />
             ))}
           </div>
-        </section>
+        </motion.section>
       ) : null}
 
       {collections.length > 0 ? (
-        <section className="flex flex-col gap-5 lg:hidden">
+        <motion.section className="flex flex-col gap-5 lg:hidden" {...sectionProps("collections")}>
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏榜单</h2>
           {/* Mobile only: desktop shows collections in aside */}
           <div className="-mr-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pr-5">
@@ -191,7 +211,7 @@ export function BookmarksGrid({ items }: { items: BookmarkItem[] }) {
             ))}
           </div>
           {/* Desktop: hidden here, shown in aside */}
-        </section>
+        </motion.section>
       ) : null}
     </div>
   );
