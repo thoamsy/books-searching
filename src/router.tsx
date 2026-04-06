@@ -18,7 +18,8 @@ function RootLayout() {
   const isDetailWithBookmark =
     /^\/(book|movie)\//.test(pathname) ||
     /^\/celebrity\//.test(pathname) ||
-    /^\/author\//.test(pathname);
+    /^\/author\//.test(pathname) ||
+    /^\/collection\//.test(pathname);
 
   const navRightKey = isHome ? "user-menu" : isDetailWithBookmark ? "bookmark" : "empty";
 

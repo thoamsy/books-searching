@@ -1,6 +1,6 @@
 import { Star } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, MotionConfig, AnimatePresence, useAnimate } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -11,6 +11,7 @@ import {
 import { bookDetailQueryOptions } from "@/lib/book-queries";
 import { movieDetailQueryOptions } from "@/lib/movie-queries";
 import { celebrityDetailQueryOptions } from "@/lib/celebrity-queries";
+import { collectionItemsQueryOptions } from "@/lib/collection-queries";
 import { cn } from "@/lib/utils";
 import type { BookmarkRow } from "@/types/supabase";
 
@@ -23,11 +24,14 @@ function useBookmarkContext(): { itemId: string; itemType: BookmarkType } | null
   if (params.subjectId) return { itemId: params.subjectId, itemType: "movie" };
   if (params.celebrityId) return { itemId: params.celebrityId, itemType: "celebrity" };
   if (params.authorName) return { itemId: decodeURIComponent(params.authorName), itemType: "author" };
+  if (params.collectionId) return { itemId: params.collectionId, itemType: "collection" };
 
   return null;
 }
 
 function useItemMeta(itemId: string, itemType: BookmarkType) {
+  const queryClient = useQueryClient();
+
   const bookQuery = useQuery({
     ...bookDetailQueryOptions(itemType === "book" ? itemId : ""),
     enabled: itemType === "book",
@@ -64,6 +68,20 @@ function useItemMeta(itemId: string, itemType: BookmarkType) {
     return { title: itemId, coverUrl: params.get("photo") };
   }
 
+  if (itemType === "collection") {
+    const queryKey = collectionItemsQueryOptions(itemId).queryKey;
+    const cachedData = queryClient.getQueryData<{
+      pages: Array<{ meta: { title: string }; items: Array<{ normalCoverUrl?: string }> }>;
+    }>(queryKey);
+    if (!cachedData?.pages?.[0]) return null;
+    const { meta, items } = cachedData.pages[0];
+    const coverUrls = items
+      .slice(0, 4)
+      .map((item) => item.normalCoverUrl)
+      .filter((url): url is string => Boolean(url));
+    return { title: meta.title, coverUrl: null, coverUrls };
+  }
+
   return null;
 }
 
@@ -93,6 +111,7 @@ export function BookmarkButton() {
         item_type: itemType,
         item_title: title,
         item_cover_url: coverUrl,
+        item_cover_urls: meta?.coverUrls ?? null,
         created_at: new Date().toISOString(),
       });
       // Fire-and-forget: pop animation only on user-initiated bookmark
