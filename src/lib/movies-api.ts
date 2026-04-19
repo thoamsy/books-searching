@@ -136,6 +136,7 @@ interface FrodoCreditsResponse {
     name: string;
     url?: string;
     simple_character?: string;
+    avatar?: { normal?: string; large?: string };
   }[];
 }
 
@@ -154,7 +155,8 @@ async function fetchCredits(subjectId: string): Promise<Map<string, CreditPerson
         map.set(item.name, {
           name: item.name,
           id: extractCelebrityId(item.url),
-          character: item.simple_character
+          character: item.simple_character,
+          avatarUrl: proxifyImageUrl(item.avatar?.normal ?? item.avatar?.large)
         });
       }
     }

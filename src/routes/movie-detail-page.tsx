@@ -2,17 +2,16 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import {
   CalendarDays,
-  Clapperboard,
   Clock,
   ExternalLink,
   Film,
   Star,
-  Tv,
-  Users
+  Tv
 } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { DepthLink } from "@/components/depth-link";
 import { BookCover } from "@/components/book-cover";
+import { CreditAvatar } from "@/components/credit-avatar";
 import { DetailErrorFallback } from "@/components/detail-error-fallback";
 import { ExpandableDescription, InfoBlock } from "@/components/expandable-description";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
@@ -64,6 +63,7 @@ function MovieDetailSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie })
 
       {/* Mobile content skeleton */}
       <div className="animate-fade-up mt-6 flex flex-col gap-6 [animation-delay:160ms] lg:hidden">
+        <MobileCreditsSkeleton />
         <div className="grid gap-6">
           <DescriptionPanelSkeleton />
           <SidebarPanelSkeleton />
@@ -112,6 +112,7 @@ function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; f
 
       {/* Mobile: content panels below the hero */}
       <div className="mt-6 flex flex-col gap-6 lg:hidden">
+        <MobileCreditsPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
         <div className="grid gap-6">
           <DetailDescriptionPanel movieDetail={movieDetail} />
           <DetailSidebarPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
@@ -206,43 +207,7 @@ function DetailHeroPanel({
         <p className="mt-2 text-lg text-muted-foreground">{movieDetail.originalTitle}</p>
       ) : null}
 
-      {directors.length > 0 && (
-        <div className="mt-5 flex flex-wrap items-center gap-2.5">
-          <span className="text-sm text-muted-foreground">导演</span>
-          {directors.map((person) => (
-            <DepthLink
-              key={person.name}
-              to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
-              className="group/person inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/[0.06] px-3 py-1 text-sm font-medium text-primary shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-primary/40 hover:bg-primary/[0.1] hover:shadow-[0_4px_12px_color-mix(in_oklch,var(--primary)_12%,transparent)]"
-            >
-              <Clapperboard className="size-3.5" />
-              <span className="bg-[linear-gradient(var(--primary),var(--primary))] bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1.5px]">
-                {person.name}
-              </span>
-            </DepthLink>
-          ))}
-        </div>
-      )}
-
-      {cast.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-2.5">
-          <span className="text-sm text-muted-foreground">主演</span>
-          {cast.slice(0, 5).map((person) => (
-            <DepthLink
-              key={person.name}
-              to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
-              className="group/person inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/40 px-3 py-1 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-px hover:border-white/80 hover:bg-white/60 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
-            >
-              <Users className="size-3.5" />
-              <span className="bg-[linear-gradient(var(--foreground),var(--foreground))] bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1.5px]">
-                {person.name}
-              </span>
-            </DepthLink>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-3 flex flex-wrap items-center gap-2.5">
+      <div className="mt-5 flex flex-wrap items-center gap-2.5">
         {movieDetail.year || fallbackMovie?.year ? (
           <Badge className="gap-2">
             <CalendarDays className="size-3.5" />
@@ -291,9 +256,51 @@ function DetailHeroPanel({
           )}
         </div>
       ) : null}
+
+      {directors.length > 0 || cast.length > 0 ? (
+        <div className="mt-8 flex flex-col gap-5">
+          {directors.length > 0 ? (
+            <CreditsGroupDesktop label="导演" people={directors} variant="director" />
+          ) : null}
+          {cast.length > 0 ? (
+            <CreditsGroupDesktop label="主演" people={cast.slice(0, MAX_CAST_DESKTOP)} variant="cast" />
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
+
+function CreditsGroupDesktop({
+  label,
+  people,
+  variant,
+}: {
+  label: string;
+  people: CreditPerson[];
+  variant: "director" | "cast";
+}) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-4 sm:gap-x-4">
+        {people.map((person) => (
+          <CreditAvatar
+            key={`${person.id ?? person.name}`}
+            name={person.name}
+            id={person.id}
+            avatarUrl={person.avatarUrl}
+            variant={variant}
+            size="md"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const MAX_CAST_DESKTOP = 12;
+const MAX_CAST_MOBILE = 16;
 
 function DetailDescriptionPanel({ movieDetail }: { movieDetail: MovieDetail }) {
   const description = movieDetail.description || "";
@@ -403,55 +410,19 @@ function MobileHeroPanel({
   fallbackMovie?: SearchMovie;
 }) {
   const title = movieDetail?.title ?? fallbackMovie?.title ?? "未知影片";
-  const directors = movieDetail.director?.length
-    ? movieDetail.director
-    : (fallbackMovie?.director?.map((name): CreditPerson => ({ name })) ?? []);
-  const cast = movieDetail.cast?.length
-    ? movieDetail.cast
-    : (fallbackMovie?.cast?.map((name): CreditPerson => ({ name })) ?? []);
   const isTV = movieDetail.type === "tv";
 
   return (
     <div>
       <h1 className="font-display text-3xl leading-tight sm:text-4xl">{title}</h1>
 
-      {directors.length > 0 && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">导演</span>
-          {directors.slice(0, 2).map((person) => (
-            <DepthLink
-              key={person.name}
-              to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
-              className="group/person inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/[0.06] px-2.5 py-0.5 text-xs font-medium text-primary transition-all hover:border-primary/40 hover:bg-primary/[0.1]"
-            >
-              <Clapperboard className="size-3" />
-              <span className="bg-[linear-gradient(var(--primary),var(--primary))] bg-[length:0%_1px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1px]">
-                {person.name}
-              </span>
-            </DepthLink>
-          ))}
-        </div>
-      )}
+      {movieDetail.originalTitle ? (
+        <p className="mt-1.5 text-sm text-muted-foreground line-clamp-1">
+          {movieDetail.originalTitle}
+        </p>
+      ) : null}
 
-      {cast.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">主演</span>
-          {cast.slice(0, 3).map((person) => (
-            <DepthLink
-              key={person.name}
-              to={person.id ? `/celebrity/${person.id}` : `/?q=${encodeURIComponent(person.name)}`}
-              className="group/person inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/40 px-2.5 py-0.5 text-xs text-foreground transition-all hover:border-white/80 hover:bg-white/60"
-            >
-              <Users className="size-3" />
-              <span className="bg-[linear-gradient(var(--foreground),var(--foreground))] bg-[length:0%_1px] bg-left-bottom bg-no-repeat transition-[background-size] duration-300 ease-out group-hover/person:bg-[length:100%_1px]">
-                {person.name}
-              </span>
-            </DepthLink>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         {movieDetail.year || fallbackMovie?.year ? (
           <Badge className="gap-1.5 text-xs">
             <CalendarDays className="size-3" />
@@ -491,6 +462,50 @@ function MobileHeroPanel({
   );
 }
 
+function MobileCreditsPanel({
+  movieDetail,
+  fallbackMovie,
+}: {
+  movieDetail: MovieDetail;
+  fallbackMovie?: SearchMovie;
+}) {
+  const directors = movieDetail.director?.length
+    ? movieDetail.director
+    : (fallbackMovie?.director?.map((name): CreditPerson => ({ name })) ?? []);
+  const cast = movieDetail.cast?.length
+    ? movieDetail.cast
+    : (fallbackMovie?.cast?.map((name): CreditPerson => ({ name })) ?? []);
+
+  if (directors.length === 0 && cast.length === 0) {
+    return null;
+  }
+
+  const people: { person: CreditPerson; variant: "director" | "cast" }[] = [
+    ...directors.map((person) => ({ person, variant: "director" as const })),
+    ...cast.slice(0, MAX_CAST_MOBILE).map((person) => ({ person, variant: "cast" as const })),
+  ];
+
+  return (
+    <section>
+      <p className="px-0 text-xs uppercase tracking-[0.2em] text-muted-foreground">演职员</p>
+      <div className="-mx-5 mt-3 overflow-x-auto px-5 pb-1 sm:-mx-8 sm:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-3 w-max">
+          {people.map(({ person, variant }) => (
+            <CreditAvatar
+              key={`${variant}-${person.id ?? person.name}`}
+              name={person.name}
+              id={person.id}
+              avatarUrl={person.avatarUrl}
+              variant={variant}
+              size="sm"
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /*  Skeleton sub-components                                            */
 /* ------------------------------------------------------------------ */
@@ -506,23 +521,30 @@ function MobileHeroSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) 
           <Skeleton className="h-9 w-full max-w-[10rem] rounded-full bg-white/70" />
         </div>
       )}
-      {fallbackMovie?.director?.length ? (
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">导演</span>
-          {fallbackMovie.director.slice(0, 2).map((name) => (
-            <span key={name} className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/[0.06] px-2.5 py-0.5 text-xs font-medium text-primary">
-              {name}
-            </span>
-          ))}
-        </div>
-      ) : (
-        <Skeleton className="mt-3 h-5 w-32 rounded-full bg-white/70" />
-      )}
       <div className="mt-3 flex flex-wrap gap-2">
         <Skeleton className="h-7 w-20 rounded-full bg-white/70" />
         <Skeleton className="h-7 w-16 rounded-full bg-white/70" />
+        <Skeleton className="h-7 w-14 rounded-full bg-white/70" />
       </div>
     </div>
+  );
+}
+
+function MobileCreditsSkeleton() {
+  return (
+    <section>
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">演职员</p>
+      <div className="-mx-5 mt-3 overflow-x-hidden px-5 sm:-mx-8 sm:px-8">
+        <div className="flex gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex shrink-0 flex-col items-center gap-1.5 w-[60px]">
+              <Skeleton className="size-12 rounded-full bg-white/70" />
+              <Skeleton className="h-3 w-12 rounded-full bg-white/70" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -557,13 +579,33 @@ function HeroPanelSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) {
         </div>
       )}
       <div className="mt-5 flex flex-wrap gap-2.5">
-        <Skeleton className="h-8 w-32 rounded-full bg-primary/[0.06]" />
-        <Skeleton className="h-8 w-24 rounded-full bg-primary/[0.06]" />
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2.5">
         <Skeleton className="h-7 w-20 rounded-full bg-white/70" />
         <Skeleton className="h-7 w-16 rounded-full bg-white/70" />
         <Skeleton className="h-7 w-14 rounded-full bg-white/70" />
+      </div>
+      <div className="mt-8 flex flex-col gap-5">
+        <div>
+          <Skeleton className="h-3 w-10 rounded-full bg-white/70" />
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-4 sm:gap-x-4">
+            {Array.from({ length: 1 }).map((_, i) => (
+              <div key={i} className="flex shrink-0 flex-col items-center gap-1.5 w-[68px] sm:w-[76px]">
+                <Skeleton className="size-14 sm:size-16 rounded-full bg-white/70" />
+                <Skeleton className="h-3 w-14 rounded-full bg-white/70" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <Skeleton className="h-3 w-10 rounded-full bg-white/70" />
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-4 sm:gap-x-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex shrink-0 flex-col items-center gap-1.5 w-[68px] sm:w-[76px]">
+                <Skeleton className="size-14 sm:size-16 rounded-full bg-white/70" />
+                <Skeleton className="h-3 w-14 rounded-full bg-white/70" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

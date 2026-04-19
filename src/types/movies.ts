@@ -47,6 +47,7 @@ export interface CreditPerson {
   name: string;
   id?: string;
   character?: string;
+  avatarUrl?: string;
 }
 
 export interface MovieDetail {
