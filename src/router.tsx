@@ -1,5 +1,4 @@
-import { createBrowserRouter, Outlet, ScrollRestoration, useLocation } from "react-router-dom";
-import { AnimatePresence, motion, MotionConfig } from "framer-motion";
+import { createBrowserRouter, Outlet, ScrollRestoration } from "react-router-dom";
 import { bookDetailQueryOptions, searchBooksQueryOptions } from "@/lib/book-queries";
 import { bookmarksQueryOptions } from "@/lib/bookmark-queries";
 import { celebrityDetailQueryOptions, celebrityWorksQueryOptions } from "@/lib/celebrity-queries";
@@ -7,36 +6,12 @@ import { collectionItemsQueryOptions } from "@/lib/collection-queries";
 import { movieDetailQueryOptions } from "@/lib/movie-queries";
 import { queryClient } from "@/lib/query-client";
 import { supabase } from "@/lib/supabase";
-import { BackButton } from "@/components/back-button";
-import { UserMenu } from "@/components/user-menu";
-import { BookmarkButton } from "@/components/bookmark-button";
+import { TopBar } from "@/components/top-bar";
 
 function RootLayout() {
-  const { pathname } = useLocation();
-  const isHome = pathname === "/";
-
-  const isDetailWithBookmark = /^\/(book|movie|celebrity|author|collection)\//.test(pathname);
-
-  const navRightKey = isHome ? "user-menu" : isDetailWithBookmark ? "bookmark" : "empty";
-
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
-      <MotionConfig reducedMotion="user">
-        <nav className="flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8">
-          <div>{!isHome && <BackButton />}</div>
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-              key={navRightKey}
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, filter: "blur(4px)" }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
-              {isHome ? <UserMenu /> : isDetailWithBookmark ? <BookmarkButton /> : null}
-            </motion.div>
-          </AnimatePresence>
-        </nav>
-      </MotionConfig>
+      <TopBar />
       <Outlet />
       <footer className="-mt-10 pb-3 text-center text-[10px] text-muted-foreground/30">
         <a href="https://github.com/thoamsy" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-muted-foreground/60">

@@ -190,7 +190,161 @@ const REXXAR_HEADERS = {
   Referer: "https://m.douban.com/"
 };
 
-async function proxyRequest(target: string, request: Request, options?: { extraHeaders?: Record<string, string>; cacheTtl?: number; maxAge?: number }) {
+// ── OG meta helpers ──────────────────────────────────────────────
+
+function escapeAttr(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function truncate(s: string, max: number): string {
+  if (s.length <= max) return s;
+  return s.slice(0, max).trimEnd() + "…";
+}
+
+interface OGMeta {
+  title: string;
+  description: string;
+  image: string;
+  type: string;
+}
+
+async function fetchBookOG(
+  id: string,
+  origin: string,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<OGMeta | null> {
+  try {
+    let json = await env.DOUBAN_CACHE.get(`book:${id}`);
+    if (!json) {
+      const res = await fetch(
+        `https://frodo.douban.com/api/v2/book/${id}?apikey=${FRODO_APIKEY}`,
+        { headers: { ...DEFAULT_HEADERS, ...FRODO_HEADERS } }
+      );
+      if (!res.ok) return null;
+      json = await res.text();
+      ctx.waitUntil(
+        env.DOUBAN_CACHE.put(`book:${id}`, json, { expirationTtl: 30 * 86400 })
+      );
+    }
+
+    const data = JSON.parse(json);
+    const title = data.title || "未知书名";
+    const authors = (data.author ?? []).slice(0, 3).join(" / ");
+    const coverUrl: string | undefined = data.pic?.large ?? data.cover_url;
+
+    return {
+      title: authors ? `${title} — ${authors}` : title,
+      description: truncate((data.intro ?? "").replace(/\n+/g, " "), 200),
+      image: coverUrl
+        ? `${origin}/api/douban/image?url=${encodeURIComponent(coverUrl)}`
+        : "",
+      type: "book",
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchMovieOG(
+  id: string,
+  origin: string,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<OGMeta | null> {
+  try {
+    let json = await env.DOUBAN_CACHE.get(`movie:${id}`);
+    if (!json) {
+      let res = await fetch(
+        `https://frodo.douban.com/api/v2/movie/${id}?apikey=${FRODO_APIKEY}`,
+        { headers: { ...DEFAULT_HEADERS, ...FRODO_HEADERS } }
+      );
+      if (res.status === 400 || res.status === 404) {
+        res = await fetch(
+          `https://frodo.douban.com/api/v2/tv/${id}?apikey=${FRODO_APIKEY}`,
+          { headers: { ...DEFAULT_HEADERS, ...FRODO_HEADERS } }
+        );
+      }
+      if (!res.ok) return null;
+      json = await res.text();
+      ctx.waitUntil(
+        env.DOUBAN_CACHE.put(`movie:${id}`, json, { expirationTtl: 30 * 86400 })
+      );
+    }
+
+    const data = JSON.parse(json);
+    const title = data.title || "未知影片";
+    const year: string | undefined = data.year;
+    const coverUrl: string | undefined =
+      data.cover?.image?.large?.url ?? data.pic?.large ?? data.cover_url;
+
+    return {
+      title: year ? `${title} (${year})` : title,
+      description: truncate((data.intro ?? "").replace(/\n+/g, " "), 200),
+      image: coverUrl
+        ? `${origin}/api/douban/image?url=${encodeURIComponent(coverUrl)}`
+        : "",
+      type: "video.movie",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function injectOGTags(
+  assetResponse: Response,
+  og: OGMeta,
+  canonicalUrl: string
+): Response {
+  return new HTMLRewriter()
+    .on("title", {
+      element(el) {
+        el.setInnerContent(`${og.title} — Opus`);
+      },
+    })
+    .on('meta[name="description"]', {
+      element(el) {
+        el.setAttribute("content", og.description);
+      },
+    })
+    .on("head", {
+      element(el) {
+        el.append(
+          [
+            `<meta property="og:title" content="${escapeAttr(og.title)}" />`,
+            `<meta property="og:description" content="${escapeAttr(og.description)}" />`,
+            `<meta property="og:image" content="${escapeAttr(og.image)}" />`,
+            `<meta property="og:url" content="${escapeAttr(canonicalUrl)}" />`,
+            `<meta property="og:type" content="${og.type}" />`,
+            `<meta property="og:site_name" content="Opus" />`,
+            `<meta name="twitter:card" content="summary_large_image" />`,
+            `<meta name="twitter:title" content="${escapeAttr(og.title)}" />`,
+            `<meta name="twitter:description" content="${escapeAttr(og.description)}" />`,
+            `<meta name="twitter:image" content="${escapeAttr(og.image)}" />`,
+          ].join("\n"),
+          { html: true }
+        );
+      },
+    })
+    .transform(assetResponse);
+}
+
+// ── End OG meta helpers ──────────────────────────────────────────
+
+async function proxyRequest(
+  target: string,
+  request: Request,
+  options?: {
+    extraHeaders?: Record<string, string>;
+    cacheTtl?: number;
+    maxAge?: number;
+    immutable?: boolean;
+  }
+) {
   const origin = resolveCorsOrigin(request);
   const upstream = await fetch(target, {
     headers: {
@@ -214,7 +368,10 @@ async function proxyRequest(target: string, request: Request, options?: { extraH
 
   const headers = new Headers(upstream.headers);
   Object.entries(corsHeaders(origin)).forEach(([key, value]) => headers.set(key, value));
-  headers.set("Cache-Control", `public, max-age=${options?.maxAge ?? 300}`);
+  headers.set(
+    "Cache-Control",
+    `public, max-age=${options?.maxAge ?? 300}${options?.immutable ? ", immutable" : ""}`
+  );
 
   return new Response(upstream.body, {
     status: upstream.status,
@@ -403,6 +560,33 @@ export default {
         }
 
         return proxyImageRequest(imageUrl, request);
+      }
+
+      // OG meta injection for detail pages
+      const bookPageMatch = url.pathname.match(/^\/book\/(\d+)\/?$/);
+      const moviePageMatch =
+        !bookPageMatch && url.pathname.match(/^\/movie\/(\d+)\/?$/);
+
+      if (bookPageMatch || moviePageMatch) {
+        const id = (bookPageMatch ?? moviePageMatch)![1];
+        const fetchOG = bookPageMatch
+          ? fetchBookOG(id, url.origin, env, ctx)
+          : fetchMovieOG(id, url.origin, env, ctx);
+
+        const [og, assetResponse] = await Promise.all([
+          fetchOG,
+          env.ASSETS.fetch(request),
+        ]);
+
+        if (og && assetResponse.ok) {
+          return injectOGTags(
+            assetResponse,
+            og,
+            `${url.origin}${url.pathname}`
+          );
+        }
+
+        return assetResponse;
       }
 
       return env.ASSETS.fetch(request);

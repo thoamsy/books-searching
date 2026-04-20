@@ -1,6 +1,6 @@
 import { Star } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { motion, MotionConfig, AnimatePresence, useAnimate } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -14,7 +14,6 @@ import { celebrityDetailQueryOptions } from "@/lib/celebrity-queries";
 import { collectionItemsQueryOptions } from "@/lib/collection-queries";
 import { cn } from "@/lib/utils";
 import type { BookmarkRow } from "@/types/supabase";
-import type { CollectionItemsResponse } from "@/types/collection";
 
 type BookmarkType = BookmarkRow["item_type"];
 
@@ -31,8 +30,6 @@ function useBookmarkContext(): { itemId: string; itemType: BookmarkType } | null
 }
 
 function useItemMeta(itemId: string, itemType: BookmarkType) {
-  const queryClient = useQueryClient();
-
   const bookQuery = useQuery({
     ...bookDetailQueryOptions(itemType === "book" ? itemId : ""),
     enabled: itemType === "book",
@@ -44,6 +41,10 @@ function useItemMeta(itemId: string, itemType: BookmarkType) {
   const celebrityQuery = useQuery({
     ...celebrityDetailQueryOptions(itemType === "celebrity" ? itemId : ""),
     enabled: itemType === "celebrity",
+  });
+  const collectionQuery = useInfiniteQuery({
+    ...collectionItemsQueryOptions(itemType === "collection" ? itemId : ""),
+    enabled: itemType === "collection",
   });
 
   if (itemType === "book") {
@@ -70,10 +71,9 @@ function useItemMeta(itemId: string, itemType: BookmarkType) {
   }
 
   if (itemType === "collection") {
-    const queryKey = collectionItemsQueryOptions(itemId).queryKey;
-    const cachedData = queryClient.getQueryData<InfiniteData<CollectionItemsResponse>>(queryKey);
-    if (!cachedData?.pages?.[0]) return null;
-    const { meta, items } = cachedData.pages[0];
+    const firstPage = collectionQuery.data?.pages?.[0];
+    if (!firstPage) return null;
+    const { meta, items } = firstPage;
     const coverUrls = items
       .slice(0, 4)
       .map((item) => item.normalCoverUrl)

@@ -314,6 +314,7 @@ export function SearchPage() {
               data-1p-ignore
               data-lpignore="true"
               data-form-type="other"
+              autoFocus
               placeholder="搜索书名、电影、电视剧……"
               className="h-13 rounded-2xl border-white/60 bg-surface-elevated text-base font-medium shadow-warm-sm backdrop-blur-xl transition-[box-shadow,border-color] duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] has-[[data-slot=input-group-control]:focus-visible]:border-primary/25 has-[[data-slot=input-group-control]:focus-visible]:shadow-warm-md has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&_input]:pl-11 placeholder:text-muted-foreground/60"
               onFocus={() => setIsOpen(true)}
