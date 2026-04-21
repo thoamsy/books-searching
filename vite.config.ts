@@ -335,7 +335,22 @@ export default defineConfig({
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       workbox: {
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api\//, /^\/media\//]
+        navigateFallbackDenylist: [/^\/api\//, /^\/media\//],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url, sameOrigin }) =>
+              sameOrigin && url.pathname.startsWith("/media/douban/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "douban-images",
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 30
+              },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          }
+        ]
       },
       manifest: {
         name: "Opus",
