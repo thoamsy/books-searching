@@ -140,8 +140,7 @@ describe("douban-shared", () => {
   describe("proxifyImageUrl", () => {
     it("proxifies doubanio URLs", () => {
       const result = proxifyImageUrl("https://img3.doubanio.com/pic.jpg");
-      expect(result).toContain("/api/douban/image?url=");
-      expect(result).toContain(encodeURIComponent("https://img3.doubanio.com/pic.jpg"));
+      expect(result).toBe(`/media/douban/${encodeURIComponent("https://img3.doubanio.com/pic.jpg")}`);
     });
 
     it("returns non-doubanio URLs as-is after normalizing", () => {
@@ -201,7 +200,7 @@ export function proxifyImageUrl(url?: string) {
     return normalized;
   }
 
-  return `${API_BASE}/api/douban/image?url=${encodeURIComponent(normalized)}`;
+  return `${API_BASE}/media/douban/${encodeURIComponent(normalized)}`;
 }
 
 export function fetchProxy(path: string, accept = "text/html,application/xhtml+xml") {

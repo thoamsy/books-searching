@@ -51,9 +51,23 @@ export default defineConfig({
     {
       name: "douban-image-proxy",
       configureServer(server) {
-        server.middlewares.use("/api/douban/image", async (req, res) => {
+        server.middlewares.use(async (req, res, next) => {
           const requestUrl = new URL(req.url ?? "", "http://localhost");
-          const source = requestUrl.searchParams.get("url");
+          const mediaPrefix = "/media/douban/";
+          if (!requestUrl.pathname.startsWith(mediaPrefix)) {
+            return next();
+          }
+
+          const encodedSource = requestUrl.pathname.slice(mediaPrefix.length);
+          let source = "";
+
+          try {
+            source = decodeURIComponent(encodedSource);
+          } catch {
+            res.statusCode = 400;
+            res.end("Invalid image url");
+            return;
+          }
 
           if (!source) {
             res.statusCode = 400;

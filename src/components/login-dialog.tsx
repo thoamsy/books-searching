@@ -95,7 +95,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
 }
 
 function LoginForm({ onSuccess }: { onSuccess: () => void }) {
-  const { signInWithOAuth, signInWithEmail, signUpWithEmail } = useAuth();
+  const { enabled, signInWithOAuth, signInWithEmail, signUpWithEmail } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -125,6 +125,10 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <FieldGroup>
+      {!enabled && (
+        <FieldError>当前站点暂未配置登录服务，仍可继续使用本地收藏。</FieldError>
+      )}
+
       <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
         <Field>
           <FieldLabel htmlFor="login-email">邮箱</FieldLabel>
@@ -135,6 +139,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={!enabled}
             autoComplete="email"
           />
         </Field>
@@ -148,6 +153,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
+            disabled={!enabled}
             autoComplete={isSignUp ? "new-password" : "current-password"}
           />
           <FieldDescription className={cn(!isSignUp && "invisible")}>
@@ -163,7 +169,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           </p>
         )}
 
-        <Button type="submit" className="w-full" disabled={submitting}>
+        <Button type="submit" className="w-full" disabled={submitting || !enabled}>
           {submitting ? "处理中…" : isSignUp ? "注册" : "登录"}
         </Button>
       </form>
@@ -178,6 +184,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             setError(null);
             setSignUpSuccess(false);
           }}
+          disabled={!enabled}
         >
           {isSignUp ? "去登录" : "注册"}
         </button>
@@ -196,6 +203,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
                 variant="outline"
                 type="button"
                 className="w-full"
+                disabled={!enabled}
                 onClick={() => signInWithOAuth(provider.id)}
               >
                 <provider.icon data-icon="inline-start" />

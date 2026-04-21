@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { batchUpsertBookmarks } from "@/lib/supabase-api";
 import { readLocalBookmarks, clearLocalBookmarks } from "@/lib/bookmark-store";
 
 interface AuthState {
+  enabled: boolean;
   user: User | null;
   session: Session | null;
   loading: boolean;
@@ -19,12 +20,19 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
   const user = session?.user ?? null;
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
+    const client = supabase;
+
+    const { data: { subscription } } = client.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         setLoading(false);
@@ -36,9 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Restart the refresh loop every time the app comes back to foreground.
     function handleVisibilityChange() {
       if (document.visibilityState === "visible") {
-        supabase.auth.startAutoRefresh();
+        client.auth.startAutoRefresh();
       } else {
-        supabase.auth.stopAutoRefresh();
+        client.auth.stopAutoRefresh();
       }
     }
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -51,6 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Migrate localStorage bookmarks to cloud on login
   useEffect(() => {
+    if (!supabase) return;
+
     const userId = session?.user?.id;
     if (!userId) return;
 
@@ -66,6 +76,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [session?.user?.id, queryClient]);
 
   async function signInWithOAuth(provider: "google" | "github") {
+    if (!supabase) {
+      return;
+    }
+
     await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: window.location.origin },
@@ -73,21 +87,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signInWithEmail(email: string, password: string) {
+    if (!supabase) {
+      return { error: "当前站点未配置登录服务。" };
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error?.message ?? null };
   }
 
   async function signUpWithEmail(email: string, password: string) {
+    if (!supabase) {
+      return { error: "当前站点未配置登录服务。" };
+    }
+
     const { error } = await supabase.auth.signUp({ email, password });
     return { error: error?.message ?? null };
   }
 
   async function signOut() {
+    if (!supabase) {
+      return;
+    }
+
     await supabase.auth.signOut();
   }
 
   return (
-    <AuthContext value={{ user, session, loading, signInWithOAuth, signInWithEmail, signUpWithEmail, signOut }}>
+    <AuthContext value={{ enabled: isSupabaseConfigured, user, session, loading, signInWithOAuth, signInWithEmail, signUpWithEmail, signOut }}>
       {children}
     </AuthContext>
   );

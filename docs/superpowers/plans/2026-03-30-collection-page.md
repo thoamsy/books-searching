@@ -202,7 +202,7 @@ import type {
 
 function proxifyImageUrl(url?: string): string | undefined {
   if (!url) return undefined;
-  return `/api/douban/image?url=${encodeURIComponent(url)}`;
+  return `/media/douban/${encodeURIComponent(url)}`;
 }
 
 interface RexxarCollectionMeta {

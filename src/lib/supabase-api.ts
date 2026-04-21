@@ -1,7 +1,8 @@
-import { supabase } from "@/lib/supabase";
+import { requireSupabase } from "@/lib/supabase";
 import type { BookmarkRow } from "@/types/supabase";
 
 export async function getBookmarks(userId: string): Promise<BookmarkRow[]> {
+  const supabase = requireSupabase();
   const { data, error } = await supabase
     .from("bookmarks")
     .select("*")
@@ -17,6 +18,7 @@ export async function addBookmark(
     item_cover_urls?: string[] | null;
   }
 ) {
+  const supabase = requireSupabase();
   const { error } = await supabase.from("bookmarks").upsert(
     {
       user_id: userId,
@@ -37,6 +39,7 @@ export async function updateBookmarkCovers(
   itemId: string,
   coverUrls: string[]
 ) {
+  const supabase = requireSupabase();
   const { error } = await supabase
     .from("bookmarks")
     .update({ item_cover_urls: coverUrls })
@@ -47,6 +50,7 @@ export async function updateBookmarkCovers(
 }
 
 export async function removeBookmark(userId: string, itemId: string) {
+  const supabase = requireSupabase();
   const { error } = await supabase
     .from("bookmarks")
     .delete()
@@ -62,6 +66,7 @@ export async function batchUpsertBookmarks(
   }>
 ) {
   if (bookmarks.length === 0) return;
+  const supabase = requireSupabase();
   const rows = bookmarks.map((b) => ({
     user_id: userId,
     item_id: b.item_id,

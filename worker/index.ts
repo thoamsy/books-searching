@@ -81,10 +81,6 @@ function parseImageSource(source: string) {
 }
 
 function extractImageSource(url: URL) {
-  if (url.pathname === "/api/douban/image") {
-    return url.searchParams.get("url");
-  }
-
   const mediaPrefix = "/media/douban/";
   if (!url.pathname.startsWith(mediaPrefix)) {
     return null;

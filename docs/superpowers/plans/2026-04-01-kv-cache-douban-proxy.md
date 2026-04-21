@@ -360,4 +360,4 @@ git commit -m "chore: deploy with KV cache"
 | `/api/douban/movie/suggest` | Same as above |
 | `/api/douban/movie/search` | Same as above |
 | `/api/douban/collection/*` | Collection content changes frequently (rankings, new additions) |
-| `/api/douban/image` | Already cached 7 days at edge; binary blobs in KV would waste storage |
+| `/media/douban/:encoded-url` | Already cached 7 days at edge; binary blobs in KV would waste storage |

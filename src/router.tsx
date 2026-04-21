@@ -5,7 +5,7 @@ import { celebrityDetailQueryOptions, celebrityWorksQueryOptions } from "@/lib/c
 import { collectionItemsQueryOptions } from "@/lib/collection-queries";
 import { movieDetailQueryOptions } from "@/lib/movie-queries";
 import { queryClient } from "@/lib/query-client";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { TopBar } from "@/components/top-bar";
 
 function RootLayout() {
@@ -38,6 +38,11 @@ export const router = createBrowserRouter([
       {
         path: "/",
         loader() {
+          if (!isSupabaseConfigured || !supabase) {
+            void queryClient.ensureQueryData(bookmarksQueryOptions(null));
+            return null;
+          }
+
           void supabase.auth.getSession().then(({ data: { session } }) => {
             void queryClient.ensureQueryData(
               bookmarksQueryOptions(session?.user?.id ?? null)

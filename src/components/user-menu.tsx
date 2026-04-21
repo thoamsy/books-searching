@@ -13,10 +13,14 @@ import {
 import { LoginDialog } from "@/components/login-dialog";
 
 export function UserMenu() {
-  const { user, loading, signOut } = useAuth();
+  const { enabled, user, loading, signOut } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
 
   if (loading) return null;
+
+  if (!enabled && !user) {
+    return null;
+  }
 
   if (!user) {
     return (

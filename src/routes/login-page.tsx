@@ -32,7 +32,7 @@ const oauthProviders = [
 ].filter((p) => p.enabled);
 
 export function LoginPage() {
-  const { user, loading, signInWithOAuth, signInWithEmail, signUpWithEmail } = useAuth();
+  const { enabled, user, loading, signInWithOAuth, signInWithEmail, signUpWithEmail } = useAuth();
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
@@ -87,6 +87,10 @@ export function LoginPage() {
                 </p>
               </div>
 
+              {!enabled && (
+                <FieldError>当前站点暂未配置登录服务，仍可继续使用本地收藏。</FieldError>
+              )}
+
               <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
                 <Field>
                   <FieldLabel htmlFor="email">邮箱</FieldLabel>
@@ -97,6 +101,7 @@ export function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={!enabled}
                     autoComplete="email"
                   />
                 </Field>
@@ -110,6 +115,7 @@ export function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
+                    disabled={!enabled}
                     autoComplete={isSignUp ? "new-password" : "current-password"}
                   />
                   <FieldDescription className={cn(!isSignUp && "invisible")}>
@@ -125,7 +131,7 @@ export function LoginPage() {
                   </p>
                 )}
 
-                <Button type="submit" className="w-full" disabled={submitting}>
+                <Button type="submit" className="w-full" disabled={submitting || !enabled}>
                   {submitting ? "处理中…" : isSignUp ? "注册" : "登录"}
                 </Button>
               </form>
@@ -142,6 +148,7 @@ export function LoginPage() {
                     setError(null);
                     setSignUpSuccess(false);
                   }}
+                  disabled={!enabled}
                 >
                   {isSignUp ? "去登录" : "注册"}
                 </button>
@@ -160,6 +167,7 @@ export function LoginPage() {
                         variant="outline"
                         type="button"
                         className="w-full"
+                        disabled={!enabled}
                         onClick={() => signInWithOAuth(provider.id)}
                       >
                         <provider.icon data-icon="inline-start" />
