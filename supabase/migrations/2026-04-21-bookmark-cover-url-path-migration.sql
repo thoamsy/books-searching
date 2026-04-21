@@ -5,56 +5,81 @@
 -- - rows already using `/media/douban/` are unchanged
 -- - non-proxied URLs are unchanged
 --
+-- Tolerant of shadow-database runs (e.g. `supabase db push`):
+-- - wrapped in a DO block guarded by information_schema, so missing tables
+--   in a blank shadow DB do not abort the migration.
+--
 -- Applies to:
 -- - public.bookmarks.item_cover_url
 -- - public.bookmarks.item_cover_urls (collection thumbnails)
 
-begin;
-
-create or replace function public.normalize_bookmark_cover_url(value text)
-returns text
-language sql
-immutable
-as $$
-  select
-    case
-      when value is null then null
-      when value ~ '^https?://[^/]+/api/douban/image\?url=' then
-        regexp_replace(value, '^https?://[^/]+/api/douban/image\?url=', '/media/douban/')
-      when value like '/api/douban/image?url=%' then
-        replace(value, '/api/douban/image?url=', '/media/douban/')
-      else value
-    end
-$$;
-
-update public.bookmarks
-set item_cover_url = public.normalize_bookmark_cover_url(item_cover_url)
-where item_cover_url is not null
-  and (
-    item_cover_url ~ '^https?://[^/]+/api/douban/image\?url='
-    or item_cover_url like '/api/douban/image?url=%'
-  );
-
-with normalized_arrays as (
-  select
-    b.id,
-    array_agg(public.normalize_bookmark_cover_url(url) order by ordinality) as normalized_urls
-  from public.bookmarks b
-  cross join lateral unnest(coalesce(b.item_cover_urls, '{}'::text[])) with ordinality as item(url, ordinality)
-  where b.item_cover_urls is not null
-  group by b.id
-)
-update public.bookmarks b
-set item_cover_urls = n.normalized_urls
-from normalized_arrays n
-where b.id = n.id
-  and exists (
+do $migration$
+begin
+  if not exists (
     select 1
-    from unnest(n.normalized_urls) as normalized_url
-    where normalized_url ~ '^/media/douban/'
-  );
+    from information_schema.tables
+    where table_schema = 'public'
+      and table_name = 'bookmarks'
+  ) then
+    raise notice 'public.bookmarks not found; skipping cover URL normalization';
+    return;
+  end if;
 
-commit;
+  update public.bookmarks
+  set item_cover_url = regexp_replace(
+    item_cover_url,
+    '^https?://[^/]+/api/douban/image\?url=',
+    '/media/douban/'
+  )
+  where item_cover_url ~ '^https?://[^/]+/api/douban/image\?url=';
+
+  update public.bookmarks
+  set item_cover_url = replace(
+    item_cover_url,
+    '/api/douban/image?url=',
+    '/media/douban/'
+  )
+  where item_cover_url like '/api/douban/image?url=%';
+
+  with legacy_rows as (
+    select b.id
+    from public.bookmarks b
+    where b.item_cover_urls is not null
+      and exists (
+        select 1
+        from unnest(b.item_cover_urls) as url
+        where url ~ '^https?://[^/]+/api/douban/image\?url='
+           or url like '/api/douban/image?url=%'
+      )
+  ),
+  normalized_arrays as (
+    select
+      b.id,
+      array_agg(
+        case
+          when url ~ '^https?://[^/]+/api/douban/image\?url=' then
+            regexp_replace(
+              url,
+              '^https?://[^/]+/api/douban/image\?url=',
+              '/media/douban/'
+            )
+          when url like '/api/douban/image?url=%' then
+            replace(url, '/api/douban/image?url=', '/media/douban/')
+          else url
+        end
+        order by ordinality
+      ) as normalized_urls
+    from public.bookmarks b
+    join legacy_rows l on l.id = b.id
+    cross join lateral unnest(b.item_cover_urls) with ordinality as item(url, ordinality)
+    group by b.id
+  )
+  update public.bookmarks b
+  set item_cover_urls = n.normalized_urls
+  from normalized_arrays n
+  where b.id = n.id;
+end
+$migration$;
 
 -- Optional verification queries:
 --
