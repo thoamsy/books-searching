@@ -24,7 +24,7 @@ export function proxifyImageUrl(url?: string) {
     return normalized;
   }
 
-  return `${API_BASE}/api/douban/image?url=${encodeURIComponent(normalized)}`;
+  return `${API_BASE}/media/douban/${encodeURIComponent(normalized)}`;
 }
 
 export function fetchProxy(path: string, accept = "text/html,application/xhtml+xml") {

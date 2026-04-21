@@ -6,6 +6,9 @@ interface Env {
 const MAX_PAGINATION_COUNT = 50;
 const MAX_PAGINATION_START = 1000;
 const ALLOWED_IMAGE_HOST_SUFFIXES = ["doubanio.com"];
+const IMAGE_EDGE_TTL = 30 * 86400;
+const IMAGE_BROWSER_TTL = 30 * 86400;
+const IMAGE_CACHE_CONTROL = `public, max-age=${IMAGE_BROWSER_TTL}, immutable`;
 
 const DEFAULT_HEADERS = {
   "User-Agent":
@@ -75,6 +78,103 @@ function parseImageSource(source: string) {
   } catch {
     return null;
   }
+}
+
+function extractImageSource(url: URL) {
+  if (url.pathname === "/api/douban/image") {
+    return url.searchParams.get("url");
+  }
+
+  const mediaPrefix = "/media/douban/";
+  if (!url.pathname.startsWith(mediaPrefix)) {
+    return null;
+  }
+
+  const encodedSource = url.pathname.slice(mediaPrefix.length);
+  if (!encodedSource) {
+    return "";
+  }
+
+  try {
+    return decodeURIComponent(encodedSource);
+  } catch {
+    return "";
+  }
+}
+
+function imageCorsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
+}
+
+function matchesConditionalHeader(headerValue: string | null, candidate: string) {
+  if (!headerValue) {
+    return false;
+  }
+
+  return headerValue
+    .split(",")
+    .map((value) => value.trim())
+    .some((value) => value === "*" || value === candidate);
+}
+
+async function createWeakEtag(parts: string[]) {
+  const payload = new TextEncoder().encode(parts.join("|"));
+  const digest = await crypto.subtle.digest("SHA-256", payload);
+  const hash = Array.from(new Uint8Array(digest))
+    .slice(0, 12)
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
+
+  return `W/"${hash}"`;
+}
+
+async function proxyImageRequest(target: string, request: Request) {
+  const origin = resolveCorsOrigin(request);
+  const upstream = await fetch(target, {
+    headers: DEFAULT_HEADERS,
+    redirect: "follow",
+    cf: {
+      cacheEverything: true,
+      cacheTtl: IMAGE_EDGE_TTL
+    }
+  });
+
+  if (upstream.url?.includes("sec.douban.com")) {
+    return new Response(JSON.stringify({ error: "rate-limited" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", ...corsHeaders(origin) }
+    });
+  }
+
+  const headers = new Headers(upstream.headers);
+  Object.entries(imageCorsHeaders()).forEach(([key, value]) => headers.set(key, value));
+  headers.set("Cache-Control", IMAGE_CACHE_CONTROL);
+
+  const etag = headers.get("ETag") ?? await createWeakEtag([
+    target,
+    headers.get("Last-Modified") ?? "",
+    headers.get("Content-Length") ?? "",
+    headers.get("Content-Type") ?? ""
+  ]);
+  headers.set("ETag", etag);
+
+  if (matchesConditionalHeader(request.headers.get("If-None-Match"), etag)) {
+    headers.delete("Content-Length");
+    return new Response(null, {
+      status: 304,
+      headers
+    });
+  }
+
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers
+  });
 }
 
 const FRODO_HEADERS = {
@@ -291,18 +391,18 @@ export default {
         );
       }
 
-      if (url.pathname === "/api/douban/image") {
-        const source = url.searchParams.get("url");
-        if (!source) {
+      const imageSource = extractImageSource(url);
+      if (imageSource !== null) {
+        if (!imageSource) {
           return jsonError("missing-image-url", 400, origin);
         }
 
-        const imageUrl = parseImageSource(source);
+        const imageUrl = parseImageSource(imageSource);
         if (!imageUrl) {
           return jsonError("invalid-image-url", 400, origin);
         }
 
-        return proxyRequest(imageUrl, request, { cacheTtl: 604800, maxAge: 3600 });
+        return proxyImageRequest(imageUrl, request);
       }
 
       return env.ASSETS.fetch(request);
