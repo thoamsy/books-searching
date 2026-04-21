@@ -98,14 +98,6 @@ function extractImageSource(url: URL) {
   }
 }
 
-function imageCorsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
-  };
-}
-
 function matchesConditionalHeader(headerValue: string | null, candidate: string) {
   if (!headerValue) {
     return false;
@@ -147,7 +139,6 @@ async function proxyImageRequest(target: string, request: Request) {
   }
 
   const headers = new Headers(upstream.headers);
-  Object.entries(imageCorsHeaders()).forEach(([key, value]) => headers.set(key, value));
   headers.set("Cache-Control", IMAGE_CACHE_CONTROL);
 
   const etag = headers.get("ETag") ?? await createWeakEtag([
