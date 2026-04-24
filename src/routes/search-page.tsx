@@ -328,6 +328,7 @@ export function SearchPage() {
                 if (event.key === "Enter" && !isComposing) {
                   event.preventDefault();
                   event.stopPropagation();
+                  (event as typeof event & { preventBaseUIHandler?: () => void }).preventBaseUIHandler?.();
                   submitSearch(query);
                   return;
                 }
