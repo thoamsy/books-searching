@@ -1,52 +1,248 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ────────────────────────────────────────────────────────────────
+ * @theme inline — expose design tokens as Tailwind utilities.
+ * Raw values live in :root / .dark below so dark mode can flip them.
+ * ──────────────────────────────────────────────────────────────── */
 @theme inline {
+  /* Semantic surfaces */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-accent: var(--accent);
-  --color-destructive: var(--destructive);
-  --color-card: var(--card);
-  --color-card-foreground: var(--foreground);
-  --color-ring: var(--ring);
-  --color-input: var(--border);
-  --color-muted: var(--accent);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
-  --color-star: oklch(0.795 0.184 86.047);
-  --color-popover: var(--surface-elevated);
-  --color-popover-foreground: var(--foreground);
-  --color-skeleton: rgba(255, 255, 255, 0.5);
-  --shadow-warm-sm: var(--shadow-warm-sm);
-  --shadow-warm-md: var(--shadow-warm-md);
-  --shadow-warm-lg: var(--shadow-warm-lg);
-  --shadow-warm-dropdown: var(--shadow-warm-dropdown);
-  --font-display: "Georgia", "Songti SC", "SimSun", serif;
-  --font-sans: "Manrope", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+
+  /* shadcn semantic pairs */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-edge: var(--border-edge);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-skeleton: var(--skeleton);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-foreground: var(--inverse-foreground);
+
+  /* Brand accents (rarely used directly — prefer semantic tokens) */
+  --color-star: var(--amber-400);
+  --color-amber: var(--amber-400);
+  --color-leaf: var(--leaf-500);
+  --color-rose: var(--rose-500);
+  --color-indigo: var(--indigo-600);
+
+  /* Radii */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+
+  /* Shadows — warm in light, neutral in dark (values below) */
+  --shadow-warm-xs: var(--shadow-xs);
+  --shadow-warm-sm: var(--shadow-sm);
+  --shadow-warm-md: var(--shadow-md);
+  --shadow-warm-lg: var(--shadow-lg);
+  --shadow-warm-dropdown: var(--shadow-dropdown);
+
+  /* Fonts */
+  --font-sans: "Manrope", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", sans-serif;
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia,
+    serif;
+  --font-display: "Fraunces", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    "Courier New", monospace;
 }
 
+/* ────────────────────────────────────────────────────────────────
+ * :root — LIGHT mode
+ * Raw ramps first, then semantic tokens derived from them.
+ * ──────────────────────────────────────────────────────────────── */
 :root {
-  --background: #f6efe5;
-  --foreground: #35271f;
-  --primary: #c96f45;
-  --primary-foreground: #fff8f1;
-  --muted-foreground: #756357;
-  --border: rgba(137, 108, 80, 0.26);
-  --accent: rgba(224, 209, 189, 0.72);
-  --ring: #c96f45;
-  --destructive: #b5442e;
-  --card: rgba(255, 255, 255, 0.72);
+  color-scheme: light;
+
+  /* Paper — warm neutral bg ramp */
+  --paper-50: #faf5ec;
+  --paper-100: #f6efe5;
+  --paper-200: #ede3d1;
+  --paper-300: #ded1b9;
+  --paper-400: #c7b596;
+
+  /* Ink — text ramp (dark → light) */
+  --ink-900: #35271f;
+  --ink-700: #4a3f32;
+  --ink-500: #756357;
+  --ink-400: #8a7e6e;
+  --ink-300: #ada094;
+
+  /* Clay — primary warm brand */
+  --clay-50: #fbeee4;
+  --clay-100: #f6d9c3;
+  --clay-400: #d88a5e;
+  --clay-500: #c96f45;
+  --clay-600: #a05528;
+  --clay-700: #7d4321;
+
+  /* Indigo — cool ink accent */
+  --indigo-100: #d9dde8;
+  --indigo-400: #4a5a82;
+  --indigo-600: #2b3a5e;
+  --indigo-800: #1a2640;
+
+  /* Amber — favourites / ratings */
+  --amber-400: #e6b249;
+  --amber-500: #d19a2e;
+
+  /* Misc accents */
+  --leaf-500: #6f8a5a;
+  --rose-500: #b45a5a;
+
+  /* ── Semantic tokens ─────────────────────────────── */
+  --background: var(--paper-100);
+  --foreground: var(--ink-900);
+
   --surface: rgba(255, 255, 255, 0.6);
   --surface-elevated: rgba(255, 255, 255, 0.92);
-  --shadow-warm-sm: 0 10px 24px rgba(95, 66, 43, 0.1);
-  --shadow-warm-md: 0 18px 52px rgba(95, 66, 43, 0.1);
-  --shadow-warm-lg: 0 28px 70px rgba(95, 66, 43, 0.12);
-  --shadow-warm-dropdown: 0 20px 48px rgba(96, 65, 42, 0.12);
+
+  --card: rgba(255, 255, 255, 0.72);
+  --card-foreground: var(--ink-900);
+
+  --popover: var(--surface-elevated);
+  --popover-foreground: var(--ink-900);
+
+  --primary: var(--clay-500);
+  --primary-foreground: #fff8f1;
+
+  --secondary: var(--paper-200);
+  --secondary-foreground: var(--ink-900);
+
+  --muted: rgba(224, 209, 189, 0.72);
+  --muted-foreground: var(--ink-500);
+
+  --accent: rgba(224, 209, 189, 0.72);
+  --accent-foreground: var(--ink-900);
+
+  --destructive: #b5442e;
+  --destructive-foreground: #fff8f1;
+
+  --border: rgba(137, 108, 80, 0.26);
+  --border-strong: rgba(137, 108, 80, 0.42);
+  --border-edge: rgba(255, 255, 255, 0.7);
+  --input: var(--border);
+  --ring: var(--clay-500);
+
+  --skeleton: rgba(255, 255, 255, 0.55);
+
+  /* Inverse surface — high-contrast chips/tooltips. Always reads dark. */
+  --inverse-surface: #35271f;
+  --inverse-foreground: #faf5ec;
+
+  /* ── Shadows (warm tint on brown) ─────────────────── */
+  --shadow-xs: 0 1px 2px rgba(58, 44, 26, 0.06);
+  --shadow-sm: 0 10px 24px rgba(95, 66, 43, 0.1);
+  --shadow-md: 0 18px 52px rgba(95, 66, 43, 0.1);
+  --shadow-lg: 0 28px 70px rgba(95, 66, 43, 0.12);
+  --shadow-dropdown: 0 20px 48px rgba(96, 65, 42, 0.12);
 }
 
+/* ────────────────────────────────────────────────────────────────
+ * .dark — DARK mode overrides
+ * Flip both raw ramps and semantic tokens. Any component that
+ * references the paper or ink ramps inherits the flip automatically.
+ * ──────────────────────────────────────────────────────────────── */
+.dark {
+  color-scheme: dark;
+
+  --paper-50: #1c1915;
+  --paper-100: #161310;
+  --paper-200: #221d17;
+  --paper-300: #2e2720;
+  --paper-400: #3d3428;
+
+  --ink-900: #f0e7d6;
+  --ink-700: #d4c7b0;
+  --ink-500: #9e927d;
+  --ink-400: #7f7563;
+  --ink-300: #5f584b;
+
+  --clay-50: #3a251a;
+  --clay-100: #4a2d1f;
+  --clay-400: #e49a68;
+  --clay-500: #d6844f;
+  --clay-600: #e49a68;
+  --clay-700: #c06a3f;
+
+  --indigo-100: #2a3450;
+  --indigo-400: #6876a0;
+  --indigo-600: #8fa3d0;
+  --indigo-800: #b7bfd3;
+
+  --amber-400: #e6b249;
+  --amber-500: #d19a2e;
+
+  --background: #141210;
+  --foreground: var(--ink-900);
+
+  --surface: rgba(31, 26, 20, 0.94);
+  --surface-elevated: rgba(35, 29, 22, 0.96);
+
+  --card: rgba(31, 26, 20, 0.88);
+  --card-foreground: var(--ink-900);
+
+  --popover: var(--surface-elevated);
+  --popover-foreground: var(--ink-900);
+
+  --primary: var(--clay-500);
+  --primary-foreground: #141210;
+
+  --secondary: var(--paper-300);
+  --secondary-foreground: var(--ink-900);
+
+  --muted: var(--paper-200);
+  --muted-foreground: var(--ink-500);
+
+  --accent: var(--paper-300);
+  --accent-foreground: var(--ink-900);
+
+  --destructive: #e06b54;
+  --destructive-foreground: #141210;
+
+  --border: rgba(224, 209, 189, 0.14);
+  --border-strong: rgba(224, 209, 189, 0.24);
+  --border-edge: rgba(224, 209, 189, 0.06);
+  --input: var(--border);
+  --ring: var(--clay-500);
+
+  --skeleton: rgba(224, 209, 189, 0.07);
+
+  /* Inverse surface in dark — still reads dark, but lifted vs page bg. */
+  --inverse-surface: #2e2720;
+  --inverse-foreground: #f0e7d6;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.55);
+  --shadow-dropdown: 0 20px 48px rgba(0, 0, 0, 0.5);
+}
+
+/* ────────────────────────────────────────────────────────────────
+ * Base document
+ * ──────────────────────────────────────────────────────────────── */
 * {
   box-sizing: border-box;
 }
@@ -54,7 +250,7 @@
 html {
   height: 100%;
   min-height: 100%;
-  background-color: #f6efe5;
+  background-color: var(--background);
 }
 
 body {
@@ -62,10 +258,13 @@ body {
   height: 100%;
   min-height: 100dvh;
   min-width: 320px;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
   background-color: var(--background);
   color: var(--foreground);
-  font-family: "Manrope", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
@@ -110,4 +309,3 @@ a {
     scroll-behavior: auto !important;
   }
 }
-

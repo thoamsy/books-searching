@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LoginDialog } from "@/components/login-dialog";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function UserMenu() {
   const { enabled, user, loading, signOut } = useAuth();
@@ -62,7 +63,7 @@ export function UserMenu() {
           )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuGroup>
           <div className="px-2 py-1.5">
             <p className="truncate text-sm font-medium">{displayName}</p>
@@ -71,6 +72,11 @@ export function UserMenu() {
             )}
           </div>
         </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+          <span className="text-xs text-muted-foreground">主题</span>
+          <ThemeToggle />
+        </div>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={signOut}>
