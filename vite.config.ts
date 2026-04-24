@@ -332,7 +332,15 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
+      includeAssets: [
+        "favicon.svg",
+        "app-icon.svg",
+        "app-icon-dark.svg",
+        "apple-touch-icon.png",
+        "apple-touch-icon-dark.png",
+        "pwa-maskable-512x512.png",
+        "pwa-maskable-512x512-dark.png"
+      ],
       workbox: {
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//, /^\/media\//],
@@ -390,6 +398,12 @@ export default defineConfig({
             src: "pwa-512x512.png",
             sizes: "512x512",
             type: "image/png"
+          },
+          {
+            src: "pwa-maskable-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
           },
           {
             src: "favicon.svg",

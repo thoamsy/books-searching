@@ -1,79 +1,55 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Opus">
-  <style>
-    .bg { fill: #f2e7d7; }
-    .plate { fill: #ead7be; }
-    .clay { stroke: #c96f45; }
-    .clay-fill { fill: #dd9a73; }
-    .clay-soft { stroke: #dd9a73; }
-    .ink { stroke: #35271f; }
-    .line { stroke: #8f6f55; }
-
-    @media (prefers-color-scheme: dark) {
-      .bg { fill: #141210; }
-      .plate { fill: #241e18; }
-      .clay { stroke: #d6844f; }
-      .clay-fill { fill: #e6b249; }
-      .clay-soft { stroke: #e6b249; }
-      .ink { stroke: #f0e7d6; }
-      .line { stroke: #bfa98b; }
-    }
-  </style>
-
-  <rect class="bg" width="128" height="128" rx="30" />
+  <rect width="128" height="128" fill="#f2e7d7" />
   <path
-    class="plate"
     d="M31 64C31 37.5 44.2 21 64 21s33 16.5 33 43-13.2 43-33 43S31 90.5 31 64Z"
+    fill="#ead7be"
     opacity=".78"
   />
-
   <path
-    class="clay"
     d="M39.5 88.5C34.6 72.8 35.2 48.2 43 34.5 48.1 25.7 55 21.2 64 21.2s15.9 4.5 21 13.3c7.8 13.7 8.4 38.3 3.5 54"
     fill="none"
+    stroke="#c96f45"
     stroke-width="8"
     stroke-linecap="round"
   />
   <path
-    class="clay"
     d="M49 30.5C53.3 25.2 58.1 22.6 64 22.6s10.7 2.6 15 7.9"
     fill="none"
+    stroke="#c96f45"
     stroke-width="8"
     stroke-linecap="round"
   />
-
   <path
-    class="clay"
     d="M44.5 90.5C54.8 87.2 73.2 87.2 83.5 90.5"
     fill="none"
+    stroke="#c96f45"
     stroke-width="6"
     stroke-linecap="round"
   />
   <path
-    class="clay-soft"
     d="M47 101.5C57.2 105.1 70.8 105.1 81 101.5"
     fill="none"
+    stroke="#dd9a73"
     stroke-width="4"
     stroke-linecap="round"
     opacity=".86"
   />
-
   <path
-    class="ink"
     d="M52.5 33.5 49 86.5M60.5 27.5 59.5 86.5M67.5 27.5 68.5 86.5M75.5 33.5 79 86.5"
     fill="none"
+    stroke="#35271f"
     stroke-width="4"
     stroke-linecap="round"
     opacity=".86"
   />
   <path
-    class="line"
     d="M44 94.5C52.5 111 75.5 111 84 94.5"
     fill="none"
+    stroke="#8f6f55"
     stroke-width="3"
     stroke-linecap="round"
     opacity=".34"
   />
-
-  <circle class="clay-fill" cx="64" cy="18.5" r="3.5" opacity=".86" />
-  <circle class="clay-fill" cx="64" cy="111.5" r="3.5" opacity=".86" />
+  <circle cx="64" cy="18.5" r="3.5" fill="#dd9a73" opacity=".86" />
+  <circle cx="64" cy="111.5" r="3.5" fill="#dd9a73" opacity=".86" />
 </svg>
