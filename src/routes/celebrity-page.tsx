@@ -42,7 +42,7 @@ function CelebrityWorksContent({ celebrityId }: { celebrityId: string }) {
         {sorted.length > 1 ? (
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/50 px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-white/70 hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border-edge bg-skeleton px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-skeleton hover:text-foreground"
             onClick={() => {
               const nextIndex = (SORT_ORDER.indexOf(sortMode) + 1) % SORT_ORDER.length;
               setSortMode(SORT_ORDER[nextIndex]);
@@ -55,7 +55,7 @@ function CelebrityWorksContent({ celebrityId }: { celebrityId: string }) {
       </div>
 
       {sorted.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-white/70 bg-surface px-8 py-12 text-center">
+        <div className="mt-8 rounded-lg border border-border-edge bg-surface px-8 py-12 text-center">
           <p className="text-sm text-muted-foreground">未找到相关作品</p>
         </div>
       ) : (
@@ -96,10 +96,10 @@ function WorksGridSkeleton() {
       <div className="mt-6 grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-5 @5xl:grid-cols-5 @5xl:gap-6">
         {Array.from({ length: 10 }).map((_, i) => (
           <div key={i}>
-            <Skeleton className="aspect-[2/3] rounded-lg bg-white/50" />
+            <Skeleton className="aspect-[2/3] rounded-lg bg-skeleton" />
             <div className="mt-3 px-0.5">
-              <Skeleton className="h-4 w-3/4 rounded-full bg-white/50" />
-              <Skeleton className="mt-2 h-3 w-1/2 rounded-full bg-white/50" />
+              <Skeleton className="h-4 w-3/4 rounded-full bg-skeleton" />
+              <Skeleton className="mt-2 h-3 w-1/2 rounded-full bg-skeleton" />
             </div>
           </div>
         ))}
@@ -118,7 +118,7 @@ function ErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
     : "获取影人信息失败，请稍后重试。";
 
   return (
-    <div className="mt-8 rounded-lg border border-white/70 bg-surface px-8 py-12 text-center">
+    <div className="mt-8 rounded-lg border border-border-edge bg-surface px-8 py-12 text-center">
       <p className="text-sm text-destructive">{message}</p>
       <Button variant="outline" className="mt-4" onClick={reset}>
         重试
@@ -136,11 +136,11 @@ function CelebrityHero({ celebrityId }: { celebrityId: string }) {
 
   return (
     <div className="flex items-start gap-6 sm:items-center sm:gap-8">
-      <div className="size-20 shrink-0 overflow-hidden rounded-full border-2 border-white/80 shadow-warm-sm sm:size-28">
+      <div className="size-20 shrink-0 overflow-hidden rounded-full border-2 border-border-edge shadow-warm-sm sm:size-28">
         {celebrity.coverUrl ? (
           <img src={celebrity.coverUrl} alt={celebrity.name} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent">
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-surface to-accent">
             <span className="font-display text-2xl text-muted-foreground sm:text-3xl">
               {celebrity.name.charAt(0) || "?"}
             </span>
@@ -179,11 +179,11 @@ function CelebrityHero({ celebrityId }: { celebrityId: string }) {
 function HeroSkeleton() {
   return (
     <div className="flex items-start gap-6 sm:items-center sm:gap-8">
-      <Skeleton className="size-20 shrink-0 rounded-full bg-white/50 sm:size-28" />
+      <Skeleton className="size-20 shrink-0 rounded-full bg-skeleton sm:size-28" />
       <div className="min-w-0 flex flex-col gap-3">
-        <Skeleton className="h-4 w-16 rounded-full bg-white/50" />
-        <Skeleton className="h-10 w-48 rounded-full bg-white/50" />
-        <Skeleton className="h-4 w-32 rounded-full bg-white/50" />
+        <Skeleton className="h-4 w-16 rounded-full bg-skeleton" />
+        <Skeleton className="h-10 w-48 rounded-full bg-skeleton" />
+        <Skeleton className="h-4 w-32 rounded-full bg-skeleton" />
       </div>
     </div>
   );

@@ -23,7 +23,7 @@ export function BackButton() {
   return (
     <MotionConfig reducedMotion="user">
       <motion.div
-        className="inline-flex items-center overflow-hidden rounded-full border border-white/70 bg-white/65"
+        className="inline-flex items-center overflow-hidden rounded-full border border-border-edge bg-surface"
         layout
         transition={{ layout: springConfig }}
       >
@@ -48,7 +48,7 @@ export function BackButton() {
               transition={springConfig}
             >
               <motion.div
-                className="h-4 w-px bg-white/40"
+                className="h-4 w-px bg-border-strong"
                 initial={{ scaleY: 0 }}
                 animate={{ scaleY: 1 }}
                 exit={{ scaleY: 0 }}

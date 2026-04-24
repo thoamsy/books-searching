@@ -39,7 +39,7 @@ function BookDetailSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
             {fallbackBook?.coverUrl ? (
               <BookCover src={fallbackBook.coverUrl} title={fallbackBook?.title ?? "封面"} className="rounded-lg opacity-70 saturate-75" />
             ) : (
-              <Skeleton className="h-full w-full rounded-lg bg-white/70" />
+              <Skeleton className="h-full w-full rounded-lg bg-skeleton" />
             )}
           </div>
         </div>
@@ -269,7 +269,7 @@ function DetailDescriptionPanel({
   const description = bookDetail.description || fallbackBook?.description || "";
 
   return (
-    <article className="rounded-lg border border-white/70 bg-surface p-7 shadow-warm-md lg:sticky lg:top-4 lg:self-start">
+    <article className="rounded-lg border border-border-edge bg-surface p-7 shadow-warm-md lg:sticky lg:top-4 lg:self-start">
       <h2 className="font-display text-2xl font-medium sm:text-3xl">内容简介</h2>
       <ExpandableDescription
         text={description || "当前来源没有提供简介信息。你可以返回搜索查看更多相关版本。"}
@@ -289,7 +289,7 @@ function DetailSidebarPanel({
 
   return (
     <aside className="flex flex-col gap-6 lg:sticky lg:top-4 lg:self-start">
-      <section className="rounded-lg border border-white/70 bg-surface p-6">
+      <section className="rounded-lg border border-border-edge bg-surface p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">主题标签</h3>
         <div className="mt-4 flex flex-wrap gap-2">
           {subjects.length ? (
@@ -301,7 +301,7 @@ function DetailSidebarPanel({
       </section>
 
       {bookDetail.subjectCollections?.length ? (
-        <section className="rounded-lg border border-white/70 bg-surface p-6">
+        <section className="rounded-lg border border-border-edge bg-surface p-6">
           <h3 className="font-display text-xl font-medium sm:text-2xl">上榜</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {bookDetail.subjectCollections.map((c) => (
@@ -316,13 +316,13 @@ function DetailSidebarPanel({
       ) : null}
 
       {bookDetail.catalog ? (
-        <section className="rounded-lg border border-white/70 bg-surface p-6">
+        <section className="rounded-lg border border-border-edge bg-surface p-6">
           <h3 className="font-display text-xl font-medium sm:text-2xl">目录</h3>
           <ExpandableDescription text={bookDetail.catalog} />
         </section>
       ) : null}
 
-      <section className="rounded-lg border border-white/70 bg-surface p-6">
+      <section className="rounded-lg border border-border-edge bg-surface p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">书目信息</h3>
         <div className="mt-4 flex flex-col gap-4">
           <InfoBlock label="出版社" value={bookDetail.publisher ?? fallbackBook?.publisher ?? "暂无出版社信息"} />
@@ -443,8 +443,8 @@ function MobileHeroSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
         <h1 className="font-display text-3xl leading-tight sm:text-4xl">{fallbackBook.title}</h1>
       ) : (
         <div className="flex flex-col gap-2">
-          <Skeleton className="h-9 w-full max-w-[16rem] rounded-full bg-white/70" />
-          <Skeleton className="h-9 w-full max-w-[10rem] rounded-full bg-white/70" />
+          <Skeleton className="h-9 w-full max-w-[16rem] rounded-full bg-skeleton" />
+          <Skeleton className="h-9 w-full max-w-[10rem] rounded-full bg-skeleton" />
         </div>
       )}
       {fallbackBook?.authorName?.length ? (
@@ -452,11 +452,11 @@ function MobileHeroSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
           {fallbackBook.authorName.join(" / ")}
         </p>
       ) : (
-        <Skeleton className="mt-3 h-5 w-32 rounded-full bg-white/70" />
+        <Skeleton className="mt-3 h-5 w-32 rounded-full bg-skeleton" />
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        <Skeleton className="h-7 w-20 rounded-full bg-white/70" />
-        <Skeleton className="h-7 w-16 rounded-full bg-white/70" />
+        <Skeleton className="h-7 w-20 rounded-full bg-skeleton" />
+        <Skeleton className="h-7 w-16 rounded-full bg-skeleton" />
       </div>
     </div>
   );
@@ -474,7 +474,7 @@ function CoverPanelSkeleton({
       {coverUrl ? (
         <BookCover src={coverUrl} title={title ?? "封面"} className="rounded-lg opacity-70 saturate-75" />
       ) : (
-        <Skeleton className="h-full w-full rounded-lg bg-white/70" />
+        <Skeleton className="h-full w-full rounded-lg bg-skeleton" />
       )}
     </div>
   );
@@ -488,8 +488,8 @@ function HeroPanelSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
         <h1 className="mt-3 max-w-4xl font-display text-4xl font-medium leading-none sm:text-5xl lg:text-6xl">{fallbackBook.title}</h1>
       ) : (
         <div className="mt-4 flex flex-col gap-3">
-          <Skeleton className="h-14 w-full max-w-[34rem] rounded-full bg-white/70" />
-          <Skeleton className="h-14 w-full max-w-[22rem] rounded-full bg-white/70" />
+          <Skeleton className="h-14 w-full max-w-[34rem] rounded-full bg-skeleton" />
+          <Skeleton className="h-14 w-full max-w-[22rem] rounded-full bg-skeleton" />
         </div>
       )}
       {fallbackBook?.authorName?.length ? (
@@ -508,9 +508,9 @@ function HeroPanelSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
         </div>
       )}
       <div className="mt-3 flex flex-wrap gap-2.5">
-        <Skeleton className="h-7 w-20 rounded-full bg-white/70" />
-        <Skeleton className="h-7 w-16 rounded-full bg-white/70" />
-        <Skeleton className="h-7 w-14 rounded-full bg-white/70" />
+        <Skeleton className="h-7 w-20 rounded-full bg-skeleton" />
+        <Skeleton className="h-7 w-16 rounded-full bg-skeleton" />
+        <Skeleton className="h-7 w-14 rounded-full bg-skeleton" />
       </div>
     </div>
   );
@@ -518,13 +518,13 @@ function HeroPanelSkeleton({ fallbackBook }: { fallbackBook?: SearchBook }) {
 
 function DescriptionPanelSkeleton() {
   return (
-    <article className="rounded-lg border border-white/70 bg-surface p-7 shadow-warm-md">
+    <article className="rounded-lg border border-border-edge bg-surface p-7 shadow-warm-md">
       <h2 className="font-display text-2xl font-medium sm:text-3xl">内容简介</h2>
       <div className="mt-6 flex flex-col gap-4">
         {Array.from({ length: 8 }).map((_, index) => (
           <Skeleton
             key={index}
-            className={cn("h-6 rounded-full bg-white/70", index === 7 ? "w-2/3" : "w-full")}
+            className={cn("h-6 rounded-full bg-skeleton", index === 7 ? "w-2/3" : "w-full")}
           />
         ))}
       </div>
@@ -535,25 +535,25 @@ function DescriptionPanelSkeleton() {
 function SidebarPanelSkeleton() {
   return (
     <aside className="flex flex-col gap-6">
-      <section className="rounded-lg border border-white/70 bg-surface p-6">
+      <section className="rounded-lg border border-border-edge bg-surface p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">主题标签</h3>
         <div className="mt-4 flex flex-wrap gap-2">
           {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-8 w-20 rounded-full bg-white/70" />
+            <Skeleton key={index} className="h-8 w-20 rounded-full bg-skeleton" />
           ))}
         </div>
       </section>
 
-      <section className="rounded-lg border border-white/70 bg-surface p-6">
+      <section className="rounded-lg border border-border-edge bg-surface p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">书目信息</h3>
         <div className="mt-4 flex flex-col gap-5">
           {Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="flex flex-col gap-2">
-              <Skeleton className="h-5 w-24 rounded-full bg-white/70" />
-              <Skeleton className="h-5 w-full rounded-full bg-white/70" />
+              <Skeleton className="h-5 w-24 rounded-full bg-skeleton" />
+              <Skeleton className="h-5 w-full rounded-full bg-skeleton" />
             </div>
           ))}
-          <Skeleton className="h-5 w-32 rounded-full bg-white/70" />
+          <Skeleton className="h-5 w-32 rounded-full bg-skeleton" />
         </div>
       </section>
     </aside>

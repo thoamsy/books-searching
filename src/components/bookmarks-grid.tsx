@@ -31,7 +31,7 @@ function BookmarkCard({ item }: { item: BookmarkItem }) {
     <DepthLink to={bookmarkUrl(item)} className="group">
       <TiltCard
         variant={variant}
-        className="overflow-hidden rounded-lg border border-white/60 bg-white/40 shadow-warm-sm transition-shadow group-hover:shadow-warm-md"
+        className="overflow-hidden rounded-lg border border-border-edge bg-surface/70 shadow-warm-sm transition-shadow group-hover:shadow-warm-md"
         style={{ aspectRatio: aspect }}
       >
         {item.item_cover_url ? (
@@ -41,7 +41,7 @@ function BookmarkCard({ item }: { item: BookmarkItem }) {
             <img src={item.item_cover_url} alt={item.item_title} className="h-full w-full rounded-lg object-cover" loading="lazy" />
           )
         ) : (
-          <div className="flex h-full w-full items-center justify-center rounded-lg bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(231,211,185,0.94))]">
+          <div className="flex h-full w-full items-center justify-center rounded-lg bg-gradient-to-b from-surface to-muted">
             <Film className="size-10 text-muted-foreground" />
           </div>
         )}
@@ -58,7 +58,7 @@ const entrance = { duration: 0.4, ease: [0, 0, 0.58, 1] as const };
 export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[]; animate?: boolean }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-white/70 bg-surface px-8 py-12 text-center">
+      <div className="rounded-lg border border-border-edge bg-surface px-8 py-12 text-center">
         <p className="text-sm text-muted-foreground">
           还没有收藏，浏览作品时点击星标即可收藏
         </p>
@@ -104,11 +104,11 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
           <div className="flex gap-2 overflow-x-auto pb-2 sm:hidden">
             {persons.map((item) => (
               <DepthLink key={item.item_id} to={bookmarkUrl(item)} className="group flex shrink-0 flex-col items-center gap-1.5">
-                <div className="size-16 overflow-hidden rounded-full border-2 border-white/80 shadow-warm-sm transition-shadow group-hover:shadow-warm-md">
+                <div className="size-16 overflow-hidden rounded-full border-2 border-border-edge shadow-warm-sm transition-shadow group-hover:shadow-warm-md">
                   {item.item_cover_url ? (
                     <img src={item.item_cover_url} alt={item.item_title} className="h-full w-full object-cover" loading="lazy" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent">
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-surface to-accent">
                       <User className="size-6 text-muted-foreground" />
                     </div>
                   )}
@@ -134,7 +134,7 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
                           {item.item_cover_url ? (
                             <img src={item.item_cover_url} alt={item.item_title} className="h-full w-full object-cover" />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent text-xs font-medium text-muted-foreground">
+                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-surface to-accent text-xs font-medium text-muted-foreground">
                               {item.item_title.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
                             </div>
                           )}

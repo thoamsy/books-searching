@@ -14,7 +14,7 @@ export function CollectionCover({
   return (
     <div
       className={cn(
-        "aspect-[4/5] overflow-hidden rounded-lg border border-white/60 bg-accent shadow-warm-sm",
+        "aspect-[4/5] overflow-hidden rounded-lg border border-border-edge bg-accent shadow-warm-sm",
         className
       )}
     >

@@ -56,10 +56,10 @@ function BooksGridSkeleton() {
       <div className="mt-6 grid grid-cols-2 gap-4 @xl:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-5 @5xl:grid-cols-5 @5xl:gap-6">
         {Array.from({ length: 10 }).map((_, i) => (
           <div key={i}>
-            <Skeleton className="aspect-[3/4] rounded-lg bg-white/50" />
+            <Skeleton className="aspect-[3/4] rounded-lg bg-skeleton" />
             <div className="mt-3 px-0.5">
-              <Skeleton className="h-4 w-3/4 rounded-full bg-white/50" />
-              <Skeleton className="mt-2 h-3 w-1/2 rounded-full bg-white/50" />
+              <Skeleton className="h-4 w-3/4 rounded-full bg-skeleton" />
+              <Skeleton className="mt-2 h-3 w-1/2 rounded-full bg-skeleton" />
             </div>
           </div>
         ))}
@@ -78,7 +78,7 @@ function BooksErrorFallback({ error, reset }: { error: Error; reset: () => void 
     : "获取作品列表失败，请稍后再试。";
 
   return (
-    <div className="mt-8 rounded-lg border border-white/70 bg-surface px-8 py-12 text-center">
+    <div className="mt-8 rounded-lg border border-border-edge bg-surface px-8 py-12 text-center">
       <p className="text-sm text-destructive">{message}</p>
       <Button variant="outline" className="mt-4" onClick={reset}>
         重试
@@ -108,7 +108,7 @@ function AuthorBooksContent({ authorName }: { authorName: string }) {
         {books.length > 1 ? (
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/50 px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-white/70 hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border-edge bg-skeleton px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-skeleton hover:text-foreground"
             onClick={() => {
               const nextIndex = (SORT_ORDER.indexOf(sortMode) + 1) % SORT_ORDER.length;
               const next = SORT_ORDER[nextIndex];
@@ -123,7 +123,7 @@ function AuthorBooksContent({ authorName }: { authorName: string }) {
       </div>
 
       {books.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-white/70 bg-surface px-8 py-12 text-center">
+        <div className="mt-8 rounded-lg border border-border-edge bg-surface px-8 py-12 text-center">
           <p className="text-sm text-muted-foreground">未找到相关作品</p>
         </div>
       ) : (
@@ -172,7 +172,7 @@ export function AuthorPage() {
       {/* Author hero */}
       <section className="animate-fade-up mx-auto mt-8 w-full max-w-[1240px] px-5 [animation-delay:80ms] sm:px-8 lg:px-10">
         <div className="flex items-start gap-6 sm:items-center sm:gap-8">
-          <div className="size-20 shrink-0 overflow-hidden rounded-full border-2 border-white/80 shadow-warm-sm sm:size-28">
+          <div className="size-20 shrink-0 overflow-hidden rounded-full border-2 border-border-edge shadow-warm-sm sm:size-28">
             {photoUrl ? (
               <img
                 src={photoUrl}
@@ -180,7 +180,7 @@ export function AuthorPage() {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/80 to-accent">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-surface to-accent">
                 <span className="font-display text-2xl text-muted-foreground sm:text-3xl">
                   {decodedName.replace(/[\[\]（）()【】\s]/g, "").charAt(0) || "?"}
                 </span>

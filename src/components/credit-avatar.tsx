@@ -32,11 +32,11 @@ export function CreditAvatar({
     >
       <div
         className={cn(
-          "relative overflow-hidden rounded-full bg-white/60 shadow-warm-sm transition-all duration-300 ease-out group-hover/avatar:-translate-y-0.5 group-hover/avatar:shadow-warm-md",
+          "relative overflow-hidden rounded-full bg-surface shadow-warm-sm transition-all duration-300 ease-out group-hover/avatar:-translate-y-0.5 group-hover/avatar:shadow-warm-md",
           size === "md" ? "size-14 sm:size-16" : "size-12",
           variant === "director"
             ? "ring-2 ring-primary/40 group-hover/avatar:ring-primary/70"
-            : "ring-2 ring-white/80 group-hover/avatar:ring-white",
+            : "ring-2 ring-border-edge group-hover/avatar:ring-border-strong",
         )}
       >
         {avatarUrl ? (
@@ -47,7 +47,7 @@ export function CreditAvatar({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-white/90 via-white/70 to-accent text-muted-foreground">
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface via-muted to-accent text-muted-foreground">
             <span
               className={cn(
                 "font-display",

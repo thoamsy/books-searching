@@ -40,7 +40,7 @@ function MovieDetailSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie })
             {fallbackMovie?.coverUrl ? (
               <BookCover src={fallbackMovie.coverUrl} title={fallbackMovie?.title ?? "海报"} className="rounded-lg opacity-70 saturate-75" />
             ) : (
-              <Skeleton className="h-full w-full rounded-lg bg-white/70" />
+              <Skeleton className="h-full w-full rounded-lg bg-skeleton" />
             )}
           </div>
         </div>
@@ -306,7 +306,7 @@ function DetailDescriptionPanel({ movieDetail }: { movieDetail: MovieDetail }) {
   const description = movieDetail.description || "";
 
   return (
-    <article className="rounded-lg border border-white/70 bg-surface p-7 shadow-warm-md">
+    <article className="rounded-lg border border-border-edge bg-surface p-7 shadow-warm-md">
       <h2 className="font-display text-2xl font-medium sm:text-3xl">剧情简介</h2>
       <ExpandableDescription
         text={description || "当前来源没有提供简介信息。你可以在豆瓣查看更多详情。"}
@@ -328,7 +328,7 @@ function DetailSidebarPanel({
   return (
     <aside className="flex flex-col gap-6">
       {genres.length > 0 && (
-        <section className="rounded-lg border border-white/70 bg-surface p-6">
+        <section className="rounded-lg border border-border-edge bg-surface p-6">
           <h3 className="font-display text-xl font-medium sm:text-2xl">类型</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {genres.map((genre) => <Badge key={genre}>{genre}</Badge>)}
@@ -337,7 +337,7 @@ function DetailSidebarPanel({
       )}
 
       {subjects.length > 0 && (
-        <section className="rounded-lg border border-white/70 bg-surface p-6">
+        <section className="rounded-lg border border-border-edge bg-surface p-6">
           <h3 className="font-display text-xl font-medium sm:text-2xl">标签</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {subjects.map((subject) => <Badge key={subject}>{subject}</Badge>)}
@@ -345,7 +345,7 @@ function DetailSidebarPanel({
         </section>
       )}
 
-      <section className="rounded-lg border border-white/70 bg-surface p-6">
+      <section className="rounded-lg border border-border-edge bg-surface p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">影片信息</h3>
         <div className="mt-4 flex flex-col gap-4">
           {movieDetail.country?.length ? (
@@ -381,7 +381,7 @@ function DetailSidebarPanel({
       </section>
 
       {movieDetail.subjectCollections?.length ? (
-        <section className="rounded-lg border border-white/70 bg-surface p-6">
+        <section className="rounded-lg border border-border-edge bg-surface p-6">
           <h3 className="font-display text-xl font-medium sm:text-2xl">上榜</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {movieDetail.subjectCollections.map((c) => (
@@ -517,14 +517,14 @@ function MobileHeroSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) 
         <h1 className="font-display text-3xl leading-tight sm:text-4xl">{fallbackMovie.title}</h1>
       ) : (
         <div className="flex flex-col gap-2">
-          <Skeleton className="h-9 w-full max-w-[16rem] rounded-full bg-white/70" />
-          <Skeleton className="h-9 w-full max-w-[10rem] rounded-full bg-white/70" />
+          <Skeleton className="h-9 w-full max-w-[16rem] rounded-full bg-skeleton" />
+          <Skeleton className="h-9 w-full max-w-[10rem] rounded-full bg-skeleton" />
         </div>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        <Skeleton className="h-7 w-20 rounded-full bg-white/70" />
-        <Skeleton className="h-7 w-16 rounded-full bg-white/70" />
-        <Skeleton className="h-7 w-14 rounded-full bg-white/70" />
+        <Skeleton className="h-7 w-20 rounded-full bg-skeleton" />
+        <Skeleton className="h-7 w-16 rounded-full bg-skeleton" />
+        <Skeleton className="h-7 w-14 rounded-full bg-skeleton" />
       </div>
     </div>
   );
@@ -538,8 +538,8 @@ function MobileCreditsSkeleton() {
         <div className="flex gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex shrink-0 flex-col items-center gap-1.5 w-[60px]">
-              <Skeleton className="size-12 rounded-full bg-white/70" />
-              <Skeleton className="h-3 w-12 rounded-full bg-white/70" />
+              <Skeleton className="size-12 rounded-full bg-skeleton" />
+              <Skeleton className="h-3 w-12 rounded-full bg-skeleton" />
             </div>
           ))}
         </div>
@@ -560,7 +560,7 @@ function CoverPanelSkeleton({
       {coverUrl ? (
         <BookCover src={coverUrl} title={title ?? "海报"} className="rounded-lg opacity-70 saturate-75" />
       ) : (
-        <Skeleton className="h-full w-full rounded-lg bg-white/70" />
+        <Skeleton className="h-full w-full rounded-lg bg-skeleton" />
       )}
     </div>
   );
@@ -574,34 +574,34 @@ function HeroPanelSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) {
         <h1 className="mt-3 max-w-4xl font-display text-4xl font-medium leading-none sm:text-5xl lg:text-6xl">{fallbackMovie.title}</h1>
       ) : (
         <div className="mt-4 flex flex-col gap-3">
-          <Skeleton className="h-14 w-full max-w-[34rem] rounded-full bg-white/70" />
-          <Skeleton className="h-14 w-full max-w-[22rem] rounded-full bg-white/70" />
+          <Skeleton className="h-14 w-full max-w-[34rem] rounded-full bg-skeleton" />
+          <Skeleton className="h-14 w-full max-w-[22rem] rounded-full bg-skeleton" />
         </div>
       )}
       <div className="mt-5 flex flex-wrap gap-2.5">
-        <Skeleton className="h-7 w-20 rounded-full bg-white/70" />
-        <Skeleton className="h-7 w-16 rounded-full bg-white/70" />
-        <Skeleton className="h-7 w-14 rounded-full bg-white/70" />
+        <Skeleton className="h-7 w-20 rounded-full bg-skeleton" />
+        <Skeleton className="h-7 w-16 rounded-full bg-skeleton" />
+        <Skeleton className="h-7 w-14 rounded-full bg-skeleton" />
       </div>
       <div className="mt-8 flex flex-col gap-5">
         <div>
-          <Skeleton className="h-3 w-10 rounded-full bg-white/70" />
+          <Skeleton className="h-3 w-10 rounded-full bg-skeleton" />
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-4 sm:gap-x-4">
             {Array.from({ length: 1 }).map((_, i) => (
               <div key={i} className="flex shrink-0 flex-col items-center gap-1.5 w-[68px] sm:w-[76px]">
-                <Skeleton className="size-14 sm:size-16 rounded-full bg-white/70" />
-                <Skeleton className="h-3 w-14 rounded-full bg-white/70" />
+                <Skeleton className="size-14 sm:size-16 rounded-full bg-skeleton" />
+                <Skeleton className="h-3 w-14 rounded-full bg-skeleton" />
               </div>
             ))}
           </div>
         </div>
         <div>
-          <Skeleton className="h-3 w-10 rounded-full bg-white/70" />
+          <Skeleton className="h-3 w-10 rounded-full bg-skeleton" />
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-4 sm:gap-x-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex shrink-0 flex-col items-center gap-1.5 w-[68px] sm:w-[76px]">
-                <Skeleton className="size-14 sm:size-16 rounded-full bg-white/70" />
-                <Skeleton className="h-3 w-14 rounded-full bg-white/70" />
+                <Skeleton className="size-14 sm:size-16 rounded-full bg-skeleton" />
+                <Skeleton className="h-3 w-14 rounded-full bg-skeleton" />
               </div>
             ))}
           </div>
@@ -613,13 +613,13 @@ function HeroPanelSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie }) {
 
 function DescriptionPanelSkeleton() {
   return (
-    <article className="rounded-lg border border-white/70 bg-surface p-7 shadow-warm-md">
+    <article className="rounded-lg border border-border-edge bg-surface p-7 shadow-warm-md">
       <h2 className="font-display text-2xl font-medium sm:text-3xl">剧情简介</h2>
       <div className="mt-6 flex flex-col gap-4">
         {Array.from({ length: 8 }).map((_, index) => (
           <Skeleton
             key={index}
-            className={cn("h-6 rounded-full bg-white/70", index === 7 ? "w-2/3" : "w-full")}
+            className={cn("h-6 rounded-full bg-skeleton", index === 7 ? "w-2/3" : "w-full")}
           />
         ))}
       </div>
@@ -630,25 +630,25 @@ function DescriptionPanelSkeleton() {
 function SidebarPanelSkeleton() {
   return (
     <aside className="flex flex-col gap-6">
-      <section className="rounded-lg border border-white/70 bg-surface p-6">
+      <section className="rounded-lg border border-border-edge bg-surface p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">类型</h3>
         <div className="mt-4 flex flex-wrap gap-2">
           {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-8 w-16 rounded-full bg-white/70" />
+            <Skeleton key={index} className="h-8 w-16 rounded-full bg-skeleton" />
           ))}
         </div>
       </section>
 
-      <section className="rounded-lg border border-white/70 bg-surface p-6">
+      <section className="rounded-lg border border-border-edge bg-surface p-6">
         <h3 className="font-display text-xl font-medium sm:text-2xl">影片信息</h3>
         <div className="mt-4 flex flex-col gap-5">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="flex flex-col gap-2">
-              <Skeleton className="h-5 w-24 rounded-full bg-white/70" />
-              <Skeleton className="h-5 w-full rounded-full bg-white/70" />
+              <Skeleton className="h-5 w-24 rounded-full bg-skeleton" />
+              <Skeleton className="h-5 w-full rounded-full bg-skeleton" />
             </div>
           ))}
-          <Skeleton className="h-5 w-32 rounded-full bg-white/70" />
+          <Skeleton className="h-5 w-32 rounded-full bg-skeleton" />
         </div>
       </section>
     </aside>
