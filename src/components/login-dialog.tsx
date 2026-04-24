@@ -27,6 +27,7 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { FieldLabel } from "@/components/ui/field";
+import { OpusWordmark } from "@/components/opus-wordmark";
 
 const oauthProviders = [
   {
@@ -58,8 +59,9 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
           <DialogHeader>
             <div className="flex flex-col items-center gap-2 text-center">
               <img src="/favicon.svg" alt="" className="size-8" />
-              <DialogTitle className="text-2xl font-bold">
-                Welcome to Opus
+              <DialogTitle className="flex items-baseline justify-center gap-2 text-2xl font-medium">
+                <span className="text-muted-foreground">Welcome to</span>
+                <OpusWordmark className="text-[1.6rem]" />
               </DialogTitle>
               <DialogDescription>
                 登录以同步搜索历史和收藏
@@ -78,8 +80,9 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
         <DrawerHeader>
           <div className="flex flex-col items-center gap-2">
             <img src="/favicon.svg" alt="" className="size-8" />
-            <DrawerTitle className="text-2xl font-bold">
-              Welcome to Opus
+            <DrawerTitle className="flex items-baseline justify-center gap-2 text-2xl font-medium">
+              <span className="text-muted-foreground">Welcome to</span>
+              <OpusWordmark className="text-[1.6rem]" />
             </DrawerTitle>
             <DrawerDescription>
               登录以同步搜索历史和收藏

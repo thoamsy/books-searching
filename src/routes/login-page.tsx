@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { OpusWordmark } from "@/components/opus-wordmark";
 import {
   Field,
   FieldDescription,
@@ -81,7 +82,10 @@ export function LoginPage() {
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
                 <img src="/favicon.svg" alt="" className="size-8" />
-                <h1 className="text-2xl font-bold">Welcome to Opus</h1>
+                <h1 className="flex items-baseline gap-2 text-2xl font-medium">
+                  <span className="text-muted-foreground">Welcome to</span>
+                  <OpusWordmark className="text-[1.6rem]" />
+                </h1>
                 <p className="text-balance text-muted-foreground">
                   登录以同步搜索历史和收藏
                 </p>

@@ -8,6 +8,7 @@ import { BookmarksGrid } from "@/components/bookmarks-grid";
 import { BookCover } from "@/components/book-cover";
 import { CollectionCover } from "@/components/collection-cover";
 import { DepthLink } from "@/components/depth-link";
+import { OpusWordmark } from "@/components/opus-wordmark";
 import {
   Combobox,
   ComboboxContent,
@@ -277,9 +278,9 @@ export function SearchPage() {
           transition={entrance}
           className={cn(hasBookmarks ? "mb-10" : "mb-8")}
         >
-          <p className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-primary/70">
-            <img src="/favicon.svg" alt="" className="size-5" />
-            <span className="font-display">Opus</span>
+          <p className="flex items-center gap-2.5">
+            <img src="/favicon.svg" alt="" className="size-6" />
+            <OpusWordmark className="text-xl" />
           </p>
           <h1 className="mt-3 font-display text-4xl font-medium leading-tight sm:text-5xl">
             找到你的<span className="text-primary">下一部作品</span>
