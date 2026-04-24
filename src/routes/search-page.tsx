@@ -257,12 +257,12 @@ export function SearchPage() {
   const entrance = { duration: 0.4, ease: [0, 0, 0.58, 1] as const };
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main className="flex min-h-0 flex-1 flex-col">
       <div className={cn(
         "mx-auto w-full px-5 sm:px-8",
         hasBookmarks
           ? "max-w-5xl lg:grid lg:grid-cols-[1fr_240px] lg:gap-x-12"
-          : "my-auto max-w-3xl"
+          : "flex flex-1 items-center max-w-3xl py-10 sm:py-12"
       )}>
       <motion.div
         layout="position"

@@ -13,7 +13,7 @@ function RootLayout() {
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
       <TopBar />
       <Outlet />
-      <footer className="-mt-10 pb-3 text-center text-[10px] text-muted-foreground/30">
+      <footer className="shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center text-[10px] text-muted-foreground/30">
         <a href="https://github.com/thoamsy" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-muted-foreground/60">
           @thoamsy
         </a>
