@@ -45,11 +45,11 @@
   --color-indigo: var(--indigo-600);
 
   /* Radii */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --radius-xl: 28px;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 
   /* Shadows — warm in light, neutral in dark (values below) */
   --shadow-warm-xs: var(--shadow-xs);
