@@ -12,6 +12,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { DepthLink } from "@/components/depth-link";
 import { BookCover } from "@/components/book-cover";
 import { CreditAvatar } from "@/components/credit-avatar";
+import { DetailActionPill } from "@/components/detail-action-pill";
 import { DetailErrorFallback } from "@/components/detail-error-fallback";
 import { ExpandableDescription, InfoBlock } from "@/components/expandable-description";
 import { QueryErrorBoundary } from "@/components/query-error-boundary";
@@ -79,6 +80,9 @@ function MovieDetailSkeleton({ fallbackMovie }: { fallbackMovie?: SearchMovie })
 
 function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; fallbackMovie?: SearchMovie }) {
   const { data: movieDetail } = useSuspenseQuery(movieDetailQueryOptions(subjectId));
+  const mobileTitle = movieDetail?.title ?? fallbackMovie?.title ?? "未知影片";
+  const mobileCoverUrl = movieDetail?.coverUrl ?? fallbackMovie?.coverUrl ?? null;
+  const mobileMediaKind = movieDetail.type === "tv" ? "tv" : "movie";
 
   return (
     <section className="mx-auto mt-8 w-full max-w-[1240px] px-5 sm:px-8 lg:px-10">
@@ -97,12 +101,20 @@ function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; f
           <MobileHeroPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
         </div>
       </div>
+      <DetailActionPill
+        itemId={subjectId}
+        itemType="movie"
+        mediaKind={mobileMediaKind}
+        title={mobileTitle}
+        coverUrl={mobileCoverUrl}
+        className="lg:hidden"
+      />
 
       {/* Desktop: original two-column layout */}
       <div className="hidden lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">
         <DetailCoverPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
         <div className="flex flex-col gap-10">
-          <DetailHeroPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
+          <DetailHeroPanel subjectId={subjectId} movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
           <div className="grid gap-8 lg:grid-cols-[1.45fr_0.95fr]">
             <DetailDescriptionPanel movieDetail={movieDetail} />
             <DetailSidebarPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
@@ -180,9 +192,11 @@ function DetailCoverPanel({
 }
 
 function DetailHeroPanel({
+  subjectId,
   movieDetail,
   fallbackMovie
 }: {
+  subjectId: string;
   movieDetail: MovieDetail;
   fallbackMovie?: SearchMovie;
 }) {
@@ -256,6 +270,14 @@ function DetailHeroPanel({
           )}
         </div>
       ) : null}
+
+      <DetailActionPill
+        itemId={subjectId}
+        itemType="movie"
+        mediaKind={isTV ? "tv" : "movie"}
+        title={movieDetail?.title ?? fallbackMovie?.title ?? "未知影片"}
+        coverUrl={movieDetail?.coverUrl ?? fallbackMovie?.coverUrl ?? null}
+      />
 
       {directors.length > 0 || cast.length > 0 ? (
         <div className="mt-8 flex flex-col gap-5">

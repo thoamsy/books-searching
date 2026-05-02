@@ -6,6 +6,7 @@ import { collectionItemsQueryOptions } from "@/lib/collection-queries";
 import { movieDetailQueryOptions } from "@/lib/movie-queries";
 import { queryClient } from "@/lib/query-client";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { watchedItemsQueryOptions } from "@/lib/watched-queries";
 import { TopBar } from "@/components/top-bar";
 
 function RootLayout() {
@@ -31,6 +32,16 @@ function DetailLayout() {
   );
 }
 
+async function ensureWatchedItemsForSession() {
+  if (!isSupabaseConfigured || !supabase) {
+    await queryClient.ensureQueryData(watchedItemsQueryOptions(null));
+    return;
+  }
+
+  const { data: { session } } = await supabase.auth.getSession();
+  await queryClient.ensureQueryData(watchedItemsQueryOptions(session?.user?.id ?? null));
+}
+
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -54,14 +65,25 @@ export const router = createBrowserRouter([
           import("@/routes/search-page").then((m) => ({ Component: m.SearchPage }))
       },
       {
+        path: "/history",
+        async loader() {
+          await ensureWatchedItemsForSession();
+          return null;
+        },
+        lazy: () =>
+          import("@/routes/history-page").then((m) => ({ Component: m.HistoryPage }))
+      },
+      {
         element: <DetailLayout />,
         children: [
           {
             path: "/book/:workId",
-            loader({ params }) {
+            async loader({ params }) {
+              const promises: Promise<unknown>[] = [ensureWatchedItemsForSession()];
               if (params.workId) {
-                void queryClient.ensureQueryData(bookDetailQueryOptions(params.workId));
+                promises.push(queryClient.ensureQueryData(bookDetailQueryOptions(params.workId)));
               }
+              await Promise.all(promises);
               return null;
             },
             lazy: () =>
@@ -69,10 +91,12 @@ export const router = createBrowserRouter([
           },
           {
             path: "/movie/:subjectId",
-            loader({ params }) {
+            async loader({ params }) {
+              const promises: Promise<unknown>[] = [ensureWatchedItemsForSession()];
               if (params.subjectId) {
-                void queryClient.ensureQueryData(movieDetailQueryOptions(params.subjectId));
+                promises.push(queryClient.ensureQueryData(movieDetailQueryOptions(params.subjectId)));
               }
+              await Promise.all(promises);
               return null;
             },
             lazy: () =>

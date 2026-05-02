@@ -64,7 +64,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                 <OpusWordmark className="text-[1.6rem]" />
               </DialogTitle>
               <DialogDescription>
-                登录以同步搜索历史和收藏
+                登录以同步搜索历史、收藏和看过记录
               </DialogDescription>
             </div>
           </DialogHeader>
@@ -85,7 +85,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               <OpusWordmark className="text-[1.6rem]" />
             </DrawerTitle>
             <DrawerDescription>
-              登录以同步搜索历史和收藏
+              登录以同步搜索历史、收藏和看过记录
             </DrawerDescription>
           </div>
         </DrawerHeader>

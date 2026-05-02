@@ -120,3 +120,40 @@ alter table public.bookmarks
 
 alter table public.bookmarks
   add column if not exists item_cover_urls text[];
+
+-- 4. Watched history table
+create table public.watched_items (
+  id bigint generated always as identity primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  item_id text not null,
+  item_type text not null check (item_type in ('book', 'movie')),
+  media_kind text not null check (media_kind in ('book', 'movie', 'tv')),
+  item_title text not null,
+  item_cover_url text,
+  watched_on date not null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (user_id, item_id, item_type)
+);
+
+alter table public.watched_items enable row level security;
+
+create policy "Users can read own watched items"
+  on public.watched_items for select
+  using ((select auth.uid()) = user_id);
+
+create policy "Users can insert own watched items"
+  on public.watched_items for insert
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users can update own watched items"
+  on public.watched_items for update
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users can delete own watched items"
+  on public.watched_items for delete
+  using ((select auth.uid()) = user_id);
+
+create index idx_watched_items_user_recent
+  on public.watched_items (user_id, watched_on desc, created_at desc);

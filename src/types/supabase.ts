@@ -20,3 +20,16 @@ export interface BookmarkRow {
   created_at: string;
   updated_at: string;
 }
+
+export interface WatchedItemRow {
+  id: number;
+  user_id: string;
+  item_id: string;
+  item_type: "book" | "movie";
+  media_kind: "book" | "movie" | "tv";
+  item_title: string;
+  item_cover_url: string | null;
+  watched_on: string;
+  created_at: string;
+  updated_at: string;
+}

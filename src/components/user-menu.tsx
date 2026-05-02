@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { LogOut, User } from "lucide-react";
+import { CalendarDays, LogOut, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export function UserMenu() {
   const { enabled, user, loading, signOut } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
+  const navigate = useNavigate();
 
   if (loading) return null;
 
@@ -71,6 +73,13 @@ export function UserMenu() {
               <p className="truncate text-xs text-muted-foreground">{user.email}</p>
             )}
           </div>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => navigate("/history")}>
+            <CalendarDays data-icon="inline-start" />
+            看过历史
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <div className="flex items-center justify-between gap-2 px-2 py-1.5">

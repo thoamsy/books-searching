@@ -1,5 +1,5 @@
 import { requireSupabase } from "@/lib/supabase";
-import type { BookmarkRow } from "@/types/supabase";
+import type { BookmarkRow, WatchedItemRow } from "@/types/supabase";
 
 export async function getBookmarks(userId: string): Promise<BookmarkRow[]> {
   const supabase = requireSupabase();
@@ -79,5 +79,82 @@ export async function batchUpsertBookmarks(
   const { error } = await supabase
     .from("bookmarks")
     .upsert(rows, { onConflict: "user_id,item_id,item_type" });
+  if (error) throw error;
+}
+
+export async function getWatchedItems(userId: string): Promise<WatchedItemRow[]> {
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from("watched_items")
+    .select("*")
+    .eq("user_id", userId)
+    .order("watched_on", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export type WatchedItemInput = Pick<
+  WatchedItemRow,
+  "item_id" | "item_type" | "media_kind" | "item_title" | "item_cover_url" | "watched_on"
+>;
+
+export async function upsertWatchedItem(
+  userId: string,
+  item: WatchedItemInput
+): Promise<WatchedItemRow> {
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from("watched_items")
+    .upsert(
+      {
+        user_id: userId,
+        item_id: item.item_id,
+        item_type: item.item_type,
+        media_kind: item.media_kind,
+        item_title: item.item_title,
+        item_cover_url: item.item_cover_url,
+        watched_on: item.watched_on,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,item_id,item_type" }
+    )
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateWatchedItemDate(
+  userId: string,
+  itemId: string,
+  itemType: WatchedItemRow["item_type"],
+  watchedOn: string
+): Promise<WatchedItemRow> {
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from("watched_items")
+    .update({ watched_on: watchedOn, updated_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .eq("item_id", itemId)
+    .eq("item_type", itemType)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function removeWatchedItem(
+  userId: string,
+  itemId: string,
+  itemType: WatchedItemRow["item_type"]
+) {
+  const supabase = requireSupabase();
+  const { error } = await supabase
+    .from("watched_items")
+    .delete()
+    .eq("user_id", userId)
+    .eq("item_id", itemId)
+    .eq("item_type", itemType);
   if (error) throw error;
 }
