@@ -49,6 +49,7 @@ export const router = createBrowserRouter([
       {
         path: "/",
         loader() {
+          void ensureWatchedItemsForSession();
           if (!isSupabaseConfigured || !supabase) {
             void queryClient.ensureQueryData(bookmarksQueryOptions(null));
             return null;
@@ -78,12 +79,11 @@ export const router = createBrowserRouter([
         children: [
           {
             path: "/book/:workId",
-            async loader({ params }) {
-              const promises: Promise<unknown>[] = [ensureWatchedItemsForSession()];
+            loader({ params }) {
+              void ensureWatchedItemsForSession();
               if (params.workId) {
-                promises.push(queryClient.ensureQueryData(bookDetailQueryOptions(params.workId)));
+                void queryClient.ensureQueryData(bookDetailQueryOptions(params.workId));
               }
-              await Promise.all(promises);
               return null;
             },
             lazy: () =>
@@ -91,12 +91,11 @@ export const router = createBrowserRouter([
           },
           {
             path: "/movie/:subjectId",
-            async loader({ params }) {
-              const promises: Promise<unknown>[] = [ensureWatchedItemsForSession()];
+            loader({ params }) {
+              void ensureWatchedItemsForSession();
               if (params.subjectId) {
-                promises.push(queryClient.ensureQueryData(movieDetailQueryOptions(params.subjectId)));
+                void queryClient.ensureQueryData(movieDetailQueryOptions(params.subjectId));
               }
-              await Promise.all(promises);
               return null;
             },
             lazy: () =>
