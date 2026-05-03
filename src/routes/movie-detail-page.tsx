@@ -99,16 +99,16 @@ function MovieDetailContent({ subjectId, fallbackMovie }: { subjectId: string; f
         </div>
         <div className="min-w-0 flex-1">
           <MobileHeroPanel movieDetail={movieDetail} fallbackMovie={fallbackMovie} />
+          <DetailActionPill
+            itemId={subjectId}
+            itemType="movie"
+            mediaKind={mobileMediaKind}
+            title={mobileTitle}
+            coverUrl={mobileCoverUrl}
+            className="mt-3 lg:hidden"
+          />
         </div>
       </div>
-      <DetailActionPill
-        itemId={subjectId}
-        itemType="movie"
-        mediaKind={mobileMediaKind}
-        title={mobileTitle}
-        coverUrl={mobileCoverUrl}
-        className="lg:hidden"
-      />
 
       {/* Desktop: original two-column layout */}
       <div className="hidden lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">

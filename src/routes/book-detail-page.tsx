@@ -96,16 +96,16 @@ function BookDetailContent({ workId, fallbackBook }: { workId: string; fallbackB
         </div>
         <div className="min-w-0 flex-1">
           <MobileHeroPanel bookDetail={bookDetail} fallbackBook={fallbackBook} />
+          <DetailActionPill
+            itemId={workId}
+            itemType="book"
+            mediaKind="book"
+            title={mobileTitle}
+            coverUrl={mobileCoverUrl}
+            className="mt-3 lg:hidden"
+          />
         </div>
       </div>
-      <DetailActionPill
-        itemId={workId}
-        itemType="book"
-        mediaKind="book"
-        title={mobileTitle}
-        coverUrl={mobileCoverUrl}
-        className="lg:hidden"
-      />
 
       {/* Desktop: original two-column layout */}
       <div className="hidden lg:grid lg:grid-cols-[320px_1fr] lg:items-start lg:gap-10">

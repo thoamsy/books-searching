@@ -137,7 +137,7 @@ export function DetailActionPill({
 
   return (
     <>
-      <div className={cn("mt-5 flex w-full flex-wrap items-center gap-2 lg:w-80", className)}>
+      <div className={cn("mt-5 flex w-full max-w-[280px] flex-wrap items-center gap-2", className)}>
         <Popover open={popoverOpen} onOpenChange={handleOpenChange}>
           <PopoverAnchor asChild>
             <Button
@@ -145,7 +145,7 @@ export function DetailActionPill({
               disabled={isPending}
               aria-pressed={Boolean(watchedItem)}
               className={cn(
-                "h-12 w-full rounded-full px-6 text-base shadow-warm-md has-data-[icon=inline-start]:pl-6",
+                "h-10 w-full rounded-full px-4 text-[0.92rem] shadow-warm-sm has-data-[icon=inline-start]:pl-4 sm:h-11 sm:px-5 sm:text-[0.95rem] sm:has-data-[icon=inline-start]:pl-5 lg:h-12 lg:px-6 lg:text-base lg:shadow-warm-md lg:has-data-[icon=inline-start]:pl-6",
                 watchedItem && "bg-primary text-primary-foreground"
               )}
               onClick={handlePrimaryClick}
