@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { Film, User } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ChevronDown, Film, User } from "lucide-react";
 import { DepthLink } from "@/components/depth-link";
 import { BookCover } from "@/components/book-cover";
 import { TiltCard } from "@/components/tilt-card";
@@ -15,6 +15,7 @@ type SectionKey = "persons" | "books" | "movies" | "collections";
 
 const PERSON_PEEK = 9; // collapsed: 9 avatars + 1 "+N" pill = 2 rows × 5
 const COVER_PEEK = 6; // collapsed: 2 rows × 3
+const DESKTOP_COVER_PEEK = 8; // collapsed: 2 rows × 4 on desktop shelves
 
 function readPersistedExpansion(): Set<SectionKey> {
   if (typeof window === "undefined") return new Set();
@@ -71,6 +72,10 @@ function bookmarkUrl(item: BookmarkItem): string {
   }
 }
 
+function bookmarkKey(item: BookmarkItem, index: number) {
+  return `${item.item_type}:${item.item_id}:${index}`;
+}
+
 function BookmarkCard({ item }: { item: BookmarkItem }) {
   const variant = item.item_type === "book" ? "book" : "poster";
   const aspect = item.item_type === "book" ? "3/4" : "2/3";
@@ -101,6 +106,55 @@ function BookmarkCard({ item }: { item: BookmarkItem }) {
   );
 }
 
+const shelfLayoutTransition = {
+  duration: 0.42,
+  ease: [0.22, 1, 0.36, 1] as const,
+};
+
+function BookmarkShelfGrid({ items, className }: { items: BookmarkItem[]; className: string }) {
+  const prefersReducedMotion = useReducedMotion();
+  const previousCountRef = useRef(items.length);
+  const previousCount = previousCountRef.current;
+  const isExpanding = items.length > previousCount;
+
+  useEffect(() => {
+    previousCountRef.current = items.length;
+  }, [items.length]);
+
+  return (
+    <motion.div
+      layout={!prefersReducedMotion}
+      transition={shelfLayoutTransition}
+      className={className}
+    >
+      {items.map((item, index) => {
+        const isNewItem = isExpanding && index >= previousCount;
+
+        return (
+          <motion.div
+            key={bookmarkKey(item, index)}
+            layout={!prefersReducedMotion}
+            initial={isNewItem && !prefersReducedMotion ? { opacity: 0, y: 18, scale: 0.96 } : false}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              layout: shelfLayoutTransition,
+              opacity: { duration: prefersReducedMotion ? 0.01 : 0.24, ease: "easeOut" },
+              scale: { duration: prefersReducedMotion ? 0.01 : 0.3, ease: [0.22, 1, 0.36, 1] },
+              y: {
+                duration: prefersReducedMotion ? 0.01 : 0.34,
+                ease: [0.22, 1, 0.36, 1],
+                delay: isNewItem && !prefersReducedMotion ? Math.min((index - previousCount) * 0.025, 0.16) : 0,
+              },
+            }}
+          >
+            <BookmarkCard item={item} />
+          </motion.div>
+        );
+      })}
+    </motion.div>
+  );
+}
+
 function ExpandToggle({
   isExpanded,
   total,
@@ -114,18 +168,31 @@ function ExpandToggle({
   onToggle: () => void;
   className?: string;
 }) {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
-    <button
+    <motion.button
+      layout={!prefersReducedMotion}
       type="button"
       onClick={onToggle}
       className={cn(
-        "mt-4 block w-full border-t border-border-edge pt-3 text-left text-xs uppercase tracking-[0.28em] text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none",
+        "group mt-4 flex w-full items-center justify-between gap-3 border-t border-border-edge pt-3 text-left text-xs uppercase tracking-[0.28em] text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none",
         className
       )}
       aria-expanded={isExpanded}
+      whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
+      transition={shelfLayoutTransition}
     >
-      {isExpanded ? "收起" : `展开全部 · ${total} ${unit}`}
-    </button>
+      <span>{isExpanded ? "收起" : `展开全部 · ${total} ${unit}`}</span>
+      <motion.span
+        aria-hidden="true"
+        animate={{ rotate: isExpanded ? 180 : 0 }}
+        transition={{ duration: prefersReducedMotion ? 0.01 : 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border-edge transition-colors group-hover:border-foreground/40"
+      >
+        <ChevronDown className="size-3.5" />
+      </motion.span>
+    </motion.button>
   );
 }
 
@@ -133,6 +200,7 @@ const entrance = { duration: 0.4, ease: [0, 0, 0.58, 1] as const };
 
 export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[]; animate?: boolean }) {
   const { expanded, toggle } = useBookmarksExpansion();
+  const prefersReducedMotion = useReducedMotion();
 
   const { persons, books, movies, collections } = useMemo(() => {
     const result = { persons: [] as BookmarkItem[], books: [] as BookmarkItem[], movies: [] as BookmarkItem[], collections: [] as BookmarkItem[] };
@@ -163,9 +231,11 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
   if (collections.length > 0) sectionOrder.push("collections");
 
   function sectionProps(key: string) {
-    if (!animate) return {};
+    const layoutProps = { layout: !prefersReducedMotion };
+    if (!animate) return layoutProps;
     const index = sectionOrder.indexOf(key);
     return {
+      ...layoutProps,
       initial: { opacity: 0, y: 12 } as const,
       animate: { opacity: 1, y: 0 } as const,
       transition: { ...entrance, delay: 0.16 + index * 0.08 },
@@ -179,10 +249,14 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
   const booksExpanded = expanded.has("books");
   const booksHasOverflow = books.length > COVER_PEEK;
   const visibleBooks = booksExpanded || !booksHasOverflow ? books : books.slice(0, COVER_PEEK);
+  const booksHasDesktopOverflow = books.length > DESKTOP_COVER_PEEK;
+  const visibleDesktopBooks = booksExpanded || !booksHasDesktopOverflow ? books : books.slice(0, DESKTOP_COVER_PEEK);
 
   const moviesExpanded = expanded.has("movies");
   const moviesHasOverflow = movies.length > COVER_PEEK;
   const visibleMovies = moviesExpanded || !moviesHasOverflow ? movies : movies.slice(0, COVER_PEEK);
+  const moviesHasDesktopOverflow = movies.length > DESKTOP_COVER_PEEK;
+  const visibleDesktopMovies = moviesExpanded || !moviesHasDesktopOverflow ? movies : movies.slice(0, DESKTOP_COVER_PEEK);
 
   const collectionsExpanded = expanded.has("collections");
   const collectionsHasOverflow = collections.length > COVER_PEEK;
@@ -197,9 +271,9 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
           {/* Mobile: avatar wrap grid, names dropped, "+N" pill as overflow entry */}
           <div className="sm:hidden">
             <div className="flex flex-wrap gap-3">
-              {visiblePersons.map((item) => (
+              {visiblePersons.map((item, index) => (
                 <DepthLink
-                  key={item.item_id}
+                  key={bookmarkKey(item, index)}
                   to={bookmarkUrl(item)}
                   className="group block"
                   aria-label={item.item_title}
@@ -238,18 +312,18 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
             <div className="group/stack hidden items-center sm:flex">
               <div className="flex items-center">
                 {persons.map((item, index) => (
-                  <Tooltip key={item.item_id}>
+                  <Tooltip key={bookmarkKey(item, index)}>
                     <TooltipTrigger asChild>
                       <DepthLink
                         to={bookmarkUrl(item)}
-                        className="relative block shrink-0 transition-[margin] duration-300 ease-out hover:!z-50 group-hover/stack:mr-2"
-                        style={{ marginLeft: index === 0 ? 0 : "-0.75rem", zIndex: persons.length - index }}
+                        className="relative block shrink-0 transition-[margin] duration-300 ease-out hover:!z-50 group-hover/stack:mr-2.5"
+                        style={{ marginLeft: index === 0 ? 0 : "-0.875rem", zIndex: persons.length - index }}
                       >
-                        <div className="size-10 overflow-hidden rounded-full border-2 border-background shadow-sm transition-transform duration-200 hover:scale-110">
+                        <div className="size-12 overflow-hidden rounded-full border-2 border-background shadow-sm transition-transform duration-200 hover:scale-110 @2xl:size-14 @5xl:size-16">
                           {item.item_cover_url ? (
                             <img src={item.item_cover_url} alt={item.item_title} className="h-full w-full object-cover" />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-surface to-accent text-xs font-medium text-muted-foreground">
+                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-surface to-accent text-sm font-medium text-muted-foreground @5xl:text-base">
                               {item.item_title.replace(/[\[\]（）()【】\s]/g, "").charAt(0)}
                             </div>
                           )}
@@ -270,11 +344,7 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏书籍</h2>
           {/* Mobile: 3-col grid, peek 6, inline expand */}
           <div className="sm:hidden">
-            <div className="grid grid-cols-3 gap-3">
-              {visibleBooks.map((item) => (
-                <BookmarkCard key={item.item_id} item={item} />
-              ))}
-            </div>
+            <BookmarkShelfGrid items={visibleBooks} className="grid grid-cols-3 gap-3" />
             {booksHasOverflow ? (
               <ExpandToggle
                 isExpanded={booksExpanded}
@@ -284,11 +354,17 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
               />
             ) : null}
           </div>
-          {/* Desktop: grid */}
-          <div className="hidden grid-cols-3 gap-3 @2xl:grid-cols-4 sm:grid">
-            {books.map((item) => (
-              <BookmarkCard key={item.item_id} item={item} />
-            ))}
+          {/* Desktop: shelf preview, expandable when the collection grows */}
+          <div className="hidden sm:block">
+            <BookmarkShelfGrid items={visibleDesktopBooks} className="grid grid-cols-3 gap-3 @2xl:grid-cols-4" />
+            {booksHasDesktopOverflow ? (
+              <ExpandToggle
+                isExpanded={booksExpanded}
+                total={books.length}
+                unit="本"
+                onToggle={() => toggle("books")}
+              />
+            ) : null}
           </div>
         </motion.section>
       ) : null}
@@ -298,11 +374,7 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏影视</h2>
           {/* Mobile: 3-col grid, peek 6, inline expand */}
           <div className="sm:hidden">
-            <div className="grid grid-cols-3 gap-3">
-              {visibleMovies.map((item) => (
-                <BookmarkCard key={item.item_id} item={item} />
-              ))}
-            </div>
+            <BookmarkShelfGrid items={visibleMovies} className="grid grid-cols-3 gap-3" />
             {moviesHasOverflow ? (
               <ExpandToggle
                 isExpanded={moviesExpanded}
@@ -312,11 +384,17 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
               />
             ) : null}
           </div>
-          {/* Desktop: grid */}
-          <div className="hidden grid-cols-3 gap-3 @2xl:grid-cols-4 sm:grid">
-            {movies.map((item) => (
-              <BookmarkCard key={item.item_id} item={item} />
-            ))}
+          {/* Desktop: shelf preview, expandable when the collection grows */}
+          <div className="hidden sm:block">
+            <BookmarkShelfGrid items={visibleDesktopMovies} className="grid grid-cols-3 gap-3 @2xl:grid-cols-4" />
+            {moviesHasDesktopOverflow ? (
+              <ExpandToggle
+                isExpanded={moviesExpanded}
+                total={movies.length}
+                unit="部"
+                onToggle={() => toggle("movies")}
+              />
+            ) : null}
           </div>
         </motion.section>
       ) : null}
@@ -327,8 +405,8 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
           {/* Mobile only: desktop shows collections in aside */}
           <div>
             <div className="grid grid-cols-3 gap-3">
-              {visibleCollections.map((item) => (
-                <DepthLink key={item.item_id} to={`/collection/${item.item_id}`} className="group">
+              {visibleCollections.map((item, index) => (
+                <DepthLink key={bookmarkKey(item, index)} to={`/collection/${item.item_id}`} className="group">
                   <CollectionCover
                     urls={item.item_cover_urls ?? []}
                     title={item.item_title}
