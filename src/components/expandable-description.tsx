@@ -9,12 +9,7 @@ export function ExpandableDescription({ text }: { text: string }) {
   return (
     <div className="mt-4">
       <div className={cn("relative", !expanded && shouldCollapse && "max-h-[28rem] overflow-hidden")}>
-        <p className="whitespace-pre-line text-[15px] leading-7 text-muted-foreground">{text}</p>
-        {!expanded && shouldCollapse ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent via-background/60 to-background">
-            <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-b from-transparent to-background" />
-          </div>
-        ) : null}
+        <p className="whitespace-pre-line text-[15px] leading-7 text-muted-foreground [overflow-wrap:anywhere]">{text}</p>
       </div>
 
       {shouldCollapse ? (
@@ -34,7 +29,7 @@ export function InfoBlock({ label, value }: { label: string; value: ReactNode })
   return (
     <div>
       <p className="text-base font-semibold">{label}</p>
-      <p className="mt-1 text-sm leading-7 text-muted-foreground">{value}</p>
+      <p className="mt-1 text-sm leading-7 text-muted-foreground [overflow-wrap:anywhere]">{value}</p>
     </div>
   );
 }
