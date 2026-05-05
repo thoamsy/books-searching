@@ -154,7 +154,12 @@ export function DetailActionPill({
               <span className="truncate">{isPending ? "保存中..." : label}</span>
             </Button>
           </PopoverAnchor>
-          <PopoverContent align="start" sideOffset={10} className="w-72">
+          <PopoverContent
+            align="start"
+            sideOffset={10}
+            collisionPadding={16}
+            className="w-72 max-w-[calc(100vw-2rem)] p-4"
+          >
             <PopoverHeader>
               <PopoverTitle>{watchedItem ? "修改看过日期" : "标记看过"}</PopoverTitle>
               <PopoverDescription>
