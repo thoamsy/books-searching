@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useCallback, useMemo, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Film, User } from "lucide-react";
 import { DepthLink } from "@/components/depth-link";
 import { BookCover } from "@/components/book-cover";
@@ -106,52 +106,64 @@ function BookmarkCard({ item }: { item: BookmarkItem }) {
   );
 }
 
-const shelfLayoutTransition = {
-  duration: 0.42,
-  ease: [0.22, 1, 0.36, 1] as const,
-};
+const shelfSpring = { type: "spring" as const, stiffness: 300, damping: 30 };
 
-function BookmarkShelfGrid({ items, className }: { items: BookmarkItem[]; className: string }) {
+function BookmarkShelfGrid({
+  allItems,
+  peekCount,
+  isExpanded,
+  className,
+}: {
+  allItems: BookmarkItem[];
+  peekCount: number;
+  isExpanded: boolean;
+  className: string;
+}) {
   const prefersReducedMotion = useReducedMotion();
-  const previousCountRef = useRef(items.length);
-  const previousCount = previousCountRef.current;
-  const isExpanding = items.length > previousCount;
-
-  useEffect(() => {
-    previousCountRef.current = items.length;
-  }, [items.length]);
+  const hasOverflow = allItems.length > peekCount;
+  const overflowItems = hasOverflow ? allItems.slice(peekCount) : [];
+  const columnCount = className.includes("@2xl:grid-cols-4") ? 4 : 3;
 
   return (
-    <motion.div
-      layout={!prefersReducedMotion}
-      transition={shelfLayoutTransition}
-      className={className}
-    >
-      {items.map((item, index) => {
-        const isNewItem = isExpanding && index >= previousCount;
+    <div className={className}>
+      {allItems.slice(0, peekCount).map((item, index) => (
+        <BookmarkCard key={bookmarkKey(item, index)} item={item} />
+      ))}
 
-        return (
+      <AnimatePresence initial={false}>
+        {isExpanded && overflowItems.length > 0 ? (
           <motion.div
-            key={bookmarkKey(item, index)}
-            layout={!prefersReducedMotion}
-            initial={isNewItem && !prefersReducedMotion ? { opacity: 0, y: 18, scale: 0.96 } : false}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{
-              layout: shelfLayoutTransition,
-              opacity: { duration: prefersReducedMotion ? 0.01 : 0.24, ease: "easeOut" },
-              scale: { duration: prefersReducedMotion ? 0.01 : 0.3, ease: [0.22, 1, 0.36, 1] },
-              y: {
-                duration: prefersReducedMotion ? 0.01 : 0.34,
-                ease: [0.22, 1, 0.36, 1],
-                delay: isNewItem && !prefersReducedMotion ? Math.min((index - previousCount) * 0.025, 0.16) : 0,
-              },
-            }}
+            key="overflow"
+            className="col-span-full overflow-hidden"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={prefersReducedMotion ? { duration: 0.01 } : shelfSpring}
           >
-            <BookmarkCard item={item} />
+            <div
+              className="grid gap-3"
+              style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}
+            >
+              {overflowItems.map((item, index) => (
+                <motion.div
+                  key={bookmarkKey(item, index + peekCount)}
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={
+                    prefersReducedMotion
+                      ? { duration: 0.01 }
+                      : { duration: 0.3, delay: Math.min(index * 0.04, 0.2) }
+                  }
+                >
+                  <BookmarkCard item={item} />
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
-        );
-      })}
-    </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -171,8 +183,7 @@ function ExpandToggle({
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <motion.button
-      layout={!prefersReducedMotion}
+    <button
       type="button"
       onClick={onToggle}
       className={cn(
@@ -180,8 +191,6 @@ function ExpandToggle({
         className
       )}
       aria-expanded={isExpanded}
-      whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
-      transition={shelfLayoutTransition}
     >
       <span>{isExpanded ? "收起" : `展开全部 · ${total} ${unit}`}</span>
       <motion.span
@@ -192,7 +201,7 @@ function ExpandToggle({
       >
         <ChevronDown className="size-3.5" />
       </motion.span>
-    </motion.button>
+    </button>
   );
 }
 
@@ -200,7 +209,6 @@ const entrance = { duration: 0.4, ease: [0, 0, 0.58, 1] as const };
 
 export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[]; animate?: boolean }) {
   const { expanded, toggle } = useBookmarksExpansion();
-  const prefersReducedMotion = useReducedMotion();
 
   const { persons, books, movies, collections } = useMemo(() => {
     const result = { persons: [] as BookmarkItem[], books: [] as BookmarkItem[], movies: [] as BookmarkItem[], collections: [] as BookmarkItem[] };
@@ -231,11 +239,9 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
   if (collections.length > 0) sectionOrder.push("collections");
 
   function sectionProps(key: string) {
-    const layoutProps = { layout: !prefersReducedMotion };
-    if (!animate) return layoutProps;
+    if (!animate) return {};
     const index = sectionOrder.indexOf(key);
     return {
-      ...layoutProps,
       initial: { opacity: 0, y: 12 } as const,
       animate: { opacity: 1, y: 0 } as const,
       transition: { ...entrance, delay: 0.16 + index * 0.08 },
@@ -248,15 +254,11 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
 
   const booksExpanded = expanded.has("books");
   const booksHasOverflow = books.length > COVER_PEEK;
-  const visibleBooks = booksExpanded || !booksHasOverflow ? books : books.slice(0, COVER_PEEK);
   const booksHasDesktopOverflow = books.length > DESKTOP_COVER_PEEK;
-  const visibleDesktopBooks = booksExpanded || !booksHasDesktopOverflow ? books : books.slice(0, DESKTOP_COVER_PEEK);
 
   const moviesExpanded = expanded.has("movies");
   const moviesHasOverflow = movies.length > COVER_PEEK;
-  const visibleMovies = moviesExpanded || !moviesHasOverflow ? movies : movies.slice(0, COVER_PEEK);
   const moviesHasDesktopOverflow = movies.length > DESKTOP_COVER_PEEK;
-  const visibleDesktopMovies = moviesExpanded || !moviesHasDesktopOverflow ? movies : movies.slice(0, DESKTOP_COVER_PEEK);
 
   const collectionsExpanded = expanded.has("collections");
   const collectionsHasOverflow = collections.length > COVER_PEEK;
@@ -344,7 +346,7 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏书籍</h2>
           {/* Mobile: 3-col grid, peek 6, inline expand */}
           <div className="sm:hidden">
-            <BookmarkShelfGrid items={visibleBooks} className="grid grid-cols-3 gap-3" />
+            <BookmarkShelfGrid allItems={books} peekCount={COVER_PEEK} isExpanded={booksExpanded} className="grid grid-cols-3 gap-3" />
             {booksHasOverflow ? (
               <ExpandToggle
                 isExpanded={booksExpanded}
@@ -356,7 +358,7 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
           </div>
           {/* Desktop: shelf preview, expandable when the collection grows */}
           <div className="hidden sm:block">
-            <BookmarkShelfGrid items={visibleDesktopBooks} className="grid grid-cols-3 gap-3 @2xl:grid-cols-4" />
+            <BookmarkShelfGrid allItems={books} peekCount={DESKTOP_COVER_PEEK} isExpanded={booksExpanded} className="grid grid-cols-3 gap-3 @2xl:grid-cols-4" />
             {booksHasDesktopOverflow ? (
               <ExpandToggle
                 isExpanded={booksExpanded}
@@ -374,7 +376,7 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
           <h2 className="text-xs uppercase tracking-[0.28em] text-muted-foreground">收藏影视</h2>
           {/* Mobile: 3-col grid, peek 6, inline expand */}
           <div className="sm:hidden">
-            <BookmarkShelfGrid items={visibleMovies} className="grid grid-cols-3 gap-3" />
+            <BookmarkShelfGrid allItems={movies} peekCount={COVER_PEEK} isExpanded={moviesExpanded} className="grid grid-cols-3 gap-3" />
             {moviesHasOverflow ? (
               <ExpandToggle
                 isExpanded={moviesExpanded}
@@ -386,7 +388,7 @@ export function BookmarksGrid({ items, animate = false }: { items: BookmarkItem[
           </div>
           {/* Desktop: shelf preview, expandable when the collection grows */}
           <div className="hidden sm:block">
-            <BookmarkShelfGrid items={visibleDesktopMovies} className="grid grid-cols-3 gap-3 @2xl:grid-cols-4" />
+            <BookmarkShelfGrid allItems={movies} peekCount={DESKTOP_COVER_PEEK} isExpanded={moviesExpanded} className="grid grid-cols-3 gap-3 @2xl:grid-cols-4" />
             {moviesHasDesktopOverflow ? (
               <ExpandToggle
                 isExpanded={moviesExpanded}
