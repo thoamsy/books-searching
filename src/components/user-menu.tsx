@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { CalendarDays, LogOut, User } from "lucide-react";
+import { CalendarDays, LogOut, Search, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
+import { useSearchAutoFocusPreference } from "@/lib/search-preferences";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -17,6 +19,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export function UserMenu() {
   const { enabled, user, loading, signOut } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
+  const [searchAutoFocus, setSearchAutoFocus] = useSearchAutoFocusPreference();
   const navigate = useNavigate();
 
   if (loading) return null;
@@ -80,6 +83,16 @@ export function UserMenu() {
             <CalendarDays data-icon="inline-start" />
             看过历史
           </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuCheckboxItem
+            checked={searchAutoFocus}
+            onCheckedChange={(checked) => setSearchAutoFocus(Boolean(checked))}
+          >
+            <Search data-icon="inline-start" />
+            打开首页自动聚焦
+          </DropdownMenuCheckboxItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <div className="flex items-center justify-between gap-2 px-2 py-1.5">

@@ -24,6 +24,7 @@ import { getCoverUrl, normalizeWorkId, suggestItemToSearchBook } from "@/lib/boo
 import { suggestionsQueryOptions } from "@/lib/book-queries";
 import { movieSuggestionsQueryOptions } from "@/lib/movie-queries";
 import { suggestItemToSearchMovie } from "@/lib/movies-api";
+import { useSearchAutoFocusPreference } from "@/lib/search-preferences";
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSearchScrollRestoration } from "@/hooks/use-search-scroll-restoration";
@@ -65,6 +66,7 @@ export function SearchPage() {
   const [isComposing, setIsComposing] = useState(false);
   const { user } = useAuth();
   const userId = user?.id ?? null;
+  const [searchAutoFocus] = useSearchAutoFocusPreference();
 
   // Only play entrance animations on the very first mount
   const [isFirstVisit] = useState(() => {
@@ -87,8 +89,13 @@ export function SearchPage() {
   const debouncedQuery = useDebounce(query, 260);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (!searchAutoFocus) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [searchAutoFocus]);
 
   // ---------------------------------------------------------------------------
   // Suggestion queries
@@ -315,7 +322,7 @@ export function SearchPage() {
               data-1p-ignore
               data-lpignore="true"
               data-form-type="other"
-              autoFocus
+              autoFocus={searchAutoFocus}
               placeholder="搜索书名、电影、电视剧……"
               className="h-13 rounded-2xl border-border-edge bg-surface-elevated text-base font-medium shadow-warm-sm backdrop-blur-xl transition-[box-shadow,border-color] duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] has-[[data-slot=input-group-control]:focus-visible]:border-primary/25 has-[[data-slot=input-group-control]:focus-visible]:shadow-warm-md has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&_input]:pl-11 placeholder:text-muted-foreground/60"
               onFocus={() => setIsOpen(true)}
